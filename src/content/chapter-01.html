@@ -1,0 +1,821 @@
+
+<h1>Haus of Grooming OS — Full-Stack Implementation Master Plan</h1>
+<p><strong>Classification:</strong> Confidential — Engineering<br><strong>Version:</strong> 1.1 — April 2026<br><strong>Audience:</strong> Staff engineers, architects, DevOps, security reviewers  </p>
+<p><strong>Split documentation (read first):</strong> <a href="/docs-sources/README.md">docs/README.md</a> — <a href="/docs-sources/00-architecture-overview.md">00 overview</a>, <a href="/docs-sources/01-data-storage-and-schema.md">01 data &amp; storage</a>, <a href="/docs-sources/02-backend-api-and-services.md">02 backend &amp; APIs</a>, <a href="/docs-sources/03-frontend-modules-and-ux.md">03 frontend</a>, <a href="/docs-sources/04-navigation-matrix-by-mode-and-role.md">04 nav matrix</a>.</p>
+<hr>
+<h2>Document purpose</h2>
+<p>This document is the <strong>authoritative implementation and operations plan</strong> for building <strong>Haus of Grooming OS</strong> on the <strong>production target stack</strong> (Next.js, Laravel modular monolith, PostgreSQL, Redis, Soketi, object storage, dedicated workers). It explicitly <strong>does not</strong> prescribe Lovable, Supabase client SDKs, Vite SPA-only hosting, or <code>@lovable.dev/*</code> as runtime dependencies for production.</p>
+<p>The <strong><code>barber-house-charm</code> repository</strong> is treated as <strong>Phase 0 — Product &amp; data model reference</strong>: UI flows, route map, subscription feature matrix, multi-mode terminology, and PostgreSQL-oriented entity shapes. Those artifacts inform OpenAPI schemas, Laravel modules, and Next.js routes; they are <strong>not</strong> the final deployment architecture.</p>
+<p>For screen-level product detail, continue to use <a href="/docs-sources/haus-of-grooming-system-blueprint.md">haus-of-grooming-system-blueprint.md</a>. For a snapshot of the <strong>legacy prototype stack</strong> (historical), see <a href="/docs-sources/technical-architecture-current-implementation.md">technical-architecture-current-implementation.md</a>.</p>
+<hr>
+<h2>Table of contents</h2>
+<ol>
+<li><a href="#1-target-technology-stack">Target technology stack</a>  </li>
+<li><a href="#2-program-roadmap-phased-delivery">Program roadmap (phased delivery)</a>  </li>
+<li><a href="#3-repository-and-monorepo-strategy">Repository and monorepo strategy</a>  </li>
+<li><a href="#4-nextjs-frontend--architecture--design">Next.js frontend — architecture &amp; design</a>  </li>
+<li><a href="#5-state-management-caching-on-the-client-and-data-flow">State management, caching on the client, and data flow</a>  </li>
+<li><a href="#6-laravel-backend--modular-monolith-architecture">Laravel backend — modular monolith architecture</a>  </li>
+<li><a href="#7-api-surface-versioning-and-idempotency">API surface, versioning, and idempotency</a>  </li>
+<li><a href="#8-postgresql--schema-tenancy-scaling-and-sharding">PostgreSQL — schema, tenancy, scaling, and sharding</a>  </li>
+<li><a href="#9-redis--sessions-cache-queues-rate-limiting">Redis — sessions, cache, queues, rate limiting</a>  </li>
+<li><a href="#10-realtime-messaging-and-extracted-services">Realtime, messaging, and extracted services</a>  </li>
+<li><a href="#11-load-handling-capacity-planning-and-choke-points">Load handling, capacity planning, and choke points</a>  </li>
+<li><a href="#12-bot-protection-abuse-prevention-and-waf">Bot protection, abuse prevention, and WAF</a>  </li>
+<li><a href="#13-security-architecture-senior-baseline">Security architecture (senior baseline)</a>  </li>
+<li><a href="#14-devops--cicd-environments-secrets-and-releases">DevOps — CI/CD, environments, secrets, and releases</a>  </li>
+<li><a href="#15-observability-slos-and-incident-response">Observability, SLOs, and incident response</a>  </li>
+<li><a href="#16-definition-of-done-engineering">Definition of done (engineering)</a></li>
+</ol>
+<hr>
+<h2>1. Target technology stack</h2>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Layer</th>
+<th>Technology</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Web app (staff, admin, customer portal, marketing)</strong></td>
+<td><strong>Next.js 14+</strong> (App Router), <strong>TypeScript</strong>, <strong>Tailwind CSS</strong>, <strong>shadcn/ui</strong> (or equivalent Radix-based kit)</td>
+<td>SSR/SSG for public SEO, RSC where beneficial, client islands for dashboards</td>
+</tr>
+<tr>
+<td><strong>Server state</strong></td>
+<td><strong>TanStack Query v5</strong> + thin <strong>API client</strong> (OpenAPI-generated or hand-typed fetch)</td>
+<td>Normalized server cache, mutations, optimistic updates</td>
+</tr>
+<tr>
+<td><strong>Client/UI state</strong></td>
+<td><strong>Zustand</strong> or lightweight <strong>React context</strong> for ephemeral UI (drawers, wizard step)</td>
+<td>Avoid putting server truth in global client stores</td>
+</tr>
+<tr>
+<td><strong>Auth (browser ↔ API)</strong></td>
+<td><strong>Laravel Sanctum</strong> (SPA cookie mode for same-site subdomains) <strong>or</strong> short-lived <strong>access + refresh</strong> JWT for mobile/PWA</td>
+<td>CSRF for cookie mode; rotation on sensitive ops</td>
+</tr>
+<tr>
+<td><strong>Primary API</strong></td>
+<td><strong>Laravel 11</strong>, <strong>PHP 8.3</strong>, <strong>modular packages</strong> (internal <code>modules/*</code> or <code>nwidart/laravel-modules</code>)</td>
+<td>Domain boundaries, events, jobs</td>
+</tr>
+<tr>
+<td><strong>AuthZ</strong></td>
+<td><strong>Spatie Laravel Permission</strong></td>
+<td>RBAC aligned with blueprint roles</td>
+</tr>
+<tr>
+<td><strong>Primary database</strong></td>
+<td><strong>PostgreSQL 16</strong></td>
+<td>ACID, reporting, tenancy column + indexes</td>
+</tr>
+<tr>
+<td><strong>Connection pooling</strong></td>
+<td><strong>PgBouncer</strong> (transaction mode) in front of Postgres</td>
+<td>Avoid connection storms from PHP-FPM</td>
+</tr>
+<tr>
+<td><strong>Cache &amp; queue backend</strong></td>
+<td><strong>Redis 7</strong></td>
+<td>Cache, session store, Horizon queues, rate-limit counters, distributed locks</td>
+</tr>
+<tr>
+<td><strong>Queue workers</strong></td>
+<td><strong>Laravel Horizon</strong></td>
+<td>SMS, WhatsApp, email, M-Pesa reconciliation, reports</td>
+</tr>
+<tr>
+<td><strong>Scheduler</strong></td>
+<td>Laravel <code>schedule:</code> in dedicated <strong>scheduler</strong> container / systemd timer</td>
+<td>Reminders, subscription dunning</td>
+</tr>
+<tr>
+<td><strong>Realtime</strong></td>
+<td><strong>Soketi</strong> (Pusher protocol) or managed <strong>Pusher/Ably</strong></td>
+<td>Staff chat, live queue, booking notifications</td>
+</tr>
+<tr>
+<td><strong>Object storage</strong></td>
+<td><strong>S3-compatible</strong> (AWS S3, Cloudflare R2, MinIO dev)</td>
+<td>Gallery, consent PDFs, receipts, exports</td>
+</tr>
+<tr>
+<td><strong>Calling</strong></td>
+<td><strong>Node.js 20</strong> service (WebRTC signaling, provider webhooks)</td>
+<td>Isolated scaling; talks to Laravel over signed webhooks</td>
+</tr>
+<tr>
+<td><strong>Edge / CDN</strong></td>
+<td><strong>Cloudflare</strong> (recommended) or equivalent</td>
+<td>TLS, WAF, bot management, static asset cache, Turnstile</td>
+</tr>
+<tr>
+<td><strong>Containers</strong></td>
+<td><strong>Docker</strong> + <strong>Compose</strong> (MVP) → <strong>Kubernetes</strong> or <strong>ECS</strong> at scale</td>
+<td>Same images across envs</td>
+</tr>
+<tr>
+<td><strong>CI/CD</strong></td>
+<td><strong>GitHub Actions</strong> (or GitLab CI)</td>
+<td>Lint, test, SAST, build, sign, deploy</td>
+</tr>
+</tbody></table></div>
+<p><strong>Explicitly retired for production:</strong> Lovable Cloud Auth, Supabase JS client as primary API, Vite SPA as sole app shell, demo-only AI gateways tied to Lovable, PostgREST as application server.</p>
+<hr>
+<h2>2. Program roadmap (phased delivery)</h2>
+<div class="diagram-wrap" role="img" aria-label="Phases P0 through P6">
+<svg class="diagram-svg" viewBox="0 0 1100 200" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="ph-ch1" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><polygon points="0 0,10 5,0 10" fill="#d4a84b"/></marker></defs>
+  <text x="550" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#e8eaef">Program roadmap — P0 → P6</text>
+  <text x="550" y="60" text-anchor="middle" font-size="14" fill="#8b95a8">Horizontal flow — scroll horizontally on small viewports if needed</text>
+  <rect class="box" x="20" y="90" width="120" height="64" rx="10"/><text x="80" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#e8eaef">P0</text>
+  <line x1="140" y1="122" x2="160" y2="122" stroke="#d4a84b" stroke-width="2" marker-end="url(#ph-ch1)"/>
+  <rect class="box-accent" x="165" y="90" width="120" height="64" rx="10"/><text x="225" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#d4a84b">P1</text>
+  <line x1="285" y1="122" x2="305" y2="122" stroke="#d4a84b" stroke-width="2" marker-end="url(#ph-ch1)"/>
+  <rect class="box" x="310" y="90" width="120" height="64" rx="10"/><text x="370" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#e8eaef">P2</text>
+  <line x1="430" y1="122" x2="450" y2="122" stroke="#d4a84b" stroke-width="2" marker-end="url(#ph-ch1)"/>
+  <rect class="box" x="455" y="90" width="120" height="64" rx="10"/><text x="515" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#e8eaef">P3</text>
+  <line x1="575" y1="122" x2="595" y2="122" stroke="#d4a84b" stroke-width="2" marker-end="url(#ph-ch1)"/>
+  <rect class="box" x="600" y="90" width="120" height="64" rx="10"/><text x="660" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#e8eaef">P4</text>
+  <line x1="720" y1="122" x2="740" y2="122" stroke="#d4a84b" stroke-width="2" marker-end="url(#ph-ch1)"/>
+  <rect class="box" x="745" y="90" width="120" height="64" rx="10"/><text x="805" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#e8eaef">P5</text>
+  <line x1="865" y1="122" x2="885" y2="122" stroke="#d4a84b" stroke-width="2" marker-end="url(#ph-ch1)"/>
+  <rect class="box-accent" x="890" y="90" width="190" height="64" rx="10"/><text x="985" y="128" text-anchor="middle" font-size="16" font-weight="600" fill="#d4a84b">P6</text>
+  <text x="550" y="185" text-anchor="middle" font-size="12" fill="#6bcf8e">Subsections below expand each phase with checklists (full text from the markdown export)</text>
+</svg>
+</div>
+<h3>Phase 0 — Lock reference model (current repo)</h3>
+<ul>
+<li>Freeze <strong>route map</strong>, <strong>feature keys</strong>, <strong>role names</strong>, and <strong>entity list</strong> from blueprint + <code>src/integrations/supabase/types.ts</code> as <strong>domain checklist</strong>.  </li>
+<li>Lock supported business categories from implementation: <code>barber</code>, <code>beauty</code>, <code>spa</code>, <code>nail_bar</code>, <code>clinic</code>, <code>mobile</code>, <code>therapy</code>, <code>solo_pro</code>, <code>products</code> (with <code>both</code> for multi-mode subscription behavior).  </li>
+<li>Capture mode-specific rollout constraints in planning docs: <code>solo_pro</code> (single-operator defaults, minimal branch/HR complexity) and <code>products</code> (retail-first POS + inventory + order workflows).  </li>
+<li>Export <strong>OpenAPI draft</strong> from that checklist (can be manual YAML first).  </li>
+<li>Accept that prototype RLS/Edge code is <strong>not</strong> carried forward line-for-line.</li>
+</ul>
+<h3>Phase 1 — Platform skeleton</h3>
+<ul>
+<li>Monorepo bootstrap (<code>apps/web</code>, <code>apps/api</code> or <code>services/api</code>).  </li>
+<li>Laravel: auth, organizations, members, subscriptions (trial), Sanctum, Horizon + Redis, base middleware <code>ResolveOrganization</code>.  </li>
+<li>Next.js: marketing shell, auth pages, protected layout stubs calling <strong>real</strong> Laravel health + <code>GET /api/v1/me</code>.  </li>
+<li>Postgres: core tenancy tables + migrations from Phase 0 model.  </li>
+<li>CI: PHPStan/Pint, ESLint, typecheck, unit tests on PR.</li>
+</ul>
+<h3>Phase 2 — Vertical slice: bookings + notifications</h3>
+<ul>
+<li>Booking create/read/update, availability service, conflict rules.  </li>
+<li>Queue jobs: confirmation SMS/WhatsApp (provider abstraction).  </li>
+<li>Next.js: staff booking board + public booking widget (SSR for embed).  </li>
+<li>Soketi: booking-created fanout to org channel.</li>
+</ul>
+<h3>Phase 3 — POS, M-Pesa, transactions</h3>
+<ul>
+<li>STK Push initiation, idempotent callback handler, reconciliation reports.  </li>
+<li>Rate limits + IP allowlist for callbacks (Safaricom ranges + signature verification).  </li>
+<li>Redis idempotency keys for <code>ResultCode</code> replays.</li>
+</ul>
+<h3>Phase 4 — CRM, inventory, HR surfaces</h3>
+<ul>
+<li>Clients, loyalty, inventory, commissions, payroll exports.  </li>
+<li>Heavy read paths: materialized views or read-model tables refreshed by jobs.</li>
+</ul>
+<h3>Phase 5 — Enterprise features</h3>
+<ul>
+<li>Multi-branch, audit log, advanced analytics, API keys for enterprise tenants.  </li>
+<li>Read replica routing for reporting queries (Laravel connection <code>pgsql_report</code>).</li>
+</ul>
+<h3>Phase 6 — Hardening &amp; scale</h3>
+<ul>
+<li>Load tests (k6), chaos drills, backup/restore runbooks, penetration test remediation.  </li>
+<li>Optional <strong>Citus</strong> or <strong>tenant shard</strong> evaluation only if measured DB CPU / row churn demands it.</li>
+</ul>
+<hr>
+<h2>3. Repository and monorepo strategy</h2>
+<p><strong>Recommended layout:</strong></p>
+<pre><code class="language-text">/
+  apps/
+    web/                 # Next.js
+    api/                 # Laravel (or packages/api if preferred)
+  packages/
+    ui/                  # Shared design tokens, primitives (optional)
+    contracts/           # OpenAPI bundle, JSON Schema, TS types generated
+  infra/
+    docker/              # Compose overlays, nginx, Dockerfile.* 
+    terraform/           # or Pulumi — VPC, RDS, ElastiCache, S3, secrets
+  .github/workflows/
+</code></pre>
+<p><strong>Versioning:</strong> API <strong>v1</strong> path prefix <code>/api/v1</code> frozen after first production customer; breaking changes ship as <strong>v2</strong> with overlap period.</p>
+<p><strong>Contracts-first:</strong> OpenAPI in <code>packages/contracts</code>; generate <strong>TypeScript</strong> client for Next.js and optionally <strong>PHP</strong> DTO validation (or manual FormRequests mirroring spec).</p>
+<hr>
+<h2>4. Next.js frontend — architecture &amp; design</h2>
+<h3>4.1 Routing and layouts (mapping from Phase 0)</h3>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Concern</th>
+<th>Next.js pattern</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Marketing, SEO</td>
+<td><code>app/(marketing)/**</code> — RSC + static/ISR where possible</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td><code>app/(auth)/login</code>, <code>signup</code>, <code>reset-password</code></td>
+</tr>
+<tr>
+<td>Staff dashboard</td>
+<td><code>app/(dashboard)/layout.tsx</code> — server-verified session, client-heavy children</td>
+</tr>
+<tr>
+<td>Customer portal</td>
+<td><code>app/(portal)/layout.tsx</code></td>
+</tr>
+<tr>
+<td>Public booking embed</td>
+<td><code>app/(public)/book/[orgSlug]/page.tsx</code> — minimal JS, Turnstile</td>
+</tr>
+</tbody></table></div>
+<p><strong>Middleware (<code>middleware.ts</code>):</strong></p>
+<ul>
+<li>Refresh / validate session cookie (if Sanctum SPA).  </li>
+<li>Attach <strong>request id</strong> header for tracing.  </li>
+<li>Optional: resolve <strong>tenant host</strong> (<code>{slug}.hausofgrooming.com</code>) and pass <code>x-tenant-slug</code> to server components (never trust without API verification).</li>
+</ul>
+<h3>4.2 Server vs client boundaries</h3>
+<ul>
+<li><strong>Default to Server Components</strong> for read-mostly pages that aggregate multiple API calls (waterfall avoidance: parallel <code>fetch</code> on server).  </li>
+<li><strong>Client Components</strong> for: calendars, drag-drop schedule, POS keypad, WebSocket subscribers, complex forms with instant validation.  </li>
+<li><strong>Server Actions</strong> (optional): only for mutations that do not duplicate business rules already in Laravel unless the Action is a <strong>BFF</strong> that only proxies to Laravel with Zod validation (avoid two sources of truth).</li>
+</ul>
+<p><strong>Preferred pattern for a modular monolith:</strong> Next.js <strong>does not</strong> embed business rules for money, inventory, or booking conflicts; it <strong>orchestrates UX</strong> and calls Laravel.</p>
+<h3>4.3 Internationalization and theming</h3>
+<ul>
+<li>Keep <code>next-intl</code> or equivalent; mode-specific copy can live in JSON per <code>business_mode</code>.  </li>
+<li>Theme: CSS variables + Tailwind; <strong>branding</strong> fetched server-side per org for widget routes.</li>
+</ul>
+<h3>4.4 High-level frontend module diagram</h3>
+<pre class="mermaid-fallback"><code class="language-mermaid">flowchart TB
+  subgraph next[&quot;Next.js apps/web&quot;]
+    MW[&quot;middleware.ts\nsession + request id + tenant hint&quot;]
+    RSC[&quot;Server Components\nlayouts + data prefetch&quot;]
+    CC[&quot;Client Components\ndashboards, POS, chat&quot;]
+    TQ[&quot;TanStack Query\nQueryClientProvider&quot;]
+    APIc[&quot;apiClient\nOpenAPI types + fetch&quot;]
+    MW --&gt; RSC
+    MW --&gt; CC
+    CC --&gt; TQ
+    TQ --&gt; APIc
+  end
+
+  subgraph edge[&quot;Cloudflare / CDN&quot;]
+    WAF[&quot;WAF + Bot Fight + Turnstile&quot;]
+    CACHE[&quot;Static asset cache&quot;]
+  end
+
+  APIc --&gt;|HTTPS| WAF
+  WAF --&gt; LB[&quot;Load balancer&quot;]
+</code></pre>
+<hr>
+<h2>5. State management, caching on the client, and data flow</h2>
+<h3>5.1 Principles</h3>
+<ol>
+<li><strong>Server state</strong> lives in <strong>TanStack Query</strong> — keyed by <code>[&#39;org&#39;, orgId, &#39;bookings&#39;, filters]</code>.  </li>
+<li><strong>URL state</strong> owns filters (date range, branch) via <code>nuqs</code> or Next <code>searchParams</code> — shareable links, back button correct.  </li>
+<li><strong>UI state</strong> (modal open, step index) stays in <strong>local useState</strong> or <strong>Zustand</strong> stores namespaced per feature.  </li>
+<li><strong>No duplicated source of truth</strong> for subscription entitlements: server returns <code>features: string[]</code> or bitmask; client gates UX; <strong>Laravel</strong> gates mutations.</li>
+</ol>
+<h3>5.2 State + mutation flow (Mermaid)</h3>
+<pre class="mermaid-fallback"><code class="language-mermaid">flowchart TD
+  A[User action in Client Component] --&gt; B{Mutation?}
+  B --&gt;|no| C[setState / Zustand]
+  B --&gt;|yes| D[TanStack useMutation]
+  D --&gt; E[apiClient POST /api/v1/...]
+  E --&gt; F{Laravel response}
+  F --&gt;|4xx validation| G[Toast + field errors]
+  F --&gt;|2xx| H[Invalidate query keys\nor optimistic rollback]
+  H --&gt; I[UI reflects server truth]
+</code></pre>
+<h3>5.3 Client-side caching policy</h3>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Data type</th>
+<th>Stale time</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET /me</code>, org, subscription</td>
+<td>Short (30–60s)</td>
+<td>After plan change, force refetch</td>
+</tr>
+<tr>
+<td>Reference data (services, staff list)</td>
+<td>Medium (5–15m)</td>
+<td>Invalidate on admin CRUD mutations</td>
+</tr>
+<tr>
+<td>Booking board for “today”</td>
+<td>Low (30s) + WebSocket patch</td>
+<td>Soketi pushes invalidate or patch cache</td>
+</tr>
+<tr>
+<td>Static mode dictionary</td>
+<td>Long (24h)</td>
+<td>Versioned by <code>BUILD_ID</code></td>
+</tr>
+</tbody></table></div>
+<p>Use <strong><code>placeholderData</code></strong> / <strong><code>keepPreviousData</code></strong> for pagination to avoid flicker.</p>
+<hr>
+<h2>6. Laravel backend — modular monolith architecture</h2>
+<h3>6.1 Module boundaries (example)</h3>
+<p>Align packages with blueprint domains:</p>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Module</th>
+<th>Responsibilities</th>
+<th>Publishes / listens</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Auth</code></td>
+<td>Register, login, password, Sanctum tokens</td>
+<td><code>UserRegistered</code></td>
+</tr>
+<tr>
+<td><code>Tenancy</code></td>
+<td>Organization, members, branches, context</td>
+<td><code>OrganizationCreated</code></td>
+</tr>
+<tr>
+<td><code>Billing</code></td>
+<td>Plans, trials, Cashier/M-Pesa subscription</td>
+<td>webhooks</td>
+</tr>
+<tr>
+<td><code>Booking</code></td>
+<td>Availability, lifecycle, no-shows</td>
+<td><code>BookingConfirmed</code>, <code>BookingCancelled</code></td>
+</tr>
+<tr>
+<td><code>Pos</code></td>
+<td>Transactions, line items, tenders</td>
+<td><code>PaymentCaptured</code></td>
+</tr>
+<tr>
+<td><code>Crm</code></td>
+<td>Customers, loyalty, referrals</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Staff</code></td>
+<td>Profiles, schedules, commissions, attendance</td>
+<td><code>QrScanRecorded</code></td>
+</tr>
+<tr>
+<td><code>Inventory</code></td>
+<td>SKUs, consumption, suppliers</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>Notifications</code></td>
+<td>Templates, provider dispatch</td>
+<td>queue jobs</td>
+</tr>
+<tr>
+<td><code>Reporting</code></td>
+<td>Aggregates, exports</td>
+<td>scheduled jobs</td>
+</tr>
+<tr>
+<td><code>Integrations</code></td>
+<td>M-Pesa, Twilio, WhatsApp, email</td>
+<td>inbound controllers</td>
+</tr>
+</tbody></table></div>
+<p><strong>Rules:</strong> modules <strong>do not</strong> reach across Eloquent models directly for writes; use <strong>application services</strong> + <strong>domain events</strong>. Cross-module reads use <strong>query services</strong> or read APIs.</p>
+<h3>6.2 Request lifecycle</h3>
+<pre class="mermaid-fallback"><code class="language-mermaid">sequenceDiagram
+  participant C as Client Next.js
+  participant N as nginx
+  participant L as Laravel
+  participant M as Tenancy middleware
+  participant P as Policy + FormRequest
+  participant S as Service layer
+  participant DB as PostgreSQL
+
+  C-&gt;&gt;N: HTTPS /api/v1/bookings
+  N-&gt;&gt;L: PHP-FPM
+  L-&gt;&gt;M: ResolveOrganization + subscription gate
+  M-&gt;&gt;P: authorize
+  P-&gt;&gt;S: BookingService.create
+  S-&gt;&gt;DB: transaction
+  DB--&gt;&gt;S: ok
+  S--&gt;&gt;L: Booking model + events
+  L--&gt;&gt;C: JSON 201
+</code></pre>
+<h3>6.3 Tenancy enforcement (application layer)</h3>
+<ol>
+<li><strong>Middleware</strong> <code>EnsureOrganizationContext</code>: resolves <code>organization_id</code> from authenticated user membership — <strong>never</strong> from raw request body for privileged routes.  </li>
+<li><strong>Global Eloquent scope</strong> <code>OrganizationScope</code> on tenant models.  </li>
+<li><strong>Policies</strong> accept <code>Organization $organization</code> resolved from route or session.  </li>
+<li><strong>Public booking</strong> routes use <strong>signed org token</strong> or <strong>slug + rate limit + Turnstile</strong> then scope all queries to that org only.</li>
+</ol>
+<h3>6.4 Background processing</h3>
+<ul>
+<li><strong>Horizon</strong> queues: <code>notifications</code>, <code>integrations</code>, <code>reports</code>, <code>default</code> — separate concurrency per queue.  </li>
+<li><strong>Failed jobs</strong> → alerting + DLQ inspection playbook.  </li>
+<li><strong>Idempotent jobs:</strong> use <code>ShouldBeUnique</code> + Redis lock for payment reconciliation.</li>
+</ul>
+<hr>
+<h2>7. API surface, versioning, and idempotency</h2>
+<h3>7.1 Conventions</h3>
+<ul>
+<li><strong>REST</strong> resource style: <code>/api/v1/organizations/{org}/bookings</code>, nested where natural.  </li>
+<li><strong>Pagination:</strong> cursor-based for high churn (<code>bookings</code>, <code>notifications</code>); offset acceptable for admin lists &lt;10k rows with filters.  </li>
+<li><strong>Filtering:</strong> <code>filter[status]=scheduled&amp;filter[branch_id]=</code>.  </li>
+<li><strong>Sparse fieldsets:</strong> <code>fields[bookings]=id,start_time,status</code> for mobile.  </li>
+<li><strong>Errors:</strong> RFC 7807 <code>application/problem+json</code> (single format company-wide).</li>
+</ul>
+<h3>7.2 Representative resource groups (from Phase 0 route map)</h3>
+<p>Group endpoints mirror blueprint modules (non-exhaustive; maintain OpenAPI as source of truth):</p>
+<ul>
+<li><strong>Auth:</strong> <code>POST /auth/register</code>, <code>POST /auth/login</code>, <code>POST /auth/logout</code>, <code>POST /auth/forgot-password</code>  </li>
+<li><strong>Me:</strong> <code>GET /me</code> (user, roles, orgs, active_org, subscription, <code>features[]</code>)  </li>
+<li><strong>Organizations / branches:</strong> CRUD under enterprise gate  </li>
+<li><strong>Bookings:</strong> CRUD, <code>POST .../check-availability</code>, <code>POST .../transition</code> (state machine)  </li>
+<li><strong>POS:</strong> <code>POST .../transactions</code>, <code>POST .../mpesa/stk</code>, <code>POST /webhooks/mpesa</code> (mTLS or IP + signature)  </li>
+<li><strong>CRM:</strong> customers, loyalty, referrals  </li>
+<li><strong>Staff:</strong> schedules, QR scans, payroll exports  </li>
+<li><strong>Inventory:</strong> items, movements, suppliers  </li>
+<li><strong>Media:</strong> <code>POST /uploads/signed-url</code> → direct S3 upload → <code>POST /media/confirm</code>  </li>
+<li><strong>Realtime token:</strong> <code>POST /realtime/token</code> → Soketi private channel auth</li>
+</ul>
+<h3>7.3 Idempotency (payments and webhooks)</h3>
+<div class="diagram-wrap" role="img" aria-label="M-Pesa callback idempotency">
+<svg class="diagram-svg" viewBox="0 0 900 150" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m-ch1" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
+  <text x="450" y="32" text-anchor="middle" font-size="18" font-weight="700" fill="#e8eaef">M-Pesa callback — idempotency path</text>
+  <rect class="box" x="30" y="60" width="120" height="50" rx="8"/><text x="90" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Callback</text>
+  <line x1="150" y1="85" x2="175" y2="85" stroke="#7eb8ff" stroke-width="2" marker-end="url(#m-ch1)"/>
+  <rect class="box" x="180" y="60" width="130" height="50" rx="8"/><text x="245" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Validate HMAC+IP</text>
+  <line x1="310" y1="85" x2="340" y2="85" stroke="#7eb8ff" stroke-width="2" marker-end="url(#m-ch1)"/>
+  <rect class="box" x="345" y="60" width="160" height="50" rx="8"/><text x="425" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Redis idempotency</text>
+  <line x1="505" y1="85" x2="530" y2="85" stroke="#7eb8ff" stroke-width="2" marker-end="url(#m-ch1)"/>
+  <rect class="box" x="535" y="60" width="150" height="50" rx="8"/><text x="610" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">DB transaction</text>
+  <line x1="685" y1="85" x2="710" y2="85" stroke="#7eb8ff" stroke-width="2" marker-end="url(#m-ch1)"/>
+  <rect class="box-accent" x="715" y="60" width="80" height="50" rx="8"/><text x="755" y="92" text-anchor="middle" font-size="16" font-weight="700" fill="#d4a84b">200</text>
+  <text x="400" y="128" text-anchor="middle" font-size="12" fill="#8b95a8">Duplicate checkout_request_id → 200 (already processed)</text>
+</svg>
+</div>
+<pre class="mermaid-fallback"><code class="language-mermaid">flowchart TD
+  W[M-Pesa callback POST] --&gt; V{Signature + IP valid?}
+  V --&gt;|no| R401[401 + log security]
+  V --&gt;|yes| K[Redis GET idempotency:checkout_request_id]
+  K --&gt;|hit| D[Return 200 duplicate acknowledged]
+  K --&gt;|miss| T[DB transaction: upsert payment + booking state]
+  T --&gt; S[SET Redis key TTL 7d]
+  S --&gt; OK[200 JSON]
+</code></pre>
+<hr>
+<h2>8. PostgreSQL — schema, tenancy, scaling, and sharding</h2>
+<h3>8.1 Tenancy model</h3>
+<ul>
+<li><strong>Shared database, shared schema</strong>, <code>organization_id uuid NOT NULL</code> on all tenant tables (matches Phase 0 types).  </li>
+<li><strong>Composite indexes</strong> leading with <code>organization_id</code> for every hot query pattern.  </li>
+<li><strong>Partial indexes</strong> for common filters (<code>WHERE status = &#39;scheduled&#39; AND booking_date = CURRENT_DATE</code>).</li>
+</ul>
+<h3>8.2 Migrations and zero-downtime deploys</h3>
+<ul>
+<li>Expand-contract pattern: add column → dual-write → backfill job → switch reads → drop old.  </li>
+<li>Long-running backfills via Horizon, not in web request.</li>
+</ul>
+<h3>8.3 Read scaling</h3>
+<ul>
+<li><strong>Primary</strong> for writes; <strong>read replica</strong> for heavy reporting (<code>pgsql_report</code> connection, <strong>sticky session not required</strong> if queries are read-only).  </li>
+<li><strong>Materialized views</strong> refreshed nightly or on event for executive dashboards.</li>
+</ul>
+<h3>8.4 Partitioning (before “sharding”)</h3>
+<ul>
+<li><strong>Range partition</strong> large append-only tables (<code>audit_log</code>, <code>notification_logs</code>) by <code>created_at</code> month.  </li>
+<li>Keeps indexes smaller and vacuum predictable.</li>
+</ul>
+<h3>8.5 Sharding (only when metrics demand)</h3>
+<p><strong>Reality check:</strong> sharding PostgreSQL by tenant is a <strong>last resort</strong> after: PgBouncer, better indexes, partitioning, read replicas, and queue offload.</p>
+<p>If required:</p>
+<ul>
+<li><strong>Citus</strong> (extension) with <code>organization_id</code> as distribution key for selected hypertables <strong>or</strong>  </li>
+<li><strong>Schema-per-tenant</strong> for a handful of whale tenants (operational complexity high).</li>
+</ul>
+<p>Document <strong>exit criteria</strong> (example): sustained &gt;70% CPU on largest instance, replication lag &gt;2s, or single-table row count &gt;100M with unavoidable sequential scans.</p>
+<pre class="mermaid-fallback"><code class="language-mermaid">flowchart LR
+  subgraph before[&quot;Before sharding&quot;]
+    APP[Laravel fleet]
+    PGB[PgBouncer]
+    PG[(Primary Postgres)]
+    RR[(Read replica)]
+    APP --&gt; PGB --&gt; PG
+    APP --&gt; RR
+  end
+
+  subgraph after[&quot;Optional Citus / multi-tenant shard&quot;]
+    APP2[Laravel fleet]
+    RT[Router / coordinator]
+    W1[(Worker 1)]
+    W2[(Worker 2)]
+    APP2 --&gt; PGB2[PgBouncer]
+    PGB2 --&gt; RT
+    RT --&gt; W1
+    RT --&gt; W2
+  end
+</code></pre>
+<hr>
+<h2>9. Redis — sessions, cache, queues, rate limiting</h2>
+<h3>9.1 Key namespaces</h3>
+<p>Pattern: <code>{env}:{org_id}:{feature}:{id}</code> — e.g. <code>prod:uuid:cache:services:v3</code>.</p>
+<h3>9.2 Usage matrix</h3>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Use</th>
+<th>Implementation</th>
+<th>TTL / eviction</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Session / token blocklist</td>
+<td>Redis session driver or JWT denylist</td>
+<td>session lifetime</td>
+</tr>
+<tr>
+<td>HTTP response cache</td>
+<td>Laravel <code>Cache::tags</code> when using taggable store</td>
+<td>per route (60–300s)</td>
+</tr>
+<tr>
+<td>Rate limiting</td>
+<td><code>RateLimiter::for</code> backed by Redis</td>
+<td>1–15 min windows</td>
+</tr>
+<tr>
+<td>Idempotency</td>
+<td><code>SETNX</code> + payload hash</td>
+<td>24h–7d</td>
+</tr>
+<tr>
+<td>Distributed lock</td>
+<td><code>Redlock</code> pattern for cron overlap</td>
+<td>seconds</td>
+</tr>
+<tr>
+<td>Queue</td>
+<td>Horizon</td>
+<td>until processed</td>
+</tr>
+</tbody></table></div>
+<h3>9.3 Cache stampede mitigation</h3>
+<ul>
+<li><strong>Probabilistic early expiration</strong> (“jitter”) on hot keys.  </li>
+<li><strong>Mutex</strong> around expensive recompute for dashboard tiles.  </li>
+<li><strong>Warming</strong> jobs after deploy for top org dashboards (optional).</li>
+</ul>
+<hr>
+<h2>10. Realtime, messaging, and extracted services</h2>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Concern</th>
+<th>Choice</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Staff chat, live queue</td>
+<td><strong>Soketi</strong> behind internal LB; Laravel <strong>broadcasting</strong> auth route issues signed channel names per <code>org.{id}</code></td>
+</tr>
+<tr>
+<td>Cross-region</td>
+<td>Prefer managed WebSocket vendor if latency unacceptable</td>
+</tr>
+<tr>
+<td>Calling</td>
+<td><strong>Node</strong> service; Laravel records <strong>call_logs</strong> via signed webhook</td>
+</tr>
+<tr>
+<td>Email/SMS/WhatsApp</td>
+<td><strong>Queue jobs</strong> only — never inline in HTTP request beyond enqueue</td>
+</tr>
+</tbody></table></div>
+<pre class="mermaid-fallback"><code class="language-mermaid">flowchart LR
+  NEXT[Next.js client] --&gt;|subscribe| SK[Soketi]
+  SK --&gt;|presence + messages| NEXT
+  LAR[Laravel Echo broadcaster] --&gt;|private auth| SK
+  LAR --&gt;|events| HORIZON[Horizon workers]
+</code></pre>
+<hr>
+<h2>11. Load handling, capacity planning, and choke points</h2>
+<h3>11.1 Horizontal scale path</h3>
+<ol>
+<li><strong>Stateless</strong> Laravel containers behind ALB/nginx — no local disk session.  </li>
+<li><strong>PHP-FPM</strong> tuning: <code>pm.max_children</code> from RAM / average worker RSS; avoid oversized pools that crush Postgres.  </li>
+<li><strong>PgBouncer</strong> transaction pooling — <strong>disable</strong> prepared statements that break in transaction mode or use PgBouncer 1.21+ features correctly.  </li>
+<li><strong>Separate worker fleet</strong> for Horizon from web pods at high load.  </li>
+<li><strong>S3</strong> for all uploads — not PHP disk.</li>
+</ol>
+<h3>11.2 Choke points to design against</h3>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Choke point</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>DB connection exhaustion</td>
+<td>PgBouncer, right-size pool, separate <code>reporting</code> connection limit</td>
+</tr>
+<tr>
+<td>Thundering herd on cron</td>
+<td>Jitter schedules, shard cron by <code>organization_id % N</code></td>
+</tr>
+<tr>
+<td>Webhook retries</td>
+<td>Idempotency store, safe replays</td>
+</tr>
+<tr>
+<td>Large CSV exports</td>
+<td>Async job + S3 presigned download link</td>
+</tr>
+<tr>
+<td>N+1 queries</td>
+<td>eager loads, <code>strict_model</code> prevention, API fieldsets</td>
+</tr>
+<tr>
+<td>Retail campaign spikes (<code>products</code>)</td>
+<td>Pre-warm catalog caches, separate queue workers for order webhooks, enforce checkout idempotency keys</td>
+</tr>
+</tbody></table></div>
+<h3>11.3 Autoscaling signals</h3>
+<ul>
+<li><strong>CPU + request queue</strong> for web; <strong>queue depth + job latency</strong> for workers; <strong>replication lag</strong> for adding replicas not primaries.</li>
+</ul>
+<hr>
+<h2>12. Bot protection, abuse prevention, and WAF</h2>
+<h3>12.1 Edge (Cloudflare or equivalent)</h3>
+<ul>
+<li><strong>WAF</strong> managed ruleset (OWASP CRS), geo block if not serving region, <strong>bot score</strong> threshold on <code>/book</code>, <code>/auth</code>, <code>/webhooks/*</code> (careful — webhooks need allowlist not CAPTCHA).  </li>
+<li><strong>Turnstile</strong> (or reCAPTCHA v3) on <strong>public booking</strong> and <strong>signup</strong>.  </li>
+<li><strong>Challenge</strong> page only when score suspicious.</li>
+</ul>
+<h3>12.2 Application layer</h3>
+<ul>
+<li><strong>Laravel rate limiters</strong> per IP + per user + per org for expensive endpoints (<code>mpesa/stk</code>, <code>auth/login</code>).  </li>
+<li><strong>Exponential backoff</strong> headers on repeated failures.  </li>
+<li><strong>Honeypot fields</strong> on public forms (silent discard).  </li>
+<li><strong>Signed embed tokens</strong> for booking widget: <code>org_id</code>, <code>exp</code>, <code>nonce</code> in JWT verified by Laravel.</li>
+</ul>
+<h3>12.3 Webhook hardening</h3>
+<ul>
+<li><strong>M-Pesa:</strong> IP allowlist + HMAC + idempotency + replay window (clock skew tolerance).  </li>
+<li><strong>Twilio:</strong> signature validation on inbound.  </li>
+<li><strong>Never</strong> expose Horizon dashboard or Soketi admin without VPN / SSO.</li>
+</ul>
+<hr>
+<h2>13. Security architecture (senior baseline)</h2>
+<ul>
+<li><strong>Transport:</strong> TLS 1.2+ everywhere; HSTS; <strong>mTLS</strong> optional between internal services.  </li>
+<li><strong>Secrets:</strong> AWS Secrets Manager / Doppler / Vault — <strong>never</strong> in git; rotation quarterly.  </li>
+<li><strong>Least privilege DB users:</strong> migrate user separate from app user if using migrations from CI.  </li>
+<li><strong>SAST/DAST</strong> in CI (PHPStan level 8, Larastan, Semgrep, OWASP ZAP on schedule).  </li>
+<li><strong>Dependency updates:</strong> Renovate + weekly merge window.  </li>
+<li><strong>Audit log:</strong> append-only table + optional stream to SIEM.  </li>
+<li><strong>PII:</strong> encrypt at rest (disk), minimize in logs, <strong>mask</strong> phone in non-security logs.</li>
+</ul>
+<hr>
+<h2>14. DevOps — CI/CD, environments, secrets, and releases</h2>
+<h3>14.1 Environments</h3>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Env</th>
+<th>Purpose</th>
+<th>Data</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>local</code></td>
+<td>Docker Compose</td>
+<td>seed + anonymized snapshot optional</td>
+</tr>
+<tr>
+<td><code>ci</code></td>
+<td>Ephemeral DB for tests</td>
+<td>migrations only</td>
+</tr>
+<tr>
+<td><code>staging</code></td>
+<td>Full integration, provider sandboxes</td>
+<td>masked copy of prod quarterly</td>
+</tr>
+<tr>
+<td><code>production</code></td>
+<td>Live</td>
+<td>backups + PITR</td>
+</tr>
+</tbody></table></div>
+<h3>14.2 GitHub Actions pipeline (example)</h3>
+<pre class="mermaid-fallback"><code class="language-mermaid">flowchart LR
+  PR[Pull request] --&gt; LINT[Lint TS + PHP\nESLint + Pint]
+  LINT --&gt; TEST[Unit + integration\nPest + Vitest]
+  TEST --&gt; SAST[PHPStan + Semgrep]
+  SAST --&gt; BUILD[Build Docker images]
+  BUILD --&gt; SCAN[Trivy scan]
+  SCAN --&gt; PUSH[Push to registry]
+  PUSH --&gt; DEPLOY_STG[Deploy staging]
+  DEPLOY_STG --&gt; E2E[Playwright smoke]
+  E2E --&gt; MANUAL[Change approval]
+  MANUAL --&gt; DEPLOY_PROD[Rolling deploy prod]
+</code></pre>
+<h3>14.3 Database migrations in CI/CD</h3>
+<ul>
+<li><strong>Automated</strong> <code>php artisan migrate --force</code> in deploy step <strong>after</strong> new code is live <strong>only if</strong> backward compatible; otherwise use <strong>expand/contract</strong> with feature flags.  </li>
+<li>Maintain <strong>rollback</strong> playbook (revert deployment + forward-fix migration).</li>
+</ul>
+<h3>14.4 Release strategy</h3>
+<ul>
+<li><strong>Rolling updates</strong> on ECS/K8s with health checks (<code>/health</code> hits DB + Redis).  </li>
+<li><strong>Feature flags</strong> (LaunchDarkly or Unleash self-hosted) for risky modules.  </li>
+<li><strong>Blue/green</strong> optional when zero-downtime DB cutover needed.</li>
+</ul>
+<hr>
+<h2>15. Observability, SLOs, and incident response</h2>
+<h3>15.1 Minimum viable observability</h3>
+<ul>
+<li><strong>OpenTelemetry</strong> traces: Next.js server + Laravel (<code>otel-php</code>) + nginx span propagation.  </li>
+<li><strong>Metrics:</strong> Prometheus + Grafana (request rate, latency p95/p99, queue depth, DB connections, Redis memory).  </li>
+<li><strong>Logs:</strong> structured JSON to Loki / CloudWatch; <strong>correlation id</strong> from Next middleware through Laravel <code>X-Request-Id</code>.  </li>
+<li><strong>Uptime:</strong> synthetic checks on <code>/health</code>, public booking POST (dry-run in staging).</li>
+</ul>
+<h3>15.2 Example SLOs</h3>
+<div class="table-wrap"><table class="data">
+<thead>
+<tr>
+<th>Surface</th>
+<th>SLO</th>
+<th>Error budget action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>API availability</td>
+<td>99.9% monthly</td>
+<td>freeze features, scale workers</td>
+</tr>
+<tr>
+<td>Booking create p95</td>
+<td>&lt;400ms excluding POS</td>
+<td>profile SQL + indexes</td>
+</tr>
+<tr>
+<td>Webhook processing</td>
+<td>99.95% success</td>
+<td>alert + runbook for provider outage</td>
+</tr>
+</tbody></table></div>
+<h3>15.3 Incident severity</h3>
+<ul>
+<li><strong>SEV1</strong> payment outage — page on-call, communicate in status page.  </li>
+<li><strong>SEV2</strong> partial feature — degrade gracefully (disable non-critical queues).</li>
+</ul>
+<hr>
+<h2>16. Definition of done (engineering)</h2>
+<p>For each vertical slice merging to <code>main</code>:</p>
+<ol>
+<li>OpenAPI updated + TS client regenerated.  </li>
+<li>Laravel FormRequests + Policies + feature tests.  </li>
+<li>Next.js: RSC data fetch or TanStack hooks with loading/error states; a11y pass on primary path.  </li>
+<li>Horizon job idempotency documented for any payment or webhook path.  </li>
+<li>Runbook entry for new env vars and failure modes.  </li>
+<li>Load test ticket filed if endpoint is hot path (<code>/book</code>, <code>/mpesa/callback</code>).</li>
+</ol>
+<hr>
+<h2>Appendix A — Mapping Phase 0 tables to Laravel modules</h2>
+<p>Use <code>src/integrations/supabase/types.ts</code> as a <strong>checklist</strong> for Eloquent models and migrations (<code>bookings</code>, <code>booking_services</code>, <code>transactions</code>, <code>subscriptions</code>, …). Rename or normalize only where Laravel naming conventions (<code>snake_case</code> table, <code>StudlyCase</code> model) require it.</p>
+<hr>
+<h2>Appendix B — Removal checklist (prototype stack)</h2>
+<p>When decommissioning the prototype:</p>
+<ul>
+<li>Remove <code>@lovable.dev/*</code>, Supabase client as <strong>production</strong> dependency; archive repo or keep as <strong>design reference</strong> only.  </li>
+<li>Replace any <strong>demo fallback</strong> product behavior with explicit “empty state” UX in Next.js.  </li>
+<li>Move AI features to <strong>first-party</strong> OpenAI/Gemini keys with budget alerts.</li>
+</ul>
+<hr>
+<p><strong>Document owner:</strong> Engineering<br><strong>Next review:</strong> After Phase 1 cutover to Laravel + Next.js production path  </p>
+<p>© 2026 Haus of Grooming OS. All rights reserved.</p>
+
+
+      <footer class="doc-footer"><a href="/">Home</a> · <a href="/chapters/2">Next: Backend &amp; API</a> · <a href="/docs-sources/full-stack-implementation-master-plan.md">Source markdown</a></footer>
+    

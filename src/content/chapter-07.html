@@ -1,0 +1,148 @@
+
+      <header class="doc-header">
+        <h1>Chapter 7 — Infrastructure cost analysis, deployment &amp; product pricing</h1>
+        <p class="doc-meta">Deployment strategy &amp; scalability report. Final optimized cost comparison (KES / month). <span class="tag">Confidential</span> Product plan figures align with <code>src/lib/pricing.ts</code>.</p>
+      </header>
+
+      <section class="doc-section" id="exec-summary">
+        <h2>Strategic summary</h2>
+        <p class="lead">The move from <strong>MVP</strong> to <strong>SCALABLE</strong> is a shift from monolith-style hosting to managed services (e.g. Amazon RDS, managed Redis, EC2 with separated roles). That step increases monthly spend but delivers reliability and headroom for high-traffic thresholds.</p>
+        <p class="muted">Cost projections for project infrastructure planning — April 2026.</p>
+      </section>
+
+      <section class="doc-section" id="stage-diagram">
+        <h2>Three deployment stages (visual)</h2>
+        <p>Illustrative relative capacity; numbers on the <a href="#line-items">line-item table</a> are authoritative in this report.</p>
+        <div class="diagram-wrap" role="img" aria-label="TEST MVP SCALABLE three pillars">
+          <svg class="diagram-svg" viewBox="0 0 1100 320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="gTest-ch7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1e3a5f"/><stop offset="1" stop-color="#121820"/></linearGradient>
+              <linearGradient id="gMvp-ch7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d3318"/><stop offset="1" stop-color="#121820"/></linearGradient>
+              <linearGradient id="gScale-ch7" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a3d28"/><stop offset="1" stop-color="#121820"/></linearGradient>
+            </defs>
+            <text x="550" y="36" text-anchor="middle" class="label-lg" fill="#e8eaef" font-size="20">Final optimized cost comparison (monthly, KES)</text>
+            <text x="550" y="64" text-anchor="middle" class="label-sm" fill="#8b95a8" font-size="14">Functionality: TEST (≈10K) · MVP (≈20K) · SCALABLE (≈60K–70K)</text>
+            <rect x="40" y="100" width="300" height="180" rx="16" fill="url(#gTest-ch7)" stroke="#4a6fa5" stroke-width="2"/>
+            <text x="190" y="138" text-anchor="middle" fill="#7eb8ff" font-size="18" font-weight="700">TEST</text>
+            <text x="190" y="168" text-anchor="middle" fill="#c8ceda" font-size="15">~ KSh 9,300 / mo</text>
+            <text x="190" y="198" text-anchor="middle" fill="#9aa3b5" font-size="13">50 – 150 users</text>
+            <text x="190" y="240" text-anchor="middle" fill="#8b95a8" font-size="12">Single AWS Lightsail, basic load</text>
+            <rect x="400" y="100" width="300" height="180" rx="16" fill="url(#gMvp-ch7)" stroke="#c9a24a" stroke-width="2"/>
+            <text x="550" y="138" text-anchor="middle" fill="#d4a84b" font-size="18" font-weight="700">MVP</text>
+            <text x="550" y="168" text-anchor="middle" fill="#c8ceda" font-size="15">~ KSh 21,800 / mo</text>
+            <text x="550" y="198" text-anchor="middle" fill="#9aa3b5" font-size="13">300 – 800 users</text>
+            <text x="550" y="240" text-anchor="middle" fill="#8b95a8" font-size="12">Larger Lightsail, optimized queues</text>
+            <rect x="760" y="100" width="300" height="180" rx="16" fill="url(#gScale-ch7)" stroke="#5a9a72" stroke-width="2"/>
+            <text x="910" y="138" text-anchor="middle" fill="#6bcf8e" font-size="18" font-weight="700">SCALABLE</text>
+            <text x="910" y="168" text-anchor="middle" fill="#c8ceda" font-size="15">~ KSh 58K – 65K / mo</text>
+            <text x="910" y="198" text-anchor="middle" fill="#9aa3b5" font-size="13">1,500 – 5,000+ users</text>
+            <text x="910" y="240" text-anchor="middle" fill="#8b95a8" font-size="12">EC2 + RDS, HA, separated services</text>
+            <line x1="190" y1="220" x2="550" y2="190" stroke="#4a5568" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+            <line x1="550" y1="190" x2="910" y2="190" stroke="#4a5568" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+            <text x="550" y="292" text-anchor="middle" class="label-sm" fill="#8b95a8" font-size="13">App setup: all-in-one → all-in-one → split services; DB: Docker → Docker → Amazon RDS; cache: Docker → Docker → managed Redis</text>
+          </svg>
+        </div>
+        <p class="diagram-legend">Wider layout reduces crowding: scroll horizontally on small viewports if needed.</p>
+      </section>
+
+      <section class="doc-section" id="line-items">
+        <h2>Line items — final optimized comparison</h2>
+        <p>Amounts in <strong>Kenya Shillings (KES)</strong> per month unless noted. “Same” = same pattern as the prior column. “0” = no incremental line in that estimate (e.g. PostgreSQL in Docker on the app host). Transaction percentages for card rails are <em>not</em> included as fixed rows.</p>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>Function / line</th>
+                <th>TEST (≈ KSh 10K)</th>
+                <th>MVP (≈ KSh 20K)</th>
+                <th>SCALABLE (≈ KSh 60K–70K)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-test"><td>Hosting (Docker on AWS)</td><td>Lightsail — <span class="cost-total">4,500</span></td><td>Lightsail (mid-tier) — <span class="cost-total">8,000</span></td><td>Amazon EC2 — <span class="cost-total">20,000</span></td></tr>
+              <tr><td>App setup</td><td>All-in-one server</td><td>Same</td><td>Split services</td></tr>
+              <tr><td>Database</td><td>PostgreSQL (Docker) — 0</td><td>Same — 0</td><td>Amazon RDS — 5,000</td></tr>
+              <tr><td>Cache (Redis)</td><td>Docker — 0</td><td>Same — 0</td><td>Managed Redis — 3,000</td></tr>
+              <tr><td>Storage (Cloudflare R2)</td><td>2,200</td><td>4,000</td><td>8,000</td></tr>
+              <tr><td>Email</td><td>NodeMailer — 0</td><td>Mailgun — 2,000</td><td>3,000</td></tr>
+              <tr><td>SMS (Africa’s Talking)</td><td>800</td><td>4,000</td><td>10,000</td></tr>
+              <tr><td>Calls (Twilio)</td><td>800</td><td>800</td><td>800</td></tr>
+              <tr><td>WhatsApp (Meta)</td><td>1,000</td><td>2,000</td><td>5,000</td></tr>
+              <tr><td>M-Pesa (Safaricom)</td><td>0</td><td>0</td><td>0</td></tr>
+              <tr><td>Online payments (Stripe)</td><td>0</td><td>Transaction %</td><td>Transaction %</td></tr>
+              <tr><td>Scheduling (Calendly or custom)</td><td>0</td><td>1,000</td><td>2,000 / custom</td></tr>
+              <tr><td>Queue workers</td><td>Same server — 0</td><td>Same — 0</td><td>Dedicated — included in split</td></tr>
+              <tr><td>Realtime (Soketi)</td><td>0</td><td>Same — 0</td><td>Dedicated — included</td></tr>
+              <tr><td>Calling server</td><td>Same — 0</td><td>—</td><td>Dedicated — included</td></tr>
+              <tr><td>Node (API / workers, same host)</td><td>0</td><td>—</td><td>—</td></tr>
+              <tr><td>Frontend</td><td>Same server — 0</td><td>Same — 0</td><td>Vercel — 2,000</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="totals">
+        <h2>Final cost &amp; user capacity</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead>
+              <tr class="cost-head">
+                <th>Stage</th>
+                <th>Approx. monthly cost</th>
+                <th>Estimated users</th>
+                <th>Key infrastructure note</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-test">
+                <td><strong>TEST</strong></td>
+                <td class="cost-total">~ KSh 9,300</td>
+                <td>50 – 150</td>
+                <td>Single AWS Lightsail small instance, basic testing load.</td>
+              </tr>
+              <tr class="row-mvp">
+                <td><strong>MVP</strong></td>
+                <td class="cost-total">~ KSh 21,800</td>
+                <td>300 – 800</td>
+                <td>Larger Lightsail instance, optimized queues, real usage.</td>
+              </tr>
+              <tr class="row-scale">
+                <td><strong>SCALABLE</strong></td>
+                <td class="cost-total">~ KSh 58,000 – 65,000</td>
+                <td>1,500 – 5,000+</td>
+                <td>Amazon EC2 + RDS, high availability, separated services.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="callout"><strong>Variance band.</strong> SCALABLE is quoted at ~KSh 60K–70K in the planning narrative; the table total falls in the ~58K–65K range once line items are summed — treat both as the same <em>tier</em>, not to-the-shilling engineering quotes.</div>
+      </section>
+
+      <section class="doc-section" id="product-pricing">
+        <h2>Product subscription pricing <span class="tag">code</span></h2>
+        <p>From <code>src/lib/pricing.ts</code>: monthly KES base × platform count. Cycles: quarterly <strong>10%</strong> off; annual <strong>20%</strong> off. Formula: <code>round(monthlyBase × platformCount × months × (1 − discount))</code>.</p>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Plan</th><th>KES / month (base)</th></tr></thead>
+            <tbody>
+              <tr><td><code>solo_pro</code></td><td>999</td></tr>
+              <tr><td><code>starter</code></td><td>1,599</td></tr>
+              <tr><td><code>professional</code></td><td>2,599</td></tr>
+              <tr><td><code>enterprise</code></td><td>6,999</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Platforms counted toward billing: Barber, Beauty, Spa, Nails, Aesthetics, Mobile, Therapy, Solo Pro, Products (see app constants).</p>
+      </section>
+
+      <section class="doc-section" id="related">
+        <h2>Related documentation</h2>
+        <ul class="list">
+          <li><a href="/chapters/1">Chapter 1 — Full-stack implementation plan</a> (load, capacity, PgBouncer, scaling).</li>
+          <li><a href="/docs-sources/full-stack-implementation-master-plan.md">full-stack-implementation-master-plan.md</a> (source)</li>
+          <li><a href="/docs-sources/technical-architecture-current-implementation.md">technical-architecture-current-implementation.md</a> (prototype snapshot)</li>
+        </ul>
+      </section>
+
+      <footer class="doc-footer">© 2026 Haus of Grooming OS · <a href="/">Documentation home</a></footer>
+    

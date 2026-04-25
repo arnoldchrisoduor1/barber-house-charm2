@@ -1,0 +1,134 @@
+
+<header class="doc-header">
+  <h1>Chapter 6 — Navigation matrix (mode × role × route)</h1>
+  <p class="doc-meta">Source: <a href="/docs-sources/04-navigation-matrix-by-mode-and-role.md">04-navigation-matrix-by-mode-and-role.md</a> · <code>src/components/AppLayout.tsx</code></p>
+</header>
+      <section class="doc-section" id="legend">
+        <p><strong>Legend:</strong> <strong>Feat</strong> = subscription feature key: <code>pos_payments</code>, <code>inventory_tracking</code>, <code>promotions_referrals</code>, <code>staff_commissions_payroll</code>, <code>multi_branch</code>, <code>custom_branding</code>, <code>sms_reminders</code>, <code>advanced_analytics</code>. Items without Feat are role-gated (and active org subscription).</p>
+      </section>
+<h3>Barber (<code>barber</code>)</h3>
+        <div class="table-wrap"><table class="data" style="font-size:0.86rem"><thead><tr><th>Section</th><th>Roles</th><th>Label → path</th><th>Feat</th></tr></thead><tbody>
+          <tr><td>Executive</td><td>ceo, director</td><td>Executive Dashboard → /dashboard</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Branch Overview → /branches</td><td>multi_branch (nav; route PG in App)</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Reports &amp; Analytics → /reports</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Finance → /finance</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Commissions → /commissions</td><td>staff_commissions_payroll</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Payroll &amp; Payslips → /payroll</td><td>staff_commissions_payroll</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Audit Log → /audit-log</td><td>advanced_analytics</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>QR Attendance → /qr-attendance</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Barber Scorecards → /scorecards</td><td>advanced_analytics</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Haus Connect → /call-centre</td><td>advanced_analytics</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>Branch Dashboard → /dashboard</td><td>—</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>Today's Schedule → /schedule</td><td>—</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>Barber Attendance → /staff</td><td>—</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>Bookings → /bookings</td><td>—</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>Waitlist → /waitlist</td><td>—</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>Walk-in Queue → /queue</td><td>—</td></tr>
+          <tr><td>Branch</td><td>branch_manager</td><td>QR Attendance → /qr-attendance</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Live Bookings → /bookings</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Client Check-in → /clients</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Queue Manager → /queue</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Schedule → /schedule</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>QR Clock Mode → /qr-clock</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>POS → /pos</td><td>pos_payments</td></tr>
+          <tr><td>My Chair</td><td>senior_barber, junior_barber</td><td>My Dashboard → /dashboard</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>My Bookings → /bookings</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>My Schedule → /schedule</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>QR Clock In → /qr-clock</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>My Reviews → /reviews</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>My Earnings → /my-earnings</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>My Clients → /clients</td><td>—</td></tr>
+          <tr><td>My Chair</td><td>senior/junior</td><td>POS → /pos</td><td>pos_payments</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Barbershop Services → /services</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Barber Directory → /staff</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Clients → /clients</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Client Ownership → /client-ownership</td><td>—</td></tr>
+          <tr><td>Sales</td><td>ceo, director</td><td>POS, Price Lock, Reconciliation</td><td>pos_payments</td></tr>
+          <tr><td>Sales</td><td>ceo, director</td><td>Inventory, Consumption, Suppliers</td><td>inventory_tracking</td></tr>
+          <tr><td>Growth</td><td>ceo, director, branch_manager</td><td>Loyalty, Packages, Gift Cards, Reviews</td><td>—</td></tr>
+          <tr><td>Growth</td><td>ceo, director, branch_manager</td><td>Promotions, Referrals</td><td>promotions_referrals</td></tr>
+          <tr><td>Growth</td><td>ceo, director, branch_manager</td><td>WhatsApp</td><td>sms_reminders</td></tr>
+          <tr><td>Growth</td><td>ceo, director, branch_manager, senior_barber</td><td>Portfolio → /gallery</td><td>—</td></tr>
+          <tr><td>Growth</td><td>ceo, director</td><td>Marketing → /marketing</td><td>—</td></tr>
+          <tr><td>Operations</td><td>ceo, director, branch_manager, receptionist</td><td>Tips → /tips</td><td>—</td></tr>
+          <tr><td>Operations</td><td>ceo, director, branch_manager</td><td>Retail Products, Revenue Forecast</td><td>—</td></tr>
+          <tr><td>Operations</td><td>all staff roles in code</td><td>Staff Chat → /staff-chat</td><td>—</td></tr>
+          <tr><td>System</td><td>ceo, director</td><td>Branding</td><td>custom_branding</td></tr>
+          <tr><td>System</td><td>ceo, director</td><td>Chair Rental</td><td>multi_branch</td></tr>
+          <tr><td>System</td><td>all above</td><td>Notifications, Settings, Support</td><td>—</td></tr>
+        </tbody></table></div>
+        <h3>Beauty (<code>beauty</code>)</h3>
+        <p>Same <strong>paths</strong> and <strong>feature keys</strong> as barber; labels/sections differ.</p>
+        <div class="table-wrap"><table class="data" style="font-size:0.86rem"><thead><tr><th>Section</th><th>Roles</th><th>Label → path</th><th>Feat</th></tr></thead><tbody>
+          <tr><td>Executive</td><td>ceo, director</td><td>Salon Dashboard → /dashboard</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Branch Overview → /branches</td><td>multi_branch</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Reports &amp; Analytics → /reports</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Finance → /finance</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Commissions → /commissions</td><td>staff_commissions_payroll</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Payroll &amp; Payslips → /payroll</td><td>staff_commissions_payroll</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Audit Log → /audit-log</td><td>advanced_analytics</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>QR Attendance → /qr-attendance</td><td>—</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Stylist Scorecards → /scorecards</td><td>advanced_analytics</td></tr>
+          <tr><td>Executive</td><td>ceo, director</td><td>Haus Connect → /call-centre</td><td>advanced_analytics</td></tr>
+          <tr><td>Salon Floor</td><td>branch_manager</td><td>Salon Dashboard → /dashboard</td><td>—</td></tr>
+          <tr><td>Salon Floor</td><td>branch_manager</td><td>Today's Schedule → /schedule</td><td>—</td></tr>
+          <tr><td>Salon Floor</td><td>branch_manager</td><td>Stylist Attendance → /staff</td><td>—</td></tr>
+          <tr><td>Salon Floor</td><td>branch_manager</td><td>Appointments → /bookings</td><td>—</td></tr>
+          <tr><td>Salon Floor</td><td>branch_manager</td><td>Waitlist → /waitlist</td><td>—</td></tr>
+          <tr><td>Salon Floor</td><td>branch_manager</td><td>QR Attendance → /qr-attendance</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Appointments → /bookings</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Client Check-in → /clients</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>Schedule → /schedule</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>QR Clock Mode → /qr-clock</td><td>—</td></tr>
+          <tr><td>Reception</td><td>receptionist</td><td>POS → /pos</td><td>pos_payments</td></tr>
+          <tr><td>My Station</td><td>senior_barber, junior_barber</td><td>My Dashboard → /dashboard</td><td>—</td></tr>
+          <tr><td>My Station</td><td>senior/junior</td><td>My Appointments → /bookings</td><td>—</td></tr>
+          <tr><td>My Station</td><td>senior/junior</td><td>My Schedule → /schedule</td><td>—</td></tr>
+          <tr><td>My Station</td><td>senior/junior</td><td>My Reviews → /reviews</td><td>—</td></tr>
+          <tr><td>My Station</td><td>senior/junior</td><td>My Earnings → /my-earnings</td><td>—</td></tr>
+          <tr><td>My Station</td><td>senior/junior</td><td>My Clients → /clients</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Beauty Services → /services</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Stylist Directory → /staff</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Clients → /clients</td><td>—</td></tr>
+          <tr><td>Services</td><td>ceo, director</td><td>Client Ownership → /client-ownership</td><td>—</td></tr>
+          <tr><td>Sales</td><td>ceo, director</td><td>POS, Price Lock, Reconciliation</td><td>pos_payments</td></tr>
+          <tr><td>Sales</td><td>ceo, director</td><td>Inventory, Consumption, Suppliers</td><td>inventory_tracking</td></tr>
+          <tr><td>Growth</td><td>ceo, director, branch_manager</td><td>Loyalty, Packages, Gift Cards, Reviews, Promotions, Referrals, WhatsApp, Marketing</td><td>promotions_referrals / sms_reminders as barber</td></tr>
+          <tr><td>Growth</td><td>+ senior_barber</td><td>Before &amp; After Gallery → /gallery</td><td>—</td></tr>
+          <tr><td>Operations</td><td>mixed</td><td>Tips, Retail Products, Consent Forms, Revenue Forecast, Staff Chat</td><td>—</td></tr>
+          <tr><td>System</td><td>ceo, director</td><td>Branding, Station Rental, Notifications, Settings, Support</td><td>custom_branding / multi_branch</td></tr>
+        </tbody></table></div>
+        <h3>Spa · Nail bar · Clinic · Mobile · Therapy</h3>
+        <div class="callout"><strong>Spa:</strong> Wellness exec; spa floor (sessions, QR; no waitlist/queue in excerpt); front desk; My Room; treatments; sales (POS/inventory/suppliers); guest experience (loyalty, gallery, consent); operations; system (branding, room rental).</div>
+        <div class="callout"><strong>Nail bar:</strong> Nail exec &amp; scorecards; no commissions/payroll in excerpt; floor queue+appointments; reception queue; My Station (no schedule/QR in excerpt); nail art gallery; ops chat only; system minimal.</div>
+        <div class="callout"><strong>Clinic:</strong> Clinic exec &amp; practitioner scorecards; clinic floor; reception patient check-in &amp; billing POS; My Practice; clinical (intake, aftercare); sales; growth (packages, reviews, referrals); operations.</div>
+        <div class="callout"><strong>Mobile:</strong> Exec dashboard, service areas, pro scorecards; dispatch (schedule, home visits, <strong>Coverage Zones</strong>); on-road visits; services + liability; growth; ops. <em>Impl:</em> <code>mobileSpecialty</code> + <code>effectiveCategories</code>; <code>/field-operations</code>, <code>/coverage-zones</code>.</div>
+        <div class="callout"><strong>Therapy:</strong> Practice exec; practice sessions + QR; My Sessions; clinical (session notes, progress, intake); growth; ops session billing POS; system room rental.</div>
+        <h3>Solo Pro (<code>solo_pro</code>)</h3>
+        <p>Category + theming + pricing; no <code>SOLO_PRO_NAV</code> — sidebar falls back. Platform selection exposes solo barber/beauty/spa/nails/clinic/therapy.</p>
+        <h3>Products (<code>products</code>)</h3>
+        <p><code>PRODUCTS_NAV</code>: Executive (store dashboard, locations, analytics, finance, payroll/commissions gated, audit, forecast); Store floor (POS, stock, online orders, attendance); Till (cashier, POS, customer lookup, orders, stock, QR); Sales floor (ring up, catalogue, stock, customers, QR, earnings); Catalogue/Sales/Growth/System (inventory, reconciliation, bundles, gallery, chat, branding).</p>
+        <h3>Customer portal (all modes)</h3>
+        <div class="table-wrap"><table class="data" style="font-size:0.86rem"><thead><tr><th>Path</th><th>Purpose</th></tr></thead><tbody>
+          <tr><td>/portal</td><td>Customer home</td></tr>
+          <tr><td>/portal/bookings</td><td>Own bookings</td></tr>
+          <tr><td>/portal/loyalty</td><td>Loyalty</td></tr>
+          <tr><td>/portal/reviews</td><td>Reviews</td></tr>
+          <tr><td>/portal/referrals</td><td>Referrals</td></tr>
+          <tr><td>/portal/profile</td><td>Profile</td></tr>
+        </tbody></table></div>
+        <p>Portal features follow org plan — enforce server-side.</p>
+        <h3>Route-level feature gates (mirror <code>App.tsx</code> <code>PG</code>)</h3>
+        <ul class="list">
+          <li><code>/pos</code>, <code>/reconciliation</code> → <code>pos_payments</code></li>
+          <li><code>/inventory</code>, <code>/consumption</code>, <code>/price-lock</code>, <code>/suppliers</code> → <code>inventory_tracking</code></li>
+          <li><code>/promotions</code>, <code>/referrals</code> → <code>promotions_referrals</code></li>
+          <li><code>/branches</code> → <code>multi_branch</code></li>
+          <li><code>/commissions</code> → <code>staff_commissions_payroll</code></li>
+          <li><code>/payroll</code> → <code>payroll</code></li>
+          <li><code>/scorecards</code>, <code>/call-centre</code>, <code>/audit-log</code> → <code>advanced_analytics</code></li>
+          <li><code>/branding</code> → <code>custom_branding</code></li>
+          <li><code>/whatsapp</code> → <code>sms_reminders</code></li>
+        </ul>
+      </section>
+<footer class="doc-footer"><a href="/chapters/5">← System overview</a> · <a href="/chapters/7">Costs →</a></footer>

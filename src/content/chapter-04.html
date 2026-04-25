@@ -1,0 +1,192 @@
+
+      <header class="doc-header">
+        <h1>Chapter 4 — Data storage, relational schema &amp; cache</h1>
+        <p class="doc-meta">Mirrors <a href="/docs-sources/01-data-storage-and-schema.md">01-data-storage-and-schema.md</a> and <code>src/integrations/supabase/types.ts</code>. <strong>Production</strong> must add <code>organization_id</code> to <code>branches</code> where the Phase 0 types omit it.</p>
+      </header>
+
+      <section class="doc-section" id="enums">
+        <h2>PostgreSQL enums (public)</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Enum</th><th>Values</th></tr></thead>
+            <tbody>
+              <tr><td><code>app_role</code></td><td><code>ceo</code>, <code>director</code>, <code>branch_manager</code>, <code>senior_barber</code>, <code>junior_barber</code>, <code>receptionist</code>, <code>customer</code></td></tr>
+              <tr><td><code>booking_status</code></td><td><code>scheduled</code>, <code>checked_in</code>, <code>in_progress</code>, <code>completed</code>, <code>no_show</code>, <code>cancelled</code></td></tr>
+              <tr><td><code>business_type</code></td><td><code>barber</code>, <code>beauty</code>, <code>both</code>, <code>nail_bar</code>, <code>clinic</code>, <code>mobile</code>, <code>therapy</code>, <code>solo_pro</code>, <code>products</code></td></tr>
+              <tr><td><code>loyalty_tier</code></td><td><code>bronze</code>, <code>silver</code>, <code>gold</code>, <code>vip</code></td></tr>
+              <tr><td><code>payment_method</code></td><td><code>mpesa</code>, <code>card</code>, <code>cash</code></td></tr>
+              <tr><td><code>payment_status</code></td><td><code>pending</code>, <code>completed</code>, <code>failed</code>, <code>refunded</code></td></tr>
+              <tr><td><code>subscription_plan</code></td><td><code>starter</code>, <code>professional</code>, <code>enterprise</code></td></tr>
+              <tr><td><code>subscription_status</code></td><td><code>trial</code>, <code>active</code>, <code>past_due</code>, <code>cancelled</code>, <code>expired</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="muted">Money in API: typically integer KES unless noted in migration.</p>
+      </section>
+
+      <section class="doc-section" id="tenancy">
+        <h2>Core tenancy &amp; identity</h2>
+        <h3><code>organizations</code></h3>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>id</td><td>uuid</td><td>PK</td></tr>
+              <tr><td>name</td><td>text</td><td>—</td></tr>
+              <tr><td>owner_id</td><td>uuid</td><td>FK → <code>users.id</code> (Laravel)</td></tr>
+              <tr><td>created_at, updated_at</td><td>timestamptz</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3><code>organization_members</code></h3>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>id</td><td>uuid</td><td>PK</td></tr>
+              <tr><td>organization_id</td><td>uuid</td><td>FK</td></tr>
+              <tr><td>user_id</td><td>uuid</td><td>FK</td></tr>
+              <tr><td>created_at</td><td>timestamptz</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3><code>subscriptions</code> (1:1 with organization in current model)</h3>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Column</th><th>Type</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr><td>id, organization_id, plan, status, business_type</td><td>…</td><td>FK unique on org</td></tr>
+              <tr><td>trial_ends_at</td><td>timestamptz null</td><td>—</td></tr>
+              <tr><td>current_period_start, current_period_end</td><td>timestamptz</td><td>—</td></tr>
+              <tr><td>mpesa_phone, last_payment_at</td><td>text / timestamptz null</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3><code>profiles</code> · <code>user_roles</code> · <code>customers</code></h3>
+        <p>See <a href="/docs-sources/01-data-storage-and-schema.md">01</a> for full column lists. <code>profiles.id</code> = user id; <code>user_roles</code> stores <code>app_role</code>; <code>customers</code> is CRM with loyalty + referral fields.</p>
+      </section>
+
+      <section class="doc-section" id="locations">
+        <h2>Locations, staff, services</h2>
+        <div class="callout"><strong>Branches.</strong> Add <code>organization_id uuid NOT NULL</code> in production. Phase 0 types may omit it.</div>
+        <h3><code>branches</code></h3>
+        <p>id, name, address, city, phone, email, description, opening/closing times, logo/cover, slug, whatsapp, is_active, created_at, …</p>
+        <h3><code>staff</code></h3>
+        <p>organization_id, branch_id, user_id, full_name, email, phone, <code>role</code> (app_role), commission_rate, specialties[], bio, avatar, slug, is_active, created_at, …</p>
+        <h3><code>services</code> / <code>staff_schedules</code></h3>
+        <p>Services: org/branch, name, category, duration, price_kes, image, is_active. Schedules: staff, branch, date, time window, is_day_off, notes.</p>
+      </section>
+
+      <section class="doc-section" id="bookings">
+        <h2>Bookings &amp; queue</h2>
+        <h3><code>bookings</code></h3>
+        <p>id, organization_id, branch_id, customer_id, staff_id, service_id, booking_date, start_time, end_time, <code>status</code>, is_walkin, notes, created_by, timestamps.</p>
+        <h3><code>booking_services</code></h3>
+        <p>booking_id, service_id, staff_id, price_kes, duration_minutes, sort_order, …</p>
+        <h3><code>waitlist</code></h3>
+        <p>Org/branch/staff/service links, customer_name, phone, party_size, status, estimated wait, check-in / served times.</p>
+      </section>
+
+      <section class="doc-section" id="commerce">
+        <h2>Commerce, CRM, operations</h2>
+        <p><strong><code>transactions</code>:</strong> org, branch, customer, staff, booking, amount_kes, payment_method, payment_status, mpesa_receipt, items jsonb, …</p>
+        <p><strong>Tips, inventory, retail_products, gift cards, packages, promotions</strong> — all org-scoped; see 01 for exact columns.</p>
+        <p><strong>Compliance / modes:</strong> <code>consent_forms</code>, <code>patient_intake</code>, <code>session_notes</code>, <code>progress_tracking</code>, <code>aftercare_instructions</code>, <code>coverage_zones</code>. <strong>Products mode:</strong> emphasise <code>retail_products</code>, <code>inventory</code>, <code>transactions</code>, optional <code>shop_orders</code>.</p>
+        <p><strong>Operations:</strong> <code>qr_scans</code>, <code>staff_chat_messages</code>, <code>notifications</code>, <code>audit_log</code>.</p>
+      </section>
+
+      <section class="doc-section" id="er">
+        <h2>Entity relationship (summary diagram)</h2>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 1000 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Core ER">
+            <text x="500" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#e8eaef">Core tenancy &amp; booking domain</text>
+            <rect class="box-accent" x="400" y="70" width="200" height="56" rx="10"/>
+            <text x="500" y="96" text-anchor="middle" font-size="16" font-weight="700" fill="#d4a84b">organizations</text>
+            <text x="500" y="118" text-anchor="middle" font-size="13" fill="#8b95a8">Tenant root</text>
+            <line x1="500" y1="126" x2="500" y2="150" stroke="#7eb8ff" stroke-width="2"/>
+            <rect class="box" x="360" y="150" width="130" height="44" rx="8"/><text x="425" y="176" text-anchor="middle" font-size="14" fill="#e8eaef">subscriptions</text>
+            <rect class="box" x="510" y="150" width="150" height="44" rx="8"/><text x="585" y="176" text-anchor="middle" font-size="14" fill="#e8eaef">org_members</text>
+            <line x1="500" y1="126" x2="425" y2="150" stroke="#7eb8ff" stroke-width="1.5"/>
+            <line x1="500" y1="126" x2="585" y2="150" stroke="#7eb8ff" stroke-width="1.5"/>
+            <rect class="box" x="50" y="220" width="100" height="40" rx="8"/><text x="100" y="244" text-anchor="middle" font-size="14">branches</text>
+            <rect class="box" x="170" y="220" width="80" height="40" rx="8"/><text x="210" y="244" text-anchor="middle" font-size="14">staff</text>
+            <rect class="box" x="270" y="220" width="90" height="40" rx="8"/><text x="315" y="244" text-anchor="middle" font-size="14">services</text>
+            <rect class="box" x="380" y="220" width="100" height="40" rx="8"/><text x="430" y="244" text-anchor="middle" font-size="14">customers</text>
+            <rect class="box" x="500" y="220" width="100" height="40" rx="8"/><text x="550" y="244" text-anchor="middle" font-size="14">bookings</text>
+            <rect class="box" x="620" y="220" width="120" height="40" rx="8"/><text x="680" y="244" text-anchor="middle" font-size="14">transactions</text>
+            <line x1="500" y1="194" x2="100" y2="220" stroke="#4a6fa5" stroke-width="1.2" opacity="0.85"/>
+            <line x1="500" y1="194" x2="210" y2="220" stroke="#4a6fa5" stroke-width="1.2" opacity="0.85"/>
+            <line x1="500" y1="194" x2="315" y2="220" stroke="#4a6fa5" stroke-width="1.2" opacity="0.85"/>
+            <line x1="500" y1="194" x2="430" y2="220" stroke="#4a6fa5" stroke-width="1.2" opacity="0.85"/>
+            <line x1="500" y1="194" x2="550" y2="220" stroke="#4a6fa5" stroke-width="1.2" opacity="0.85"/>
+            <line x1="500" y1="194" x2="680" y2="220" stroke="#4a6fa5" stroke-width="1.2" opacity="0.85"/>
+            <text x="500" y="290" text-anchor="middle" font-size="13" fill="#8b95a8">booking_services, waitlist, and mode-specific tables extend this hub</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="doc-section" id="functions">
+        <h2>DB functions (RLS / helpers — reimplement in Laravel as needed)</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Function</th><th>Purpose</th></tr></thead>
+            <tbody>
+              <tr><td><code>get_user_organization_id(uuid)</code></td><td>Resolve tenant</td></tr>
+              <tr><td><code>get_user_plan</code>, <code>get_user_business_type</code></td><td>Subscription hints</td></tr>
+              <tr><td><code>has_role</code>, <code>is_staff</code>, <code>is_management</code></td><td>RLS helpers (optional if app-only)</td></tr>
+              <tr><td><code>user_org_match</code></td><td>Validate org</td></tr>
+              <tr><td><code>check_staff_availability(…)</code></td><td>Booking conflict</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="redis-s3">
+        <h2>Redis keys · Object storage</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Key / pattern</th><th>Purpose</th><th>TTL (typical)</th></tr></thead>
+            <tbody>
+              <tr><td><code>sess:{id}</code></td><td>Session / token metadata</td><td>Session</td></tr>
+              <tr><td><code>cache:org:{id}:services:v{n}</code></td><td>Service catalog</td><td>5–15m + tag bust</td></tr>
+              <tr><td><code>cache:me:{userId}</code></td><td>Serialized <code>/me</code></td><td>30–60s</td></tr>
+              <tr><td><code>ratelimit:2fa:{userId}</code></td><td>2FA</td><td>15m</td></tr>
+              <tr><td><code>idempotency:mpesa:{checkoutRequestId}</code></td><td>Payment callback dedupe</td><td>7d</td></tr>
+              <tr><td><code>lock:report:{org}:{job}</code></td><td>distributed lock</td><td>minutes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Strategy:</strong> write-through for money; cache-aside for catalogs; <strong>never</strong> cross-tenant list cache without org prefix.</p>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Prefix</th><th>Content</th><th>ACL</th></tr></thead>
+            <tbody>
+              <tr><td><code>branding/{org_id}/</code></td><td>Logos, theme</td><td>Public read or signed</td></tr>
+              <tr><td><code>receipts/{org_id}/</code></td><td>Receipts</td><td>Private + signed GET</td></tr>
+              <tr><td><code>gallery/{org_id}/</code></td><td>Before/after</td><td>Configurable</td></tr>
+              <tr><td><code>consents/{org_id}/</code></td><td>Signatures / PDFs</td><td>Private</td></tr>
+              <tr><td><code>exports/{org_id}/</code></td><td>CSV/PDF</td><td>Signed, short TTL</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="scale">
+        <h2>Sharding, partitioning, read scale</h2>
+        <ol class="list">
+          <li>Default: single Postgres + PgBouncer + composite <code>(organization_id, …)</code> indexes.</li>
+          <li>Partition append-only: <code>audit_log</code>, notification history, by month.</li>
+          <li>Read replica for reporting; connection <code>pgsql_report</code> in Laravel when introduced.</li>
+          <li>Shard (Citus / per-tenant DB) only after sustained CPU / row SLO pressure — see <a href="/chapters/1">implementation plan</a>.</li>
+        </ol>
+        <h3>Laravel-only additions (not in Phase 0 types)</h3>
+        <ul class="list">
+          <li><code>users</code> — 2FA columns, etc.</li>
+          <li><code>personal_access_tokens</code> (Sanctum / API keys)</li>
+          <li><code>branches.organization_id</code></li>
+          <li><code>branding_settings</code>, <code>call_logs</code>, <code>subscription_invoices</code></li>
+        </ul>
+      </section>
+
+      <footer class="doc-footer"><a href="/chapters/3">← Frontend</a> · <a href="/chapters/5">System overview →</a></footer>
+    

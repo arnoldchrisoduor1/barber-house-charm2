@@ -1,0 +1,224 @@
+
+      <header class="doc-header">
+        <h1>Chapter 2 — Backend architecture, APIs &amp; data paths</h1>
+        <p class="doc-meta">Companion to <a href="/docs-sources/02-backend-api-and-services.md">02-backend-api-and-services.md</a>. Diagrams use expanded viewBoxes and legible type.</p>
+      </header>
+
+      <section class="doc-section" id="topology">
+        <h2>Process topology</h2>
+        <p>Clients use JSON over HTTPS; M-Pesa and provider callbacks hit Laravel with validation. Next.js is a consumer of the <code>v1</code> API; Node handles calling.</p>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 1000 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Laravel and adjacent services">
+            <defs>
+              <marker id="mk-ch2" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker>
+            </defs>
+            <text x="500" y="36" text-anchor="middle" class="label-lg" font-size="18" fill="#e8eaef">Request &amp; callback paths</text>
+            <text x="500" y="60" text-anchor="middle" class="label-sm" font-size="13" fill="#8b95a8">Inbound HTTPS + provider webhooks → Laravel; Next consumes REST</text>
+            <rect class="box-accent" x="40" y="88" width="240" height="100" rx="12"/>
+            <text x="160" y="128" text-anchor="middle" font-size="17" font-weight="700" fill="#d4a84b">Laravel monolith</text>
+            <text x="160" y="152" text-anchor="middle" font-size="14" fill="#9aa3b5">HTTP · routes · services · events</text>
+            <text x="160" y="174" text-anchor="middle" font-size="14" fill="#9aa3b5">Horizon · broadcasting</text>
+            <line class="arrow" x1="280" y1="138" x2="325" y2="138" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk-ch2)"/>
+            <rect class="box" x="330" y="100" width="150" height="76" rx="10"/>
+            <text x="405" y="135" text-anchor="middle" font-size="16" fill="#e8eaef">Node calls</text>
+            <text x="405" y="158" text-anchor="middle" font-size="13" fill="#8b95a8">WebRTC + webhooks</text>
+            <line class="arrow" x1="480" y1="138" x2="520" y2="138" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk-ch2)"/>
+            <rect class="box" x="525" y="100" width="150" height="76" rx="10"/>
+            <text x="600" y="135" text-anchor="middle" font-size="16" fill="#e8eaef">Gateways</text>
+            <text x="600" y="158" text-anchor="middle" font-size="13" fill="#8b95a8">SMS · WhatsApp · email</text>
+            <line class="arrow" x1="675" y1="138" x2="710" y2="138" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk-ch2)"/>
+            <rect class="box" x="715" y="100" width="120" height="76" rx="10"/>
+            <text x="775" y="135" text-anchor="middle" font-size="16" fill="#e8eaef">Next.js</text>
+            <text x="775" y="158" text-anchor="middle" font-size="13" fill="#8b95a8">BFF / UI</text>
+            <line class="arrow" x1="835" y1="138" x2="870" y2="138" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk-ch2)"/>
+            <rect class="box" x="875" y="100" width="85" height="76" rx="10"/>
+            <text x="917" y="135" text-anchor="middle" font-size="16" fill="#e8eaef">M-Pesa</text>
+            <text x="917" y="158" text-anchor="middle" font-size="12" fill="#8b95a8">STK + CB</text>
+            <line class="flow-line" x1="917" y1="188" x2="160" y2="200" stroke-dasharray="5 4" stroke="#c9a24a" marker-end="url(#mk-ch2)"/>
+            <text x="520" y="208" text-anchor="middle" font-size="12" fill="#8b95a8">M-Pesa callback → Laravel webhook (HMAC, IP, idempotency)</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="doc-section" id="laravel-layers">
+        <h2>Laravel internal layers</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Layer</th><th>Responsibility</th></tr></thead>
+            <tbody>
+              <tr><td>Routes</td><td><code>v1</code> prefix; middleware: Sanctum, <code>EnsureOrganization</code>, <code>EnsureSubscriptionFeature</code></td></tr>
+              <tr><td>Controllers</td><td>Thin — validate, authorize, delegate</td></tr>
+              <tr><td>Form requests</td><td>Never trust <code>organization_id</code> from body on privileged routes</td></tr>
+              <tr><td>Policies / gates</td><td>Row-level auth by org, branch, role</td></tr>
+              <tr><td>Domain services</td><td>BookingService, PaymentService, NotificationDispatcher, …</td></tr>
+              <tr><td>Models + scopes</td><td><code>OrganizationScope</code> on tenant tables</td></tr>
+              <tr><td>Events / jobs</td><td>Decouple modules; idempotent payment jobs</td></tr>
+              <tr><td>API resources</td><td>Stable JSON for Next.js</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="modules">
+        <h2>Module map</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Module</th><th>Key tables / concerns</th></tr></thead>
+            <tbody>
+              <tr><td>Auth</td><td>users, password reset tokens</td></tr>
+              <tr><td>Tenancy</td><td>organizations, organization_members, branches</td></tr>
+              <tr><td>Billing</td><td>subscriptions, invoices</td></tr>
+              <tr><td>Booking</td><td>bookings, booking_services, waitlist</td></tr>
+              <tr><td>Staff</td><td>staff, staff_schedules, qr_scans</td></tr>
+              <tr><td>CRM</td><td>customers, loyalty, referrals</td></tr>
+              <tr><td>POS</td><td>transactions, tips</td></tr>
+              <tr><td>Inventory</td><td>inventory, retail_products</td></tr>
+              <tr><td>Marketing</td><td>promotions, service_packages, enquiries</td></tr>
+              <tr><td>Compliance</td><td>consent_forms, patient_intake, session_notes</td></tr>
+              <tr><td>Notifications</td><td>notifications, broadcasts</td></tr>
+              <tr><td>Calling bridge</td><td>call_logs (via Node webhooks)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="auth">
+        <h2>Auth &amp; session (base <code>/api/v1</code>)</h2>
+        <ul class="list">
+          <li><code>POST /auth/register|login|logout</code> · forgot / reset password</li>
+          <li><code>GET /me</code> — roles, org, subscription, <code>features[]</code>, <code>business_type</code></li>
+          <li><code>POST /me/2fa/setup|confirm</code> · <code>DELETE /me/2fa</code> · <code>POST /auth/2fa/challenge</code></li>
+        </ul>
+      </section>
+
+      <section class="doc-section" id="route-map">
+        <h2>Frontend route → API resource (Phase 0 map)</h2>
+        <div class="table-wrap">
+          <table class="data" style="font-size:0.8rem">
+            <thead><tr><th>UI path</th><th>API resource (representative)</th></tr></thead>
+            <tbody>
+              <tr><td><code>/dashboard</code></td><td>…/dashboard/summary</td></tr>
+              <tr><td><code>/bookings</code></td><td>…/bookings + transitions</td></tr>
+              <tr><td><code>/services</code></td><td>…/services</td></tr>
+              <tr><td><code>/clients</code></td><td>…/customers</td></tr>
+              <tr><td><code>/staff</code></td><td>…/staff</td></tr>
+              <tr><td><code>/schedule</code></td><td>…/staff-schedules</td></tr>
+              <tr><td><code>/waitlist</code></td><td>…/waitlist</td></tr>
+              <tr><td><code>/queue</code></td><td>…/walk-in-queue or bookings filter</td></tr>
+              <tr><td><code>/pos</code>, <code>/reconciliation</code></td><td>…/transactions, …/payments/mpesa/stk</td></tr>
+              <tr><td><code>/inventory</code>, <code>/consumption</code>, <code>/price-lock</code>, <code>/suppliers</code></td><td>…/inventory, movements, suppliers</td></tr>
+              <tr><td><code>/loyalty</code>, <code>/promotions</code>, <code>/referrals</code></td><td>…/loyalty, …/promotions, …/referrals</td></tr>
+              <tr><td><code>/reviews</code></td><td>…/reviews</td></tr>
+              <tr><td><code>/reports</code>, <code>/finance</code></td><td>…/reports/*, …/expenses</td></tr>
+              <tr><td><code>/branches</code></td><td>…/branches</td></tr>
+              <tr><td><code>/commissions</code>, <code>/payroll</code></td><td>…/commissions, …/payroll-runs</td></tr>
+              <tr><td><code>/my-earnings</code>, <code>/my-attendance</code></td><td>…/me/earnings, …/me/attendance</td></tr>
+              <tr><td><code>/qr-clock</code>, <code>/qr-attendance</code></td><td>…/qr-scans</td></tr>
+              <tr><td><code>/scorecards</code></td><td>…/analytics/scorecards</td></tr>
+              <tr><td><code>/packages</code>, <code>/gift-cards</code></td><td>…/packages, …/gift-cards</td></tr>
+              <tr><td><code>/call-centre</code></td><td>…/calls/token + Node</td></tr>
+              <tr><td><code>/seat-rental</code></td><td>…/seat-rentals</td></tr>
+              <tr><td><code>/partnership</code>, <code>/compliance</code></td><td>…/partnerships, …/compliance-docs</td></tr>
+              <tr><td><code>/client-ownership</code></td><td>…/client-assignments</td></tr>
+              <tr><td><code>/branding</code></td><td>…/branding + signed upload URL</td></tr>
+              <tr><td><code>/whatsapp</code></td><td>…/integrations/whatsapp</td></tr>
+              <tr><td><code>/audit-log</code></td><td>…/audit-log</td></tr>
+              <tr><td><code>/notifications</code></td><td>…/notifications</td></tr>
+              <tr><td><code>/onboarding</code></td><td>…/onboarding/*</td></tr>
+              <tr><td><code>/settings</code>, <code>/support</code></td><td>…/settings, tickets</td></tr>
+              <tr><td><code>/select-plan</code></td><td><code>PATCH</code> …/subscription</td></tr>
+              <tr><td><code>/gallery</code>, <code>/tips</code>, <code>/consent-forms</code></td><td>…/media, …/tips, …/consent-forms</td></tr>
+              <tr><td><code>/staff-chat</code></td><td>REST + Soketi</td></tr>
+              <tr><td><code>/retail-products</code></td><td>…/retail-products</td></tr>
+              <tr><td><code>/shop-orders</code></td><td>…/shop-orders</td></tr>
+              <tr><td><code>/revenue-forecast</code>, <code>/marketing</code></td><td>…/insights/forecast, …/campaigns</td></tr>
+              <tr><td><code>/coverage-zones</code></td><td>…/coverage-zones</td></tr>
+              <tr><td><code>/patient-intake</code>, <code>/aftercare</code></td><td>…/patient-intake, …/aftercare-instructions</td></tr>
+              <tr><td><code>/session-notes</code>, <code>/progress-tracking</code></td><td>…/session-notes, …/progress-tracking</td></tr>
+              <tr><td><code>/book</code> (public)</td><td><code>POST /public/{orgSlug}/bookings</code> + Turnstile</td></tr>
+              <tr><td><code>/discover</code></td><td>public read</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="booking-path">
+        <h2>Critical path — booking create</h2>
+        <p>Next → <code>POST</code> bookings → Laravel auth/scope → BookingService → Postgres transaction + availability → Horizon (SMS) → Soketi broadcast → <strong>201</strong>.</p>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 1000 160" xmlns="http://www.w3.org/2000/svg" aria-label="Booking pipeline">
+            <defs><marker id="mk2-ch2" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
+            <g font-family="system-ui,sans-serif">
+              <text x="500" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#e8eaef">Booking create (horizontal flow)</text>
+            </g>
+            <rect class="box" x="20" y="60" width="100" height="48" rx="8"/><text x="70" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Next</text>
+            <line x1="120" y1="84" x2="145" y2="84" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk2-ch2)"/>
+            <rect class="box-accent" x="150" y="60" width="120" height="48" rx="8"/><text x="210" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Laravel</text>
+            <line x1="270" y1="84" x2="300" y2="84" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk2-ch2)"/>
+            <rect class="box" x="305" y="60" width="150" height="48" rx="8"/><text x="380" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">BookingService</text>
+            <line x1="455" y1="84" x2="485" y2="84" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk2-ch2)"/>
+            <rect class="box" x="490" y="60" width="130" height="48" rx="8"/><text x="555" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">PostgreSQL</text>
+            <line x1="620" y1="84" x2="650" y2="84" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk2-ch2)"/>
+            <rect class="box" x="655" y="60" width="110" height="48" rx="8"/><text x="710" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Horizon</text>
+            <line x1="765" y1="84" x2="795" y2="84" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk2-ch2)"/>
+            <rect class="box" x="800" y="60" width="100" height="48" rx="8"/><text x="850" y="90" text-anchor="middle" font-size="15" fill="#e8eaef">Soketi</text>
+            <line x1="900" y1="84" x2="920" y2="84" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk2-ch2)"/>
+            <rect class="box-accent" x="925" y="60" width="55" height="48" rx="8"/><text x="952" y="92" text-anchor="middle" font-size="16" font-weight="700" fill="#d4a84b">201</text>
+            <text x="500" y="140" text-anchor="middle" font-size="12" fill="#8b95a8">SMS job queued; realtime fanout; client cache invalidate via Echo or query invalidation</text>
+          </svg>
+        </div>
+        <p><strong>M-Pesa:</strong> STK POST → Daraja → callback → HMAC + IP + Redis idempotency → update <code>transactions</code> → broadcast POS.</p>
+        <p><strong>Chat:</strong> GET/POST messages → broadcast <code>private-org.{id}.chat.{channel}</code> → Echo + TanStack patch.</p>
+        <p><strong>Haus Connect:</strong> Next → Laravel session token → Node → provider → webhooks → <code>call_logs</code>.</p>
+      </section>
+
+      <section class="doc-section" id="authz">
+        <h2>Authorization chain</h2>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" aria-label="Authz diamond">
+            <defs><marker id="mk3-ch2" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
+            <text x="320" y="36" text-anchor="middle" font-size="17" font-weight="700" fill="#e8eaef">Laravel request authorization</text>
+            <rect class="box" x="250" y="60" width="140" height="44" rx="8"/><text x="320" y="88" text-anchor="middle" font-size="15" fill="#e8eaef">HTTP request</text>
+            <line x1="320" y1="104" x2="320" y2="128" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk3-ch2)"/>
+            <rect class="box" x="170" y="130" width="300" height="48" rx="8"/><text x="320" y="160" text-anchor="middle" font-size="14" fill="#e8eaef">Sanctum + ResolveOrganization</text>
+            <line x1="320" y1="178" x2="320" y2="198" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk3-ch2)"/>
+            <rect class="box" x="150" y="200" width="340" height="48" rx="8"/><text x="320" y="230" text-anchor="middle" font-size="14" fill="#e8eaef">Load subscription + features (EnsureSubscriptionFeature)</text>
+            <line x1="200" y1="248" x2="100" y2="248" stroke="#c9a24a" stroke-width="1.5" marker-end="url(#mk3-ch2)"/>
+            <line x1="440" y1="248" x2="540" y2="248" stroke="#6bcf8e" stroke-width="1.5" marker-end="url(#mk3-ch2)"/>
+            <rect class="box-muted" x="20" y="220" width="80" height="40" rx="6"/><text x="60" y="246" text-anchor="middle" font-size="13" fill="#9fb0c8">403 feature</text>
+            <rect class="box-accent" x="550" y="220" width="80" height="40" rx="6"/><text x="590" y="246" text-anchor="middle" font-size="13" fill="#d4a84b">Policy</text>
+            <text x="320" y="256" text-anchor="middle" font-size="12" fill="#8b95a8">Row-level policy → allowed action (or 403 / 404 scoped)</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="doc-section" id="webhooks">
+        <h2>Webhooks &amp; queues</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Source</th><th>Path</th><th>Validation</th></tr></thead>
+            <tbody>
+              <tr><td>M-Pesa</td><td><code>/webhooks/mpesa/callback</code></td><td>HMAC + IP allowlist + idempotency</td></tr>
+              <tr><td>Twilio / Meta</td><td><code>/webhooks/twilio</code>, <code>/webhooks/meta</code></td><td>Signature</td></tr>
+              <tr><td>Calling service</td><td><code>/internal/calls/webhook</code></td><td>mTLS or HMAC + nonce</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Queue</th><th>Work</th></tr></thead>
+            <tbody>
+              <tr><td>notifications</td><td>SMS, email, push</td></tr>
+              <tr><td>integrations</td><td>External APIs, retries</td></tr>
+              <tr><td>billing</td><td>Invoices, dunning</td></tr>
+              <tr><td>reports</td><td>Heavy exports</td></tr>
+              <tr><td>default</td><td>Misc</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Broadcasting auth:</strong> <code>POST /api/v1/broadcasting/auth</code> for Soketi private / presence channels.</p>
+        <p><strong>Mode alignment:</strong> category tags on <code>services.category</code>; feature flags for patient_intake, coverage_zones, session_notes, shop_orders, solo seat limits.</p>
+      </section>
+
+      <footer class="doc-footer"><a href="/">Home</a> · <a href="/chapters/3">Next: Frontend</a></footer>
+    

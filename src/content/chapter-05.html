@@ -1,0 +1,289 @@
+
+      <header class="doc-header">
+        <h1>Chapter 5 — System overview</h1>
+        <p class="doc-meta">What the product does, how pieces connect (prototype + target), who gets paid, bookings, shared vs per-Haus modules, deep dives on Mobile / Solo Pro / Products. Authoritative copy: <a href="/docs-sources/00-architecture-overview.md">00-architecture-overview.md</a> (includes the same “Product and module guide”).</p>
+      </header>
+
+      <section class="doc-section" id="what">
+        <h2>What Haus of Grooming OS is</h2>
+        <p class="lead">A <strong>multi-tenant SaaS</strong> for grooming, wellness, field services, therapy, solo independents, and retail product businesses. Each <strong>Haus</strong> (business mode) reuses one core domain — orgs, branches, staff, services, customers, bookings, transactions — and swaps <strong>labels</strong>, <strong>sidebar sections</strong>, and <strong>specialist screens</strong> (clinical, coverage zones, session notes, shop orders, etc.).</p>
+        <p>Implementation touchpoints: <code>src/components/AppLayout.tsx</code> (<code>getNavForMode</code>, mode nav constants), <code>src/hooks/useBusinessCategory.tsx</code> (<code>MODE_TERMS</code>, <code>effectiveCategories</code>, <code>mobileSpecialty</code>), <code>src/hooks/useSubscription.ts</code> (plan + <code>hasFeature</code>), <code>src/lib/pricing.ts</code> (SaaS pricing).</p>
+      </section>
+
+      <section class="doc-section" id="phase0-vs-prod">
+        <h2>How systems connect — Phase 0 vs production</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Layer</th><th>Phase 0 (this repo)</th><th>Production target</th></tr></thead>
+            <tbody>
+              <tr><td>UI shell</td><td>Vite + React Router, <code>AppLayout.tsx</code></td><td>Next.js App Router (<a href="/chapters/1">Chapter 1</a>)</td></tr>
+              <tr><td>Auth</td><td>Supabase Auth + <code>useAuth</code></td><td>Laravel Sanctum + 2FA</td></tr>
+              <tr><td>Data</td><td><code>db.from(…)</code> Supabase client</td><td>Laravel API + PostgreSQL</td></tr>
+              <tr><td>Subscription</td><td><code>subscriptions</code> + <code>hasFeature(plan, key)</code></td><td>Same keys; enforce on server</td></tr>
+              <tr><td>Per-Haus nav</td><td><code>BARBER_NAV</code> … <code>PRODUCTS_NAV</code></td><td>Same idea + <code>GET /me</code> features</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="proto-flow">
+        <h2>Phase 0 request flow (conceptual)</h2>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 980 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Phase 0 architecture">
+            <defs><marker id="cf" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
+            <text x="490" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#e8eaef">Prototype: browser → app shell → Supabase</text>
+            <text x="490" y="58" text-anchor="middle" font-size="13" fill="#8b95a8">Staff <code>/dashboard</code> … or customer <code>/portal/*</code></text>
+            <rect class="box" x="40" y="85" width="130" height="55" rx="10"/><text x="105" y="118" text-anchor="middle" font-size="15" fill="#e8eaef">Browser</text>
+            <line x1="170" y1="112" x2="195" y2="112" stroke="#7eb8ff" stroke-width="2" marker-end="url(#cf)"/>
+            <rect class="box-accent" x="200" y="80" width="200" height="65" rx="10"/><text x="300" y="110" text-anchor="middle" font-size="14" font-weight="600" fill="#d4a84b">React + AppLayout</text>
+            <text x="300" y="132" text-anchor="middle" font-size="11" fill="#9aa3b5">getNavForMode · role · features</text>
+            <line x1="400" y1="112" x2="430" y2="112" stroke="#7eb8ff" stroke-width="2" marker-end="url(#cf)"/>
+            <rect class="box" x="435" y="85" width="160" height="55" rx="10"/><text x="515" y="118" text-anchor="middle" font-size="14" fill="#e8eaef">Pages &amp; hooks</text>
+            <line x1="595" y1="112" x2="625" y2="112" stroke="#7eb8ff" stroke-width="2" marker-end="url(#cf)"/>
+            <rect class="box-accent" x="630" y="85" width="150" height="55" rx="10"/><text x="705" y="118" text-anchor="middle" font-size="14" fill="#7eb8ff">Supabase</text>
+            <text x="705" y="210" text-anchor="middle" font-size="12" fill="#6bcf8e">useBusinessCategory (localStorage + terms) · useSubscription → subscriptions</text>
+            <text x="490" y="175" text-anchor="middle" font-size="12" fill="#8b95a8">Mobile-only: DashboardPage swaps in MobileDispatchDashboard / MobileSoloProDashboard</text>
+            <text x="490" y="200" text-anchor="middle" font-size="12" fill="#8b95a8">Products-only: ProductsDashboard</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="doc-section" id="access">
+        <h2>Who can access what</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Actor</th><th>Sign-in</th><th>Primary experience</th></tr></thead>
+            <tbody>
+              <tr><td>CEO / Director</td><td>Business</td><td>Executive nav: finance, branches (plan), reports, commissions/payroll (plan)</td></tr>
+              <tr><td>Branch manager</td><td>Business</td><td>Floor: schedule, bookings, staff, queue (varies by Haus)</td></tr>
+              <tr><td>Senior / junior staff</td><td>Business</td><td>My work: bookings, schedule, earnings, clients, POS if feature</td></tr>
+              <tr><td>Receptionist</td><td>Business</td><td>Check-in, queue, POS, payments demo</td></tr>
+              <tr><td>Customer</td><td>Portal</td><td><strong><code>/portal/*</code> only</strong> — bookings, loyalty, reviews, referrals</td></tr>
+              <tr><td>Solo / mobile onboarding</td><td>URL params</td><td><code>PlatformsPage</code> / <code>PortalSelectPage</code>: <code>category=solo_pro|mobile</code> + <code>specialty=…</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="money">
+        <h2>How money works (two different flows)</h2>
+        <p><strong>1) Tenant → platform (SaaS):</strong> Plans in <code>src/lib/pricing.ts</code> — <code>solo_pro</code>, <code>starter</code>, <code>professional</code>, <code>enterprise</code> — per <strong>platform</strong> (Barber, Beauty, … Products) and billing cycle. <code>useSubscription</code> reads <code>subscriptions.plan</code>; <code>hasFeature</code> unlocks Professional/Enterprise modules (e.g. <code>pos_payments</code>).</p>
+        <p><strong>2) End-customer → tenant:</strong> In-venue and online take-home revenue via <strong>POS</strong>, <strong>M-Pesa</strong>, other tenders — modeled in <code>transactions</code>; UI on <code>/pos</code>, <code>/reconciliation</code>, <code>/payments-demo</code> where present. This is <em>not</em> the SaaS fee.</p>
+        <p><strong>3) Staff inside the tenant:</strong> <strong>My Earnings</strong>, <strong>Tips</strong>, <strong>Commissions</strong>, <strong>Payroll</strong> (feature-gated) — routes like <code>/my-earnings</code>, <code>/tips</code>, <code>/commissions</code>, <code>/payroll</code>.</p>
+      </section>
+
+      <section class="doc-section" id="bookings">
+        <h2>How bookings work</h2>
+        <p>Shared schema: <code>bookings</code>, <code>booking_services</code>, links to <code>customers</code>, <code>staff</code>, <code>services</code>, <code>branches</code> (see <a href="/chapters/4">Chapter 4</a>). Statuses follow <code>booking_status</code> enum.</p>
+        <p><strong>Labels</strong> change by Haus via <code>MODE_TERMS</code> — e.g. “Appointment” (barber), “Session” (spa), “Home Visit” (mobile), “Consultation” (clinic). For <strong>mobile</strong> with a <code>mobileSpecialty</code>, the UI can use the specialty’s terms for barber/beauty/etc. while keeping <code>mobile</code> in <code>effectiveCategories</code> for filtering.</p>
+        <p>Staff manage on <code>/bookings</code> and <code>/schedule</code>; customers use public book and <code>/portal/bookings</code>. Conflict rules and availability live in the <strong>API service layer</strong> in production.</p>
+      </section>
+
+      <section class="doc-section" id="shared-modules">
+        <h2>Shared modules (most Hauses)</h2>
+        <p>Same <strong>routes</strong> reappear under different sidebar <strong>section names</strong>. Feature flags (e.g. <code>pos_payments</code>) still apply.</p>
+        <div class="table-wrap">
+          <table class="data" style="font-size:0.85rem">
+            <thead><tr><th>Area</th><th>Example paths</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td>Dashboard</td><td><code>/dashboard</code></td><td>Role-specific home &amp; KPIs</td></tr>
+              <tr><td>Schedule &amp; queue</td><td><code>/schedule</code>, <code>/bookings</code>, <code>/waitlist</code>, <code>/queue</code></td><td>Time, walk-ins, queue</td></tr>
+              <tr><td>CRM</td><td><code>/clients</code></td><td>Clients / guests / patients</td></tr>
+              <tr><td>Catalog</td><td><code>/services</code>, <code>/staff</code></td><td>Services &amp; team directory</td></tr>
+              <tr><td>Money at counter</td><td><code>/pos</code>, <code>/reconciliation</code>, <code>/payments-demo</code></td><td>Tenant revenue capture</td></tr>
+              <tr><td>Stock &amp; retail</td><td><code>/inventory</code>, <code>/retail-products</code>, <code>/shop-orders</code> …</td><td>Inventory &amp; e-com (mode/plan)</td></tr>
+              <tr><td>Growth</td><td><code>/loyalty</code>, <code>/packages</code>, <code>/promotions</code>, <code>/whatsapp</code>, <code>/gallery</code> …</td><td>Retention &amp; marketing</td></tr>
+              <tr><td>Ops &amp; field</td><td><code>/tips</code>, <code>/staff-chat</code>, <code>/field-operations</code>, <code>/revenue-forecast</code></td><td>Tips, chat, mobile dispatch context</td></tr>
+              <tr><td>System</td><td><code>/settings</code>, <code>/branding</code>, <code>/notifications</code></td><td>Config &amp; branding (plan)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Full matrix: <a href="/chapters/6">Chapter 6 — Navigation matrix</a> (mode × role × path × feature).</p>
+      </section>
+
+      <section class="doc-section" id="per-haus">
+        <h2>Per-Haus: nav flavour (from <code>AppLayout.tsx</code>)</h2>
+        <p>Each single-mode org gets one of <code>BARBER_NAV</code>, <code>BEAUTY_NAV</code>, <code>SPA_NAV</code>, <code>NAIL_BAR_NAV</code>, <code>CLINIC_NAV</code>, <code>MOBILE_NAV</code>, <code>THERAPY_NAV</code>, <code>PRODUCTS_NAV</code>. <strong>Multi-category</strong> selection today uses <strong><code>BARBER_NAV</code> as the merged superset.</strong></p>
+        <div class="table-wrap">
+          <table class="data" style="font-size:0.84rem">
+            <thead><tr><th>Haus</th><th>Floor / section flavour</th><th>Notable routes or emphasis</th></tr></thead>
+            <tbody>
+              <tr><td>Barber</td><td>Executive, Branch, Reception, <strong>My Chair</strong></td><td>Waitlist, queue, chair rental, field ops link</td></tr>
+              <tr><td>Beauty</td><td>Salon Floor, <strong>My Station</strong></td><td>Often more sales/inventory links (reconciliation, suppliers)</td></tr>
+              <tr><td>Spa</td><td>Spa Floor, Front Desk, <strong>My Room</strong>, Guest Experience</td><td>Sessions wording; consent / allergies; ambience gallery</td></tr>
+              <tr><td>Nail bar</td><td>Nail Floor, queue</td><td>Nail art gallery; slimmer exec comms</td></tr>
+              <tr><td>Clinic</td><td>Clinic Floor, <strong>My Practice</strong>, Clinical</td><td><code>/patient-intake</code>, <code>/aftercare</code>, billing POS</td></tr>
+              <tr><td>Therapy</td><td>Practice, <strong>My Sessions</strong>, Clinical</td><td><code>/session-notes</code>, <code>/progress-tracking</code>, session billing</td></tr>
+              <tr><td>Products</td><td>Store Floor, Till, Sales Floor, Catalogue</td><td><code>/shop-orders</code>, stock, POS/till, product gallery</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="haus-mobile">
+        <h2>Deep dive: Haus of Mobile</h2>
+        <p><strong>Nav source:</strong> <code>MOBILE_NAV</code> — dispatch (exec/manager): routes, home visits, <code>/coverage-zones</code>, <code>/field-operations</code>, team, clients. Field staff: <strong>My Hub</strong> with visits, schedule, zones, earnings, portfolio, WhatsApp, loyalty, packages, tips, QR clock, chat.</p>
+        <p><strong>Terminology:</strong> <code>MODE_TERMS.mobile</code> uses “Home Visit” / “Service Area”; <code>mobileSpecialty</code> (barber, beauty, spa, nail_bar, clinic, therapy) drives <strong>borrowed</strong> labels via <code>effectiveCategories</code> for services/bookings.</p>
+        <p><strong>Dashboard:</strong> When category is <strong>only</strong> <code>mobile</code>, <code>DashboardPage.tsx</code> renders <code>MobileDispatchDashboard</code> (management) or <code>MobileSoloProDashboard</code> (staff) — visit lists, online toggle, daily goal, demo route/kit UI (not used for <code>solo_pro</code> business type).</p>
+      </section>
+
+      <section class="doc-section" id="haus-solo">
+        <h2>Deep dive: Haus of Solo Pro</h2>
+        <p><strong>Nav:</strong> No <code>SOLO_PRO_NAV</code> in code — <code>getNavForMode</code> falls back to <strong><code>BARBER_NAV</code></strong> (barber section names, same routes).</p>
+        <p><strong>Onboarding:</strong> Solo Barber / Beauty / Spa / … via <code>category=solo_pro&amp;specialty=…</code> on <code>PlatformsPage</code> / <code>Navbar</code>.</p>
+        <p><strong>Terms &amp; theme:</strong> <code>MODE_TERMS.solo_pro</code> (“Professional”, “Workspace”); theme <code>theme-solo</code>.</p>
+        <p><strong>Pricing SKU:</strong> Plan <code>solo_pro</code> in <code>pricing.ts</code> (dedicated platform price).</p>
+        <p><strong>Dashboard:</strong> Standard dashboard — <em>not</em> the mobile visit dispatch UI (that is reserved for <code>mobile</code> only).</p>
+      </section>
+
+      <section class="doc-section" id="haus-products">
+        <h2>Deep dive: Haus of Products</h2>
+        <p><strong>Nav:</strong> <code>PRODUCTS_NAV</code> — executive store analytics; <strong>Store Floor</strong> (POS, stock, <code>/shop-orders</code>, attendance); <strong>Till</strong> &amp; <strong>Sales Floor</strong> for cashier/associate; <strong>Catalogue</strong> (inventory, consumption, suppliers, price lock); growth (loyalty, bundles, WhatsApp, product gallery).</p>
+        <p><strong>Dashboard:</strong> <code>ProductsDashboard</code> when the only selected category is <code>products</code> (<code>isProductsOnly</code> in <code>DashboardPage.tsx</code>).</p>
+      </section>
+
+      <section class="doc-section" id="stack">
+        <h2>Production stack (reference diagram)</h2>
+        <p>Target platform: Next + Laravel + Postgres + Redis + Soketi + S3. Phase 0 uses Vite + Supabase. See <a href="/chapters/1">Chapter 1</a>.</p>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 1000 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Production stack">
+            <defs><marker id="mk5" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
+            <text x="500" y="38" text-anchor="middle" font-size="20" font-weight="700" fill="#e8eaef">Edge → app tier → data &amp; realtime</text>
+            <rect class="box" x="30" y="60" width="120" height="56" rx="8"/><text x="90" y="88" text-anchor="middle" font-size="16" fill="#e8eaef">Users</text>
+            <line x1="150" y1="88" x2="185" y2="88" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5)"/>
+            <rect class="box-accent" x="190" y="60" width="150" height="56" rx="8"/><text x="265" y="86" text-anchor="middle" font-size="15" fill="#d4a84b">Edge / CDN</text><text x="265" y="106" text-anchor="middle" font-size="12" fill="#8b95a8">WAF · TLS</text>
+            <line x1="340" y1="88" x2="375" y2="88" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5)"/>
+            <rect class="box-accent" x="380" y="60" width="170" height="56" rx="8"/><text x="465" y="86" text-anchor="middle" font-size="15" fill="#7eb8ff">Next.js</text><text x="465" y="106" text-anchor="middle" font-size="12" fill="#8b95a8">web · portal</text>
+            <line x1="550" y1="88" x2="585" y2="88" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5)"/>
+            <rect class="box-accent" x="590" y="60" width="180" height="56" rx="8"/><text x="680" y="86" text-anchor="middle" font-size="15" fill="#7eb8ff">Laravel API</text><text x="680" y="106" text-anchor="middle" font-size="12" fill="#8b95a8">/api/v1</text>
+            <line x1="770" y1="88" x2="800" y2="88" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5)"/>
+            <rect class="box" x="805" y="64" width="100" height="48" rx="8"/><text x="855" y="88" text-anchor="middle" font-size="15" fill="#e8eaef">Horizon</text>
+            <rect class="box" x="50" y="150" width="150" height="50" rx="8"/><text x="125" y="180" text-anchor="middle" font-size="15">PostgreSQL</text>
+            <rect class="box" x="220" y="150" width="120" height="50" rx="8"/><text x="280" y="180" text-anchor="middle" font-size="15">Redis</text>
+            <rect class="box" x="360" y="150" width="120" height="50" rx="8"/><text x="420" y="180" text-anchor="middle" font-size="15">S3 / R2</text>
+            <rect class="box" x="500" y="150" width="130" height="50" rx="8"/><text x="565" y="180" text-anchor="middle" font-size="15">Soketi</text>
+            <rect class="box" x="650" y="150" width="150" height="50" rx="8"/><text x="725" y="180" text-anchor="middle" font-size="15">Node · calls</text>
+            <line x1="680" y1="116" x2="125" y2="148" stroke="#7eb8ff" stroke-width="1.5" opacity="0.9" marker-end="url(#mk5)"/>
+            <line x1="690" y1="116" x2="280" y2="148" stroke="#7eb8ff" stroke-width="1.5" opacity="0.9" marker-end="url(#mk5)"/>
+            <line x1="700" y1="116" x2="420" y2="148" stroke="#7eb8ff" stroke-width="1.5" opacity="0.9" marker-end="url(#mk5)"/>
+            <line x1="520" y1="116" x2="565" y2="148" stroke="#7eb8ff" stroke-width="1.5" opacity="0.9" marker-end="url(#mk5)"/>
+            <line x1="700" y1="116" x2="725" y2="148" stroke="#7eb8ff" stroke-width="1.5" opacity="0.9" marker-end="url(#mk5)"/>
+            <text x="500" y="250" text-anchor="middle" font-size="15" fill="#8b95a8">Next ↔ Laravel REST; Echo + Soketi for realtime; M-Pesa + provider webhooks → Laravel</text>
+            <text x="500" y="280" text-anchor="middle" font-size="14" fill="#6bcf8e">Prototype: <code>useBusinessCategory</code>, <code>AppLayout</code>, <code>useSubscription</code>, <code>src/lib/pricing.ts</code></text>
+            <text x="500" y="320" text-anchor="middle" font-size="14" fill="#8b95a8"><code>GET /api/v1/me</code> returns subscription + features; <code>subscriptions.business_type</code> drives mode</text>
+            <text x="500" y="360" text-anchor="middle" font-size="14" fill="#8b95a8">Solo vs mobile: solo = one-person specialties; mobile = umbrella + mobileSpecialty + coverage/field modules</text>
+            <text x="500" y="390" text-anchor="middle" font-size="13" fill="#6bcf8e">Confidential — subscription pricing: <a href="/chapters/7" style="fill:#8ec5ff">Chapter 7</a></text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="doc-section" id="modes">
+        <h2>Business modes</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Mode</th><th>Brand (ex.)</th><th>Staff / client / booking / space</th></tr></thead>
+            <tbody>
+              <tr><td>barber</td><td>Haus of Barber</td><td>Barber · Client · Appointment · Chair</td></tr>
+              <tr><td>beauty</td><td>Haus of Beauty</td><td>Stylist · Client · Appointment · Station</td></tr>
+              <tr><td>spa</td><td>Haus of Wellness</td><td>Therapist · Guest · Session · Treatment room</td></tr>
+              <tr><td>nail_bar</td><td>Haus of Nails</td><td>Nail tech · Client · Appointment · Station</td></tr>
+              <tr><td>clinic</td><td>Haus of Aesthetics</td><td>Practitioner · Patient · Consultation · Treatment room</td></tr>
+              <tr><td>mobile</td><td>Haus of Mobile</td><td>Mobile pro · Client · Home visit · Service area</td></tr>
+              <tr><td>therapy</td><td>Haus of Therapy</td><td>Therapist · Client · Session · Session room</td></tr>
+              <tr><td>solo_pro</td><td>Haus of Solo Pro</td><td>Professional · Client · Appointment · Workspace</td></tr>
+              <tr><td>products</td><td>Haus of Products</td><td>Sales associate · Customer · Order · Aisle</td></tr>
+              <tr><td>both</td><td>Multi-service</td><td>Professional · Client · Appointment · Mixed</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="roles">
+        <h2>Roles &amp; primary views</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Role</th><th>View</th></tr></thead>
+            <tbody>
+              <tr><td>ceo / director</td><td>Executive — billing, branches, strategy</td></tr>
+              <tr><td>branch_manager</td><td>Single-branch floor, schedule, QR</td></tr>
+              <tr><td>senior_barber / junior_barber</td><td>My work — bookings, earnings, clients</td></tr>
+              <tr><td>receptionist</td><td>Check-in, queue, POS, light CRM</td></tr>
+              <tr><td>customer</td><td><code>/portal/*</code> only</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>Capability excerpt (system-wide)</h3>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Capability</th><th>CEO</th><th>Mgr</th><th>Rec</th><th>Staff</th><th>Customer</th></tr></thead>
+            <tbody>
+              <tr><td>Change subscription</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+              <tr><td>Branches (enterprise)</td><td>Y</td><td>N</td><td>N</td><td>N</td><td>N</td></tr>
+              <tr><td>POS</td><td>Y</td><td>if licensed</td><td>Y</td><td>if licensed</td><td>N</td></tr>
+              <tr><td>Create any booking</td><td>Y</td><td>Y</td><td>Y</td><td>own+assigned</td><td>portal own</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><strong>Org vs platform:</strong> tenant configures services/staff/branches; platform enforces plans, feature flags, CDN, abuse protection, backups.</p>
+      </section>
+
+      <section class="doc-section" id="features">
+        <h2>Subscription feature gates (examples)</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Feature key</th><th>Min plan</th><th>Routes (examples)</th></tr></thead>
+            <tbody>
+              <tr><td>online_booking, client_management, basic_reports, email_support</td><td>Starter</td><td>Core CRM, bookings</td></tr>
+              <tr><td>pos_payments</td><td>Professional</td><td><code>/pos</code>, <code>/reconciliation</code></td></tr>
+              <tr><td>inventory_tracking</td><td>Professional</td><td><code>/inventory</code>, consumption, suppliers</td></tr>
+              <tr><td>sms_reminders</td><td>Professional</td><td><code>/whatsapp</code></td></tr>
+              <tr><td>promotions_referrals</td><td>Professional</td><td><code>/promotions</code>, <code>/referrals</code></td></tr>
+              <tr><td>multi_branch</td><td>Enterprise</td><td><code>/branches</code>, chair/station rental</td></tr>
+              <tr><td>staff_commissions_payroll</td><td>Enterprise</td><td><code>/commissions</code>, <code>/payroll</code></td></tr>
+              <tr><td>custom_branding, advanced_analytics, payroll, api_access</td><td>Enterprise</td><td>branding, scorecards, audit, API keys</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Laravel <code>EnsureSubscriptionFeature</code>; Next layouts check <code>me.features</code>. Never trust plan from request body.</p>
+      </section>
+
+      <section class="doc-section" id="separation">
+        <h2>Separation of concerns (Next vs Laravel)</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Concern</th><th>Next</th><th>Laravel</th></tr></thead>
+            <tbody>
+              <tr><td>Mode terms</td><td><code>business_type</code> + i18n</td><td>Source of truth on org/subscription</td></tr>
+              <tr><td>Nav</td><td>Role + features from <code>me</code></td><td>Policies match</td></tr>
+              <tr><td>Booking conflicts</td><td>Optimistic UI</td><td>BookingService, transactions, availability</td></tr>
+              <tr><td>POS money</td><td>Display</td><td>Rounding, tax, M-Pesa, idempotency</td></tr>
+              <tr><td>Chat</td><td>Echo render</td><td>Persist, authorize channels</td></tr>
+              <tr><td>Calls</td><td>Dialer UI</td><td>Node webhooks → <code>call_logs</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="2fa">
+        <h2>Two-factor authentication (target)</h2>
+        <p>TOTP + recovery codes; optional SMS backup. Secret on <code>users</code>; Redis limit <code>login:2fa:{userId}</code>.</p>
+        <div class="diagram-wrap">
+          <svg class="diagram-svg" viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" aria-label="2FA enable">
+            <defs><marker id="mk5b" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
+            <text x="450" y="32" text-anchor="middle" font-size="16" font-weight="700" fill="#e8eaef">Enable 2FA (enrollment)</text>
+            <rect class="box" x="30" y="80" width="120" height="50" rx="8"/><text x="90" y="110" text-anchor="middle" font-size="15" fill="#e8eaef">Settings</text>
+            <line x1="150" y1="105" x2="175" y2="105" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5b)"/>
+            <rect class="box" x="180" y="80" width="150" height="50" rx="8"/><text x="255" y="110" text-anchor="middle" font-size="15" fill="#e8eaef">Laravel TOTP</text>
+            <line x1="330" y1="105" x2="360" y2="105" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5b)"/>
+            <rect class="box" x="365" y="80" width="120" height="50" rx="8"/><text x="425" y="110" text-anchor="middle" font-size="15" fill="#e8eaef">QR / URI</text>
+            <line x1="485" y1="105" x2="510" y2="105" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5b)"/>
+            <rect class="box" x="515" y="80" width="110" height="50" rx="8"/><text x="570" y="110" text-anchor="middle" font-size="15" fill="#e8eaef">Confirm</text>
+            <line x1="625" y1="105" x2="650" y2="105" class="arrow" stroke="#7eb8ff" stroke-width="2" marker-end="url(#mk5b)"/>
+            <rect class="box-accent" x="655" y="80" width="130" height="50" rx="8"/><text x="720" y="110" text-anchor="middle" font-size="15" font-weight="700" fill="#d4a84b">2FA on</text>
+            <text x="450" y="170" text-anchor="middle" font-size="14" fill="#8b95a8">Login: password → optional 2FA step-up (TOTP / recovery) → session</text>
+          </svg>
+        </div>
+      </section>
+
+      <footer class="doc-footer"><a href="/chapters/4">← Data</a> · <a href="/chapters/6">Navigation matrix →</a></footer>
+    
