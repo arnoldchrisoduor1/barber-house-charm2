@@ -1,5 +1,7 @@
-node_modules
-dist
-*.local
+# Vite docs app (./docs)
+docs/node_modules
+docs/dist
+
+# General
 .DS_Store
-node_modules/.tmp
+*.local

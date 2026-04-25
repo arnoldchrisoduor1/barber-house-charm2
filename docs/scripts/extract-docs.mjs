@@ -7,8 +7,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+/** App root: the `docs` folder (this Vite project), not the repository root. */
 const root = path.join(__dirname, '..')
-const docsDir = path.join(root, 'barber-house-charm', 'docs')
+const docsDir = path.join(root, '..', 'barber-house-charm', 'docs')
 const outContent = path.join(root, 'src', 'content')
 const outPublicMd = path.join(root, 'public', 'docs-sources')
 
