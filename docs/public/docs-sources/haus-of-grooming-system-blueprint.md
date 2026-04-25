@@ -21,12 +21,12 @@
 
 ### Implementation bridge (read this first)
 
-Sections **2–3, 5, and 11** still describe **screen behavior and data** in vocabulary inherited from the prototype (e.g. React Router provider tree, Supabase SDK call shapes, Edge Function names). **Production behavior** is implemented as:
+Sections **2–3, 5, and 11** still describe **screen behavior and data** in vocabulary inherited from the prototype (e.g. React Router provider tree, client data call patterns, background job names). **Production behavior** is implemented as:
 
 - **Next.js (App Router)** + TanStack Query + Laravel REST — see [full-stack-implementation-master-plan.md](./full-stack-implementation-master-plan.md).  
-- **Realtime:** Soketi / Pusher protocol (Laravel broadcasting), not Supabase Realtime.  
-- **Auth:** Laravel + Sanctum (and first-party password / OAuth flows), not Supabase Auth SDK.  
-- **Integrations:** Laravel controllers + **Horizon jobs** (and signed webhooks), not Supabase Edge Functions or Lovable gateways.
+- **Realtime:** Soketi / Pusher protocol (Laravel broadcasting).  
+- **Auth:** Laravel + Sanctum (and first-party password / OAuth flows).  
+- **Integrations:** Laravel controllers + **Horizon jobs** (and signed webhooks), not third-party BaaS edge functions or Lovable gateways.
 
 Use this blueprint for **product routes, modules, tables, and flows**; use the master plan for **how we build and run** the platform.
 
@@ -52,7 +52,7 @@ Use this blueprint for **product routes, modules, tables, and flows**; use the m
 
 ### Tech Stack (production target)
 
-The **production** platform is implemented on the stack below. The historical **Phase 0** prototype (Vite/React + Supabase-style access) was a **UI + data model** reference only; that stack is **not** the long-term production architecture. See [full-stack-implementation-master-plan.md](./full-stack-implementation-master-plan.md) for the end-to-end build plan, DevOps, scaling, and security.
+The **production** platform is implemented on the stack below. The historical **Phase 0** prototype (Vite/React + direct PostgreSQL client in dev) was a **UI + data model** reference only; that stack is **not** the long-term production architecture. See [full-stack-implementation-master-plan.md](./full-stack-implementation-master-plan.md) for the end-to-end build plan, DevOps, scaling, and security.
 
 - **Frontend:** Next.js 14+ (App Router), TypeScript 5, Tailwind CSS v3, shadcn/ui (Radix)
 - **Server state:** TanStack React Query v5; OpenAPI-aligned API client to Laravel

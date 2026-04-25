@@ -11,14 +11,14 @@
       </section>
 
       <section class="doc-section" id="phase0-vs-prod">
-        <h2>How systems connect — Phase 0 vs production</h2>
+        <h2>How systems connect — Phase 0 reference vs production</h2>
         <div class="table-wrap">
           <table class="data">
-            <thead><tr><th>Layer</th><th>Phase 0 (this repo)</th><th>Production target</th></tr></thead>
+            <thead><tr><th>Layer</th><th>Phase 0 (reference UI)</th><th>Production target</th></tr></thead>
             <tbody>
               <tr><td>UI shell</td><td>Vite + React Router, <code>AppLayout.tsx</code></td><td>Next.js App Router (<a href="/chapters/1">Chapter 1</a>)</td></tr>
-              <tr><td>Auth</td><td>Supabase Auth + <code>useAuth</code></td><td>Laravel Sanctum + 2FA</td></tr>
-              <tr><td>Data</td><td><code>db.from(…)</code> Supabase client</td><td>Laravel API + PostgreSQL</td></tr>
+              <tr><td>Auth</td><td><code>useAuth</code> + client session (reference)</td><td>Laravel Sanctum + 2FA</td></tr>
+              <tr><td>Data</td><td>Typed client → PostgreSQL (reference)</td><td>Laravel API + PostgreSQL + Redis (cache, queues, sessions)</td></tr>
               <tr><td>Subscription</td><td><code>subscriptions</code> + <code>hasFeature(plan, key)</code></td><td>Same keys; enforce on server</td></tr>
               <tr><td>Per-Haus nav</td><td><code>BARBER_NAV</code> … <code>PRODUCTS_NAV</code></td><td>Same idea + <code>GET /me</code> features</td></tr>
             </tbody>
@@ -29,9 +29,9 @@
       <section class="doc-section" id="proto-flow">
         <h2>Phase 0 request flow (conceptual)</h2>
         <div class="diagram-wrap">
-          <svg class="diagram-svg" viewBox="0 0 980 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Phase 0 architecture">
+          <svg class="diagram-svg" viewBox="0 0 980 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Phase 0 reference architecture">
             <defs><marker id="cf" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>
-            <text x="490" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#e8eaef">Prototype: browser → app shell → Supabase</text>
+            <text x="490" y="34" text-anchor="middle" font-size="18" font-weight="700" fill="#e8eaef">Reference: browser → app shell → PostgreSQL</text>
             <text x="490" y="58" text-anchor="middle" font-size="13" fill="#8b95a8">Staff <code>/dashboard</code> … or customer <code>/portal/*</code></text>
             <rect class="box" x="40" y="85" width="130" height="55" rx="10"/><text x="105" y="118" text-anchor="middle" font-size="15" fill="#e8eaef">Browser</text>
             <line x1="170" y1="112" x2="195" y2="112" stroke="#7eb8ff" stroke-width="2" marker-end="url(#cf)"/>
@@ -40,7 +40,8 @@
             <line x1="400" y1="112" x2="430" y2="112" stroke="#7eb8ff" stroke-width="2" marker-end="url(#cf)"/>
             <rect class="box" x="435" y="85" width="160" height="55" rx="10"/><text x="515" y="118" text-anchor="middle" font-size="14" fill="#e8eaef">Pages &amp; hooks</text>
             <line x1="595" y1="112" x2="625" y2="112" stroke="#7eb8ff" stroke-width="2" marker-end="url(#cf)"/>
-            <rect class="box-accent" x="630" y="85" width="150" height="55" rx="10"/><text x="705" y="118" text-anchor="middle" font-size="14" fill="#7eb8ff">Supabase</text>
+            <rect class="box-accent" x="630" y="85" width="150" height="55" rx="10"/><text x="705" y="110" text-anchor="middle" font-size="14" fill="#7eb8ff">PostgreSQL</text>
+            <text x="705" y="128" text-anchor="middle" font-size="10" fill="#8b95a8">data &amp; auth (ref)</text>
             <text x="705" y="210" text-anchor="middle" font-size="12" fill="#6bcf8e">useBusinessCategory (localStorage + terms) · useSubscription → subscriptions</text>
             <text x="490" y="175" text-anchor="middle" font-size="12" fill="#8b95a8">Mobile-only: DashboardPage swaps in MobileDispatchDashboard / MobileSoloProDashboard</text>
             <text x="490" y="200" text-anchor="middle" font-size="12" fill="#8b95a8">Products-only: ProductsDashboard</text>
@@ -144,7 +145,7 @@
 
       <section class="doc-section" id="stack">
         <h2>Production stack (reference diagram)</h2>
-        <p>Target platform: Next + Laravel + Postgres + Redis + Soketi + S3. Phase 0 uses Vite + Supabase. See <a href="/chapters/1">Chapter 1</a>.</p>
+        <p>Target platform: <strong>Next.js</strong> + <strong>Laravel</strong> + <strong>PostgreSQL</strong> + <strong>Redis</strong> + Soketi + S3. Phase 0 is a <strong>reference Vite + React</strong> UI for flows and data shapes only — see <a href="/chapters/1">Chapter 1</a>.</p>
         <div class="diagram-wrap">
           <svg class="diagram-svg" viewBox="0 0 1000 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Production stack">
             <defs><marker id="mk5" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><polygon points="0 0,9 4,0 8" fill="#7eb8ff"/></marker></defs>

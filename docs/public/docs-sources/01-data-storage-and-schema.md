@@ -3,7 +3,7 @@
 **Version:** 1.0 — April 2026  
 **Companion:** [00-architecture-overview.md](./00-architecture-overview.md)  
 
-Column lists below mirror **`src/integrations/supabase/types.ts`** (Phase 0 generated types). Laravel production migrations should **preserve or evolve** these shapes; add **`organization_id`** everywhere it is missing in types but required for tenancy (notably **`branches`** — types show no `organization_id`; production must add it). Add **`users`** fields for 2FA, API keys, and audit as needed.
+Column lists below mirror the **Phase 0 generated / shared TypeScript types** (same domain as the reference UI). Laravel production migrations should **preserve or evolve** these shapes; add **`organization_id`** everywhere it is missing in types but required for tenancy (notably **`branches`** — types show no `organization_id`; production must add it). Add **`users`** fields for 2FA, API keys, and audit as needed.
 
 ---
 

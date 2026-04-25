@@ -4,7 +4,7 @@
 <p><strong>Split documentation (read first):</strong> <a href="/docs-sources/README.md">docs/README.md</a> — <a href="/docs-sources/00-architecture-overview.md">00 overview</a>, <a href="/docs-sources/01-data-storage-and-schema.md">01 data &amp; storage</a>, <a href="/docs-sources/02-backend-api-and-services.md">02 backend &amp; APIs</a>, <a href="/docs-sources/03-frontend-modules-and-ux.md">03 frontend</a>, <a href="/docs-sources/04-navigation-matrix-by-mode-and-role.md">04 nav matrix</a>.</p>
 <hr>
 <h2>Document purpose</h2>
-<p>This document is the <strong>authoritative implementation and operations plan</strong> for building <strong>Haus of Grooming OS</strong> on the <strong>production target stack</strong> (Next.js, Laravel modular monolith, PostgreSQL, Redis, Soketi, object storage, dedicated workers). It explicitly <strong>does not</strong> prescribe Lovable, Supabase client SDKs, Vite SPA-only hosting, or <code>@lovable.dev/*</code> as runtime dependencies for production.</p>
+<p>This document is the <strong>authoritative implementation and operations plan</strong> for building <strong>Haus of Grooming OS</strong> on the <strong>production target stack</strong> (Next.js, Laravel modular monolith, PostgreSQL, Redis, Soketi, object storage, dedicated workers). It explicitly <strong>does not</strong> prescribe Lovable, third-party BaaS client SDKs as the production API, Vite SPA-only hosting, or <code>@lovable.dev/*</code> as runtime dependencies for production.</p>
 <p><strong>Phase 0</strong> work (archived product &amp; data model reference) covers UI flows, route map, subscription feature matrix, multi-mode terminology, and PostgreSQL-oriented entity shapes. Those artifacts inform OpenAPI schemas, Laravel modules, and Next.js routes; they are <strong>not</strong> the final deployment architecture.</p>
 <p>For screen-level product detail, continue to use <a href="/docs-sources/haus-of-grooming-system-blueprint.md">haus-of-grooming-system-blueprint.md</a>. For a snapshot of the <strong>legacy prototype stack</strong> (historical), see <a href="/docs-sources/technical-architecture-current-implementation.md">technical-architecture-current-implementation.md</a>.</p>
 <hr>
@@ -123,7 +123,7 @@
 <td>Lint, test, SAST, build, sign, deploy</td>
 </tr>
 </tbody></table></div>
-<p><strong>Explicitly retired for production:</strong> Lovable Cloud Auth, Supabase JS client as primary API, Vite SPA as sole app shell, demo-only AI gateways tied to Lovable, PostgREST as application server.</p>
+<p><strong>Explicitly retired for production:</strong> Lovable Cloud Auth, any BaaS JS client as the primary API, Vite SPA as sole app shell, demo-only AI gateways tied to Lovable, PostgREST as application server.</p>
 <hr>
 <h2>2. Program roadmap (phased delivery)</h2>
 <div class="diagram-wrap" role="img" aria-label="Phases P0 through P6">
@@ -149,7 +149,7 @@
 </div>
 <h3>Phase 0 — Lock reference model (current repo)</h3>
 <ul>
-<li>Freeze <strong>route map</strong>, <strong>feature keys</strong>, <strong>role names</strong>, and <strong>entity list</strong> from blueprint + <code>src/integrations/supabase/types.ts</code> as <strong>domain checklist</strong>.  </li>
+<li>Freeze <strong>route map</strong>, <strong>feature keys</strong>, <strong>role names</strong>, and <strong>entity list</strong> from blueprint + shared <strong>TypeScript / OpenAPI types</strong> as <strong>domain checklist</strong>.  </li>
 <li>Lock supported business categories from implementation: <code>barber</code>, <code>beauty</code>, <code>spa</code>, <code>nail_bar</code>, <code>clinic</code>, <code>mobile</code>, <code>therapy</code>, <code>solo_pro</code>, <code>products</code> (with <code>both</code> for multi-mode subscription behavior).  </li>
 <li>Capture mode-specific rollout constraints in planning docs: <code>solo_pro</code> (single-operator defaults, minimal branch/HR complexity) and <code>products</code> (retail-first POS + inventory + order workflows).  </li>
 <li>Export <strong>OpenAPI draft</strong> from that checklist (can be manual YAML first).  </li>
@@ -803,12 +803,12 @@
 </ol>
 <hr>
 <h2>Appendix A — Mapping Phase 0 tables to Laravel modules</h2>
-<p>Use <code>src/integrations/supabase/types.ts</code> as a <strong>checklist</strong> for Eloquent models and migrations (<code>bookings</code>, <code>booking_services</code>, <code>transactions</code>, <code>subscriptions</code>, …). Rename or normalize only where Laravel naming conventions (<code>snake_case</code> table, <code>StudlyCase</code> model) require it.</p>
+<p>Use the <strong>shared domain / schema types</strong> (same shapes as the reference UI) as a <strong>checklist</strong> for Eloquent models and migrations (<code>bookings</code>, <code>booking_services</code>, <code>transactions</code>, <code>subscriptions</code>, …). Rename or normalize only where Laravel naming conventions (<code>snake_case</code> table, <code>StudlyCase</code> model) require it.</p>
 <hr>
 <h2>Appendix B — Removal checklist (prototype stack)</h2>
 <p>When decommissioning the prototype:</p>
 <ul>
-<li>Remove <code>@lovable.dev/*</code>, Supabase client as <strong>production</strong> dependency; archive repo or keep as <strong>design reference</strong> only.  </li>
+<li>Remove <code>@lovable.dev/*</code> and any <strong>non-target</strong> BaaS client as a <strong>production</strong> dependency; archive reference material or keep as <strong>design reference</strong> only.  </li>
 <li>Replace any <strong>demo fallback</strong> product behavior with explicit “empty state” UX in Next.js.  </li>
 <li>Move AI features to <strong>first-party</strong> OpenAI/Gemini keys with budget alerts.</li>
 </ul>

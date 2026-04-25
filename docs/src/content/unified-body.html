@@ -41,7 +41,7 @@
     <main id="main">
       <section id="overview">
         <h2>Overview</h2>
-        <p class="lead">Single-page HTML companion to the <code>docs/*.md</code> set. Production target: <strong>Next.js</strong> + <strong>Laravel</strong> + <strong>PostgreSQL</strong> + <strong>Redis</strong> + <strong>Soketi</strong> + <strong>S3</strong>. Phase 0 repo: Vite + Supabase reference UI.</p>
+        <p class="lead">Single-page HTML companion to the <code>docs/*.md</code> set. Production target: <strong>Next.js</strong> + <strong>Laravel</strong> + <strong>PostgreSQL</strong> + <strong>Redis</strong> + <strong>Soketi</strong> + <strong>S3</strong>. Phase 0: Vite + React reference UI for flows and data shapes only.</p>
         <div class="callout"><strong>Confidential.</strong> Pricing figures match <code>src/lib/pricing.ts</code>. Cost bands are illustrative (see technical architecture doc).</div>
       </section>
       <section id="svg-production">
@@ -74,7 +74,7 @@
       </section>
       <section id="prototype">
         <h2>Prototype (Phase 0)</h2>
-        <p>Phase 0 stack: Vite + React Router + Supabase. Reference: <code>AppLayout.tsx</code>, <code>useBusinessCategory.tsx</code>, <code>useSubscription.ts</code>, <code>src/lib/pricing.ts</code>, <code>types.ts</code>.</p>
+        <p>Phase 0 reference: Vite + React Router + PostgreSQL-backed client. Reference modules: <code>AppLayout.tsx</code>, <code>useBusinessCategory.tsx</code>, <code>useSubscription.ts</code>, <code>src/lib/pricing.ts</code>, <code>types.ts</code>.</p>
       </section>
       <section id="doc-00">
         <h2>Doc 00 — System overview</h2>
@@ -525,7 +525,7 @@ components/modes | shared/ · lib/api-client.ts · middleware.ts</pre>
       <section id="doc-master">
         <h2>Full-stack implementation master plan</h2>
         <p class="src"><a href="/docs-sources/full-stack-implementation-master-plan.md">full-stack-implementation-master-plan.md</a> v1.1 — authoritative production/ops plan.</p>
-        <p><strong>Purpose:</strong> Build on Next.js + Laravel + Postgres + Redis + Soketi + S3 + workers; Phase 0 repo is reference only. Retired for prod: Lovable-only auth, Supabase client as primary API, Vite-only shell.</p>
+        <p><strong>Purpose:</strong> Build on Next.js + Laravel + PostgreSQL + Redis + Soketi + S3 + workers; Phase 0 reference UI only. Production does not use third-party BaaS clients or a Vite-only shell as the primary app.</p>
         <h3>§1 Target technology stack</h3>
         <div class="table-scroll"><table><thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead><tbody>
           <tr><td>Web</td><td>Next.js 14+ App Router, TS, Tailwind, shadcn</td><td>SSR/SSG, RSC, client islands</td></tr>
@@ -627,7 +627,7 @@ components/modes | shared/ · lib/api-client.ts · middleware.ts</pre>
           <tr><td>Growth</td><td>~50k–120k</td><td>Low thousands</td></tr>
           <tr><td>Scale-out</td><td>120k+</td><td>Replicas, pooler, workers</td></tr>
         </tbody></table></div>
-        <p>From prototype snapshot doc — drivers: Supabase, SMS, storage, Edge. Production shifts to RDS/Elastache/K8s.</p>
+        <p>From prototype snapshot doc — drivers: managed DB, SMS, storage, serverless edges. Production targets managed PostgreSQL, Redis, and your own API/worker tier (e.g. RDS / ElastiCache / K8s).</p>
       </section>
       <section id="sources">
         <h2>Markdown sources</h2>

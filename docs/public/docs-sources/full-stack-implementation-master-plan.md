@@ -10,7 +10,7 @@
 
 ## Document purpose
 
-This document is the **authoritative implementation and operations plan** for building **Haus of Grooming OS** on the **production target stack** (Next.js, Laravel modular monolith, PostgreSQL, Redis, Soketi, object storage, dedicated workers). It explicitly **does not** prescribe Lovable, Supabase client SDKs, Vite SPA-only hosting, or `@lovable.dev/*` as runtime dependencies for production.
+This document is the **authoritative implementation and operations plan** for building **Haus of Grooming OS** on the **production target stack** (Next.js, Laravel modular monolith, PostgreSQL, Redis, Soketi, object storage, dedicated workers). It explicitly **does not** prescribe Lovable, third-party BaaS client SDKs as the production API, Vite SPA-only hosting, or `@lovable.dev/*` as runtime dependencies for production.
 
 **Phase 0** (archived) product & data model reference work **covers** UI flows, route map, subscription feature matrix, multi-mode terminology, and PostgreSQL-oriented entity shapes. Those artifacts inform OpenAPI schemas, Laravel modules, and Next.js routes; they are **not** the final deployment architecture.
 
@@ -61,7 +61,7 @@ For screen-level product detail, continue to use [haus-of-grooming-system-bluepr
 | **Containers** | **Docker** + **Compose** (MVP) → **Kubernetes** or **ECS** at scale | Same images across envs |
 | **CI/CD** | **GitHub Actions** (or GitLab CI) | Lint, test, SAST, build, sign, deploy |
 
-**Explicitly retired for production:** Lovable Cloud Auth, Supabase JS client as primary API, Vite SPA as sole app shell, demo-only AI gateways tied to Lovable, PostgREST as application server.
+**Explicitly retired for production:** Lovable Cloud Auth, BaaS JS client as primary API, Vite SPA as sole app shell, demo-only AI gateways tied to Lovable, PostgREST as application server.
 
 ---
 
@@ -69,7 +69,7 @@ For screen-level product detail, continue to use [haus-of-grooming-system-bluepr
 
 ### Phase 0 — Lock reference model (current repo)
 
-- Freeze **route map**, **feature keys**, **role names**, and **entity list** from blueprint + `src/integrations/supabase/types.ts` as **domain checklist**.  
+- Freeze **route map**, **feature keys**, **role names**, and **entity list** from blueprint + shared **TypeScript / OpenAPI types** as **domain checklist**.  
 - Lock supported business categories from implementation: `barber`, `beauty`, `spa`, `nail_bar`, `clinic`, `mobile`, `therapy`, `solo_pro`, `products` (with `both` for multi-mode subscription behavior).  
 - Capture mode-specific rollout constraints in planning docs: `solo_pro` (single-operator defaults, minimal branch/HR complexity) and `products` (retail-first POS + inventory + order workflows).  
 - Export **OpenAPI draft** from that checklist (can be manual YAML first).  
@@ -575,7 +575,7 @@ For each vertical slice merging to `main`:
 
 ## Appendix A — Mapping Phase 0 tables to Laravel modules
 
-Use `src/integrations/supabase/types.ts` as a **checklist** for Eloquent models and migrations (`bookings`, `booking_services`, `transactions`, `subscriptions`, …). Rename or normalize only where Laravel naming conventions (`snake_case` table, `StudlyCase` model) require it.
+Use the **shared domain / schema types** (same shapes as the reference UI) as a **checklist** for Eloquent models and migrations (`bookings`, `booking_services`, `transactions`, `subscriptions`, …). Rename or normalize only where Laravel naming conventions (`snake_case` table, `StudlyCase` model) require it.
 
 ---
 
@@ -583,7 +583,7 @@ Use `src/integrations/supabase/types.ts` as a **checklist** for Eloquent models 
 
 When decommissioning the prototype:
 
-- Remove `@lovable.dev/*`, Supabase client as **production** dependency; archive repo or keep as **design reference** only.  
+- Remove `@lovable.dev/*` and any non-target BaaS client as a **production** dependency; archive reference material or keep as **design reference** only.  
 - Replace any **demo fallback** product behavior with explicit “empty state” UX in Next.js.  
 - Move AI features to **first-party** OpenAI/Gemini keys with budget alerts.
 

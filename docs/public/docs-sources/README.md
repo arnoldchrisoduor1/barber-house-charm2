@@ -18,6 +18,6 @@ Read **in this order** for onboarding:
 - [haus-of-grooming-system-blueprint.md](./haus-of-grooming-system-blueprint.md) — screen-by-screen product blueprint.
 - [technical-architecture-current-implementation.md](./technical-architecture-current-implementation.md) — prototype repo snapshot (historical).
 
-Canonical **column definitions** for the relational model are derived from `src/integrations/supabase/types.ts` (Phase 0); production Laravel migrations may add columns (for example `organizations.settings`, `users.two_factor_*`, `branches.organization_id` if enforced globally).
+Canonical **column definitions** for the relational model are derived from the **shared TypeScript / schema types** (Phase 0 reference); production Laravel migrations may add columns (for example `organizations.settings`, `users.two_factor_*`, `branches.organization_id` if enforced globally).
 
 © 2026 Haus of Grooming OS. All rights reserved.

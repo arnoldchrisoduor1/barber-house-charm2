@@ -15,16 +15,16 @@ This file is the **entry point**: product vocabulary, who sees what, how subscri
 
 ### How the systems connect (Phase 0 prototype vs production)
 
-| Layer | Phase 0 (this repo) | Production target (see [master plan](./full-stack-implementation-master-plan.md)) |
+| Layer | Phase 0 (reference UI) | Production target (see [master plan](./full-stack-implementation-master-plan.md)) |
 |--------|----------------------|--------------------------------------------------------------------------------------|
 | UI | Vite + React Router, `AppLayout.tsx` | Next.js App Router |
-| Auth / session | Supabase Auth + `useAuth` | Laravel Sanctum (+ 2FA) |
-| Data | Supabase client (`db.from(…)`) | Laravel API + PostgreSQL |
+| Auth / session | `useAuth` + client session (reference) | Laravel Sanctum (+ 2FA) |
+| Data | Typed client → PostgreSQL (reference) | Laravel API + PostgreSQL + Redis (cache, queues, sessions) |
 | Subscription / features | `useSubscription` → `subscriptions` table; `hasFeature(plan, key)` | Same feature keys; enforce on server |
 | Nav per Haus | `getNavForMode(categories)` in `AppLayout.tsx` | Same idea: mode manifest + `me.features` |
 | Business labels | `useBusinessCategory` → `MODE_TERMS`, `effectiveCategories` | Server-driven `business_type` + i18n |
 
-**Call flow (conceptual):** browser → staff app shell or `/portal/*` → React pages → Supabase (today) or **HTTPS JSON** to Laravel `/api/v1/*` (production). Realtime, M-Pesa webhooks, and calling bridge are specified in [02](./02-backend-api-and-services.md).
+**Call flow (conceptual):** browser → staff app shell or `/portal/*` → React pages → **HTTPS JSON** to Laravel `/api/v1/*` (production: Next.js + Laravel + PostgreSQL + Redis). The Phase 0 reference used a direct-to-DB client for UI exploration only. Realtime, M-Pesa webhooks, and calling bridge are specified in [02](./02-backend-api-and-services.md).
 
 ### Who can access the system
 
