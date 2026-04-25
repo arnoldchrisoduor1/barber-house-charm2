@@ -68,3 +68,28 @@
     .src { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.35rem; }
     .legacy-note { margin: 0 0 1rem; padding: 0.65rem 0.9rem; background: #1a2030; border: 1px solid var(--border); font-size: 0.9rem; color: var(--text); }
     .legacy-note.unified-banner { margin: 0; border-radius: 0; border-left: none; border-right: none; border-top: none; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+
+    /* Injected for SPA + mobile: layout / ToC / tables */
+    @media (max-width: 900px) {
+      body { font-size: 15px; }
+      .site-header h1 { font-size: 0.92rem; line-height: 1.25; }
+      .site-header p { display: none; }
+      .layout { min-height: auto; }
+      main { padding: 0.85rem min(0.9rem, 3.5vw) 2.5rem; max-width: 100%; }
+      nav.toc {
+        max-height: min(45vh, 20rem);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.6rem 0.6rem 1.25rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.78rem;
+      }
+      nav.toc a { min-height: 2.3rem; display: flex; align-items: center; padding: 0.3rem 0.45rem; }
+      .table-scroll { -webkit-overflow-scrolling: touch; }
+      .diagram-svg { max-width: 100% !important; }
+      pre.filetree { font-size: 0.7rem; word-break: break-word; }
+      footer { padding: 1rem; font-size: 0.75rem; }
+    }
+    @media (max-width: 480px) {
+      .site-header { padding: 0.5rem 0.7rem; }
+    }
