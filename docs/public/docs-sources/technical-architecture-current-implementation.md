@@ -5,7 +5,7 @@
 
 > **Production target:** Use the split doc set **[README.md](./README.md)** (overview **00**, data **01**, backend **02**, frontend **03**, nav matrix **04**) and **[full-stack-implementation-master-plan.md](./full-stack-implementation-master-plan.md)** for CI/CD and phases. The blueprint **Tech Stack** in [haus-of-grooming-system-blueprint.md](./haus-of-grooming-system-blueprint.md) matches that target. **This file** remains a factual snapshot of the **prototype** (Vite + Supabase) for historical comparison only.
 
-**Scope:** This document describes the **code and data paths that exist in the `barber-house-charm` repository today** as a **UI and data-model reference implementation**, not the final production stack. The **implemented stack** here is a **single-page application** on **Supabase** (PostgreSQL + Auth + Row Level Security + Edge Functions), not the Laravel / Next.js / Soketi architecture used for the shipped product.
+**Scope:** This document is a **historical snapshot** of the **Phase 0** prototype: **code and data paths** in that UI as a **UI and data-model reference implementation**, not the final production stack. The **implemented stack** here is a **single-page application** on **Supabase** (PostgreSQL + Auth + Row Level Security + Edge Functions), not the Laravel / Next.js / Soketi architecture used for the shipped product.
 
 ---
 
@@ -444,7 +444,7 @@ Strategic gap vs the PDF’s AWS Lightsail table: **Supabase bundles** DB + Auth
 
 | Field | Value |
 |-------|--------|
-| Repository | `barber-house-charm` |
+| Repository (historical) | Phase 0 prototype (Vite + Supabase) — archived |
 | Primary entrypoints | `src/App.tsx`, `src/lib/db.ts`, `src/hooks/useAuth.tsx`, `src/hooks/useSubscription.ts` |
 | Database artifacts | `supabase/migrations/`, `src/integrations/supabase/types.ts` |
 | Edge Functions | `supabase/functions/send-reminders/index.ts` |

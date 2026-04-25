@@ -12,7 +12,7 @@
 
 This document is the **authoritative implementation and operations plan** for building **Haus of Grooming OS** on the **production target stack** (Next.js, Laravel modular monolith, PostgreSQL, Redis, Soketi, object storage, dedicated workers). It explicitly **does not** prescribe Lovable, Supabase client SDKs, Vite SPA-only hosting, or `@lovable.dev/*` as runtime dependencies for production.
 
-The **`barber-house-charm` repository** is treated as **Phase 0 — Product & data model reference**: UI flows, route map, subscription feature matrix, multi-mode terminology, and PostgreSQL-oriented entity shapes. Those artifacts inform OpenAPI schemas, Laravel modules, and Next.js routes; they are **not** the final deployment architecture.
+**Phase 0** (archived) product & data model reference work **covers** UI flows, route map, subscription feature matrix, multi-mode terminology, and PostgreSQL-oriented entity shapes. Those artifacts inform OpenAPI schemas, Laravel modules, and Next.js routes; they are **not** the final deployment architecture.
 
 For screen-level product detail, continue to use [haus-of-grooming-system-blueprint.md](./haus-of-grooming-system-blueprint.md). For a snapshot of the **legacy prototype stack** (historical), see [technical-architecture-current-implementation.md](./technical-architecture-current-implementation.md).
 

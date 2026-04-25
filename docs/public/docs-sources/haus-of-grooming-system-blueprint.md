@@ -52,7 +52,7 @@ Use this blueprint for **product routes, modules, tables, and flows**; use the m
 
 ### Tech Stack (production target)
 
-The **production** platform is implemented on the stack below. The `barber-house-charm` repository historically contained a **prototype UI + data model** (Vite/React + Supabase-style access); that stack is **not** the long-term production architecture. See [full-stack-implementation-master-plan.md](./full-stack-implementation-master-plan.md) for the end-to-end build plan, DevOps, scaling, and security.
+The **production** platform is implemented on the stack below. The historical **Phase 0** prototype (Vite/React + Supabase-style access) was a **UI + data model** reference only; that stack is **not** the long-term production architecture. See [full-stack-implementation-master-plan.md](./full-stack-implementation-master-plan.md) for the end-to-end build plan, DevOps, scaling, and security.
 
 - **Frontend:** Next.js 14+ (App Router), TypeScript 5, Tailwind CSS v3, shadcn/ui (Radix)
 - **Server state:** TanStack React Query v5; OpenAPI-aligned API client to Laravel
