@@ -1,0 +1,27 @@
+---
+description: Design tokens, theming, and visual language
+globs: apps/web/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Design System
+
+Dark-first luxury wellness. Port tokens verbatim from `../barber-house-charm/src/index.css` + `tailwind.config.ts`. Full spec: `plans/10-design-system-tokens.md`. Do not redesign.
+
+## Tokens
+
+- Colors are HSL channel triplets used as `hsl(var(--token))`. Base `--primary: 38 80% 55%` (gold), `--radius: 0.75rem`.
+- Typography: `font-display` = Instrument Serif (hero/display), `font-heading`/`font-body` = Inter, `font-mono` = JetBrains Mono (eyebrow labels). Prefer `next/font`.
+- Use semantic Tailwind colors (`bg-background`, `text-foreground`, `bg-primary`, `border-border`, `bg-card`, `sidebar-*`). Avoid raw hex.
+
+## Per-mode theming
+
+- Theme class on `<html>` per active mode: `theme-beauty|theme-spa|theme-nail|theme-clinic|theme-mobile|theme-therapy|theme-solo|theme-both` (barber = base, no class). Add the missing `theme-products` block.
+- Spa (wellness) = teal `--primary: 170 55% 38%` + retuned background/card. Multi-mode = `theme-both` rose-gold.
+- `.light` class toggles light mode (default is dark). Persist `haus-theme` in localStorage.
+
+## Visual language
+
+- Use the signature utilities: `.glass`, `.glass-strong`, `.mesh-aurora`, `.mesh-ambient`, `.stat-tile`, `.nav-pill`, `.label-eyebrow`, `.text-gradient-gold`, `.text-gradient-aurora`, `.shadow-gold`, `.shadow-glow`.
+- KPI cards use `.stat-tile`; sidebar items use `.nav-pill`; section eyebrows use mono uppercase `.label-eyebrow`.
+- Charts via `ui/chart.tsx` (Recharts). Animations via framer-motion in client components only.

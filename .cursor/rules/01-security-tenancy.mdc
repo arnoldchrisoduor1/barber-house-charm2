@@ -1,0 +1,42 @@
+---
+description: Tenant isolation and security rules — the #1 invariant
+alwaysApply: true
+---
+
+# Tenant Isolation & Security
+
+Supabase RLS is gone. In Go we enforce isolation in TWO independent layers. Both are required.
+
+## 1. Resolve org from membership, never from the body
+
+```go
+// ✅ GOOD — org comes from authenticated membership + validated path param
+orgID := c.Locals("org_id").(uuid.UUID) // set by ResolveOrganization middleware
+
+// ❌ BAD — trusting the client
+var body struct{ OrganizationID uuid.UUID }
+c.BodyParser(&body) // never use this to scope privileged reads/writes
+```
+
+## 2. Every tenant-table query is org-scoped
+
+```go
+// ✅ GOOD
+db.Scopes(tenancy.OrgScope(orgID)).Where("status = ?", status).Find(&bookings)
+
+// ❌ BAD — leaks across tenants
+db.Where("status = ?", status).Find(&bookings)
+```
+
+Rules:
+- Tenant models embed `OrganizationID uuid.UUID gorm:"not null;index"` and a marker method.
+- Raw `db.Find/First/Updates/Delete` on tenant models is **forbidden outside repositories**; repos always apply `OrgScope`.
+- Public booking (`/book/[orgSlug]`) is the only unauthenticated path: scope via a signed org token (JWT `org_id`,`exp`,`nonce`) + Turnstile + rate limit. Never accept raw `organization_id`.
+
+## Other security must-dos
+
+- Re-check entitlement (`RequireFeature`) and role (`RequireRole`) on every protected mutation — client gating is cosmetic. Executive "portal preview" is UI-only.
+- Idempotency-Key (Redis SETNX) on payment + webhook routes. Pesapal IPN: idempotent on `OrderMerchantReference` and **never trust the IPN body** — re-query `GetTransactionStatus` for authoritative status. Server always computes the order amount.
+- Hash passwords with argon2id; tokens in httpOnly cookies; secrets from a manager, never git.
+- Mask phone/PII in non-security logs; `audit_log` is append-only.
+- Every new endpoint ships a test proving org A cannot touch org B data.

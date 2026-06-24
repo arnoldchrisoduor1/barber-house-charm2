@@ -1,0 +1,38 @@
+---
+description: Go + Fiber backend conventions
+globs: apps/api/**/*.go
+alwaysApply: false
+---
+
+# Go + Fiber Backend
+
+Modular monolith. One module per domain under `internal/modules/<name>/` with: `handler.go`, `service.go`, `repository.go`, `model.go`, `dto.go`, `routes.go`, `events.go`.
+
+## Layering (never skip)
+
+- **Handlers** bind + validate + authorize + respond. They never touch GORM.
+- **Services** hold business rules. They call **repository interfaces**, not `*gorm.DB`.
+- **Repositories** own all queries and apply `tenancy.OrgScope`.
+- Cross-module writes go through services + domain events — never another module's repo.
+
+```go
+// handler
+func (h *Handler) Create(c *fiber.Ctx) error {
+    dto, err := validate.Bind[CreateBookingDTO](c)
+    if err != nil { return httpx.Problem(c, 422, err) }
+    b, err := h.svc.Create(c.UserContext(), c.Locals("org_id").(uuid.UUID), dto)
+    if err != nil { return httpx.From(c, err) }
+    return c.Status(201).JSON(b)
+}
+```
+
+## Conventions
+
+- Routes under `/api/v1`, resource style: `/api/v1/organizations/{org}/bookings`.
+- Errors: RFC 7807 `application/problem+json` via `httpx.Problem` — one envelope everywhere.
+- Validate with `go-playground/validator` on DTOs. Never bind straight into GORM models.
+- Always derive `context.Context` (`c.UserContext()`) for DB/Redis/HTTP calls (fasthttp Ctx ≠ net/http).
+- Cursor pagination for high-churn lists; offset only for small admin lists.
+- Lint: `golangci-lint` + `gofumpt`; security: `gosec`, `govulncheck`. Tests: `testify` + `testcontainers-go` against real Postgres.
+- No `panic` for control flow; wrap errors with `fmt.Errorf("...: %w", err)`.
+- Structured JSON logging on every request + external call (see `logging-observability.mdc`). No `fmt.Println`/bare `log` in app code; every request-path log carries `request_id`.

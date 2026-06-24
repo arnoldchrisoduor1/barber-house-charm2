@@ -1,0 +1,52 @@
+---
+description: Logging & observability — structured logs, request tracing, every request visible
+globs: apps/api/**/*.go
+alwaysApply: false
+---
+
+# Logging & Observability (backend-first)
+
+Every request and meaningful event must be observable. Use **structured JSON logs** via `log/slog` (or zerolog). No `fmt.Println` / bare `log.Print` in app code.
+
+## Request logging (every request, in + out)
+
+Fiber middleware logs each request once it completes. Include at minimum:
+
+```jsonc
+{
+  "level": "info", "ts": "...", "msg": "http_request",
+  "request_id": "uuid",        // from requestid middleware, echoed as X-Request-Id
+  "method": "POST", "path": "/api/v1/organizations/{org}/bookings",
+  "status": 201, "latency_ms": 42,
+  "ip": "...", "user_id": "uuid|anon", "org_id": "uuid|none",
+  "bytes": 318
+}
+```
+
+- Mount order: `requestid` → `recover` → request logger → auth → tenancy. Logger reads `request_id`, and `user_id`/`org_id` from locals after auth.
+- Propagate `request_id` into a `context.Context` value; every downstream log line carries it (use a `slog` handler that pulls it from ctx, or a per-request child logger `logger.With("request_id", id)`).
+- Log slow requests (`latency_ms > threshold`) at `warn`.
+
+## Application & message logs
+
+- Pass a context-aware logger into services; log key domain events at `info`: `booking_created`, `payment_ipn_received`, `payout_submitted`, `subscription_changed` — with ids, never full PII.
+- Log all external calls (Pesapal, OpenFloat, Africa's Talking, Meta, Google, S3) at `info` on send and `info`/`error` on response, with provider, endpoint, status, latency, and our `merchant_reference`/correlation id. **Redact** secrets, tokens, full phone numbers, card data.
+- Errors logged once, at the boundary that handles them, with `slog.Error` + wrapped `err` (`%w`). Don't log-and-return the same error at every layer (no duplicate noise).
+- Panics caught by `recover` middleware → logged at `error` with stack + request_id, return 500 problem-json.
+
+## Levels & config
+
+- Levels: `debug` (local only), `info` (default), `warn`, `error`. Level from env (`LOG_LEVEL`); `debug` never in prod.
+- Output JSON to stdout (Docker captures it). Local dev may use a pretty console handler.
+- Queue workers (asynq) log task start/finish/fail with `task_type`, `task_id`, attempt, latency.
+
+## Tracing & metrics (wire early, expand later)
+
+- **OpenTelemetry** traces: span per HTTP request + per external call + per DB query group; `X-Request-Id` ↔ trace correlation.
+- **Prometheus** metrics: request rate, latency p95/p99, error rate by route, queue depth, job latency, DB pool in-use, Redis ops, payout success/fail counters.
+- `/health` (DB + Redis ping) and `/metrics` endpoints; `/metrics` not publicly exposed.
+
+## Hard rules
+
+- Never log secrets, raw tokens, passwords, full PANs, or unmasked phone/email in non-security logs.
+- Every log line in a request path carries `request_id`. If you can't correlate it, fix the logger, don't drop the field.

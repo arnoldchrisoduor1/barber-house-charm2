@@ -1,0 +1,29 @@
+# Dependencies & build output
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+.pnpm-store
+
+# Git / IDE
+.git
+.cursor
+**/.DS_Store
+
+# Docs & plans (not needed in images)
+docs
+plans
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Go binaries
+apps/api/bin
+**/*.exe
+**/*.test
+
+# Large / irrelevant
+**/*.md
+!README.md

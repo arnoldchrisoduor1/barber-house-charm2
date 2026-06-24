@@ -1,0 +1,45 @@
+---
+description: Web app best practices — PWA, performance, caching, accessibility
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Web App Best Practices
+
+Apply to all of `apps/web`. Goal: fast, resilient, installable, accessible.
+
+## PWA & offline
+
+- Ship a web app manifest + installable icons; theme-color matches active mode theme.
+- Service worker (e.g. `@serwist/next`): precache the app shell + static assets; runtime cache API GETs with **stale-while-revalidate**, network-first for mutations.
+- Offline fallback page; queue write actions when offline (Background Sync) — only for safe, idempotent ops. Mobile mode (field staff) benefits most.
+- Never cache authenticated PII responses in the SW without scoping + short TTL.
+
+## Data loading & pagination
+
+- **Always paginate lists** — cursor-based for high-churn (`bookings`, `notifications`), offset for small admin tables. No unbounded `find all`.
+- Infinite scroll via `useInfiniteQuery`; use `placeholderData`/`keepPreviousData` to avoid flicker on page change.
+- Prefetch likely-next data (hover/next page) where it improves perceived speed.
+
+## Lazy loading & code splitting
+
+- Route-level: `next/dynamic` for heavy widgets (charts, calendar, maps, QR scanner, command palette). `ssr: false` for browser-only libs (`html5-qrcode`, maps).
+- `next/image` for all images (responsive `sizes`, lazy by default, blur placeholder). Store original + thumbnail; lists request thumb.
+- `next/font` (no FOUT). Defer non-critical third-party scripts with `next/script` `strategy="lazyOnload"`.
+
+## Caching
+
+- TanStack Query keys `['org', orgId, entity, params]`; stale times per `plans/02`/`docs`. Invalidate on mutation success; patch on WS event.
+- RSC `fetch` with `next: { revalidate }` for semi-static (public booking branding). Immutable cache for `/_next/static`.
+- Dashboard `noindex`; marketing/discover use ISR + metadata.
+
+## Performance budgets
+
+- Core Web Vitals targets: LCP < 2.5s, INP < 200ms, CLS < 0.1. Reserve space for async content (skeletons sized to final layout) to avoid layout shift.
+- Memoize expensive renders; stable callback/object refs to prevent re-renders. Virtualize long lists/tables.
+
+## Accessibility & resilience
+
+- Keyboard-navigable, focus-visible, ARIA on interactive components (shadcn/Radix already help). Color contrast AA across all theme classes.
+- Every async surface has loading / error / **empty** states (no silent demo fallback). Wrap route segments in error boundaries with retry.
+- Forms: `react-hook-form` + `zod`; inline field errors mirror the server's RFC 7807 response.

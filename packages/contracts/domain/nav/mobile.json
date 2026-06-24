@@ -1,0 +1,525 @@
+{
+  "mode": "mobile",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Dispatch Centre",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Service Areas",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Revenue Forecast",
+      "path": "/revenue-forecast",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Dispatch Board",
+      "path": "/dashboard",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Today's Routes",
+      "path": "/schedule",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Home Visits",
+      "path": "/bookings",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MapPin",
+      "label": "Coverage Zones",
+      "path": "/coverage-zones",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Operations",
+      "path": "/field-operations",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Team Management",
+      "path": "/staff",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Clients",
+      "path": "/clients",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessageSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Dispatch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Mobile Hub",
+      "path": "/dashboard",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Visits",
+      "path": "/bookings",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "My Schedule",
+      "path": "/schedule",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Ops",
+      "path": "/field-operations",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "My Clients",
+      "path": "/clients",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "MapPin",
+      "label": "My Zones",
+      "path": "/coverage-zones",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "My Reviews",
+      "path": "/reviews",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Camera",
+      "label": "My Portfolio",
+      "path": "/gallery",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "MessageSquare",
+      "label": "WhatsApp",
+      "path": "/whatsapp",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ],
+      "requiredFeature": "sms_reminders"
+    },
+    {
+      "icon": "Crown",
+      "label": "Client Loyalty",
+      "path": "/loyalty",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Repeat",
+      "label": "Packages",
+      "path": "/packages",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Receipt",
+      "label": "My Tips",
+      "path": "/tips",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "Clock In/Out",
+      "path": "/qr-clock",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "MessageSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "My Hub",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Car",
+      "label": "Mobile Services",
+      "path": "/services",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Mobile Pros",
+      "path": "/staff",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Clients",
+      "path": "/clients",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "MapPin",
+      "label": "Coverage Zones",
+      "path": "/coverage-zones",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Repeat",
+      "label": "Packages & Gifts",
+      "path": "/packages",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "Retail Products",
+      "path": "/retail-products",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Inventory & Kit",
+      "path": "/inventory",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "CreditCard",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Receipt",
+      "label": "Tips",
+      "path": "/tips",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Commissions",
+      "path": "/commissions",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Payroll",
+      "path": "/payroll",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Gift",
+      "label": "Gift Cards",
+      "path": "/gift-cards",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Crown",
+      "label": "Loyalty",
+      "path": "/loyalty",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CreditCard",
+      "label": "Referrals",
+      "path": "/referrals",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "Megaphone",
+      "label": "Promotions",
+      "path": "/promotions",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Target",
+      "label": "Marketing",
+      "path": "/marketing",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "MessageSquare",
+      "label": "WhatsApp Blast",
+      "path": "/whatsapp",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "sms_reminders"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

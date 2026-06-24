@@ -1,0 +1,34 @@
+---
+description: Next.js frontend conventions (App Router)
+globs: apps/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Next.js Frontend
+
+Port of the Vite prototype (`../barber-house-charm`). Keep design + domain logic; swap router + data layer.
+
+## Structure
+
+- Route groups: `(marketing)`, `(public)` (book + shop), `(auth)`, `(portal)`, `(dashboard)`. `onboarding` + `select-plan` are post-login, no shell.
+- Server Components for read-mostly aggregation pages (parallel server fetch).
+- Client Components only for: calendars, drag-drop, POS keypad, QR scanner, chat, maps, command palette, framer-motion.
+
+## Data
+
+- All data via the typed client in `lib/api-client.ts` (generated from `packages/contracts`). No direct DB, no `db.from(...)`.
+- TanStack Query with keys `['org', orgId, entity, params]`. Org id from `GET /me` (short stale time).
+- Realtime: subscribe to the WS hub, then `setQueryData` patch or targeted `invalidateQueries`.
+- No Server Action that re-implements a business rule; at most a thin BFF proxy to Go with Zod.
+
+## Domain logic comes from contracts
+
+- Nav, mode terms, feature→plan map, pricing read from `packages/contracts/domain/*.json`. Do NOT hardcode `BARBER_NAV`-style arrays in components.
+- Sidebar renders from a manifest filtered by `{mode, role, features}`. Multi-mode = merged union, deduped by `section:path` (not "fall back to barber").
+- Feature gating in UI is cosmetic; never assume it protects data.
+
+## Components
+
+- Thin pages: page = fetch + layout; logic in `components/<feature>/` + hooks.
+- Use the shared `<DataTable>` (columns/data/pagination/sort/filter) — don't re-roll `ui/table.tsx` per page.
+- Use shadcn primitives from `components/ui`. Provide loading/error/**empty** states (no silent demo fallback).

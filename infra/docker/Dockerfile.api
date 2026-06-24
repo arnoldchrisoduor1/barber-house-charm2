@@ -1,0 +1,28 @@
+FROM golang:1.25-alpine AS builder
+WORKDIR /src
+
+RUN apk add --no-cache git
+
+COPY go.work go.work.sum ./
+COPY apps/api/go.mod apps/api/go.sum ./apps/api/
+
+WORKDIR /src/apps/api
+RUN go mod download
+
+COPY apps/api/ ./
+COPY infra/migrations /src/infra/migrations
+
+RUN CGO_ENABLED=0 go build -o /app/api ./cmd/api
+RUN CGO_ENABLED=0 go build -o /app/worker ./cmd/worker
+RUN CGO_ENABLED=0 go build -o /app/migrate ./cmd/migrate
+RUN CGO_ENABLED=0 go build -o /app/seed ./cmd/seed
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+
+COPY --from=builder /app/api /app/worker /app/migrate /app/seed ./
+COPY infra/migrations /app/migrations
+
+EXPOSE 8080
+CMD ["/app/api"]

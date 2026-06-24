@@ -1,0 +1,392 @@
+{
+  "mode": "nail_bar",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Nail Bar Dashboard",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Locations",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Nail Tech Scorecards",
+      "path": "/scorecards",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Station Dashboard",
+      "path": "/dashboard",
+      "section": "Nail Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Today's Schedule",
+      "path": "/schedule",
+      "section": "Nail Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Appointments",
+      "path": "/bookings",
+      "section": "Nail Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Walk-in Queue",
+      "path": "/queue",
+      "section": "Nail Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Nail Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Appointments",
+      "path": "/bookings",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Client Check-in",
+      "path": "/clients",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Queue",
+      "path": "/queue",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Dashboard",
+      "path": "/dashboard",
+      "section": "My Station",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Appointments",
+      "path": "/bookings",
+      "section": "My Station",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "My Reviews",
+      "path": "/reviews",
+      "section": "My Station",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Station",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Sparkles",
+      "label": "Nail Services",
+      "path": "/services",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Nail Tech Directory",
+      "path": "/staff",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Clients",
+      "path": "/clients",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Crown",
+      "label": "Loyalty",
+      "path": "/loyalty",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Repeat",
+      "label": "Packages",
+      "path": "/packages",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Gift",
+      "label": "Gift Cards",
+      "path": "/gift-cards",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Camera",
+      "label": "Nail Art Gallery",
+      "path": "/gallery",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "senior_barber"
+      ]
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Allergy Forms",
+      "path": "/consent-forms",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Coins",
+      "label": "Tips",
+      "path": "/tips",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingBag",
+      "label": "Retail Products",
+      "path": "/retail-products",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Operations",
+      "path": "/field-operations",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessagesSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "Operations"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

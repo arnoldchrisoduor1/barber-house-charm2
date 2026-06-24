@@ -1,0 +1,11 @@
+{
+  "name": "Haus of Wellness",
+  "short_name": "Haus",
+  "description": "Multi-tenant SaaS for grooming, beauty, wellness, and retail",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111318",
+  "theme_color": "#d4a017",
+  "orientation": "portrait-primary",
+  "icons": []
+}

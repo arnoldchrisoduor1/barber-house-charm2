@@ -1,0 +1,347 @@
+{
+  "mode": "therapy",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Practice Dashboard",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Locations",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Therapist Scorecards",
+      "path": "/scorecards",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Practice Dashboard",
+      "path": "/dashboard",
+      "section": "Practice",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Session Schedule",
+      "path": "/schedule",
+      "section": "Practice",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Sessions",
+      "path": "/bookings",
+      "section": "Practice",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Practice",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Dashboard",
+      "path": "/dashboard",
+      "section": "My Sessions",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Sessions",
+      "path": "/bookings",
+      "section": "My Sessions",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "My Schedule",
+      "path": "/schedule",
+      "section": "My Sessions",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "My Reviews",
+      "path": "/reviews",
+      "section": "My Sessions",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Sessions",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Brain",
+      "label": "Therapy Sessions",
+      "path": "/services",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Therapist Directory",
+      "path": "/staff",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Clients",
+      "path": "/clients",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "FileText",
+      "label": "Session Notes",
+      "path": "/session-notes",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "senior_barber"
+      ]
+    },
+    {
+      "icon": "TrendingUp",
+      "label": "Client Progress",
+      "path": "/progress-tracking",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Intake & Consent",
+      "path": "/consent-forms",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Crown",
+      "label": "Client Retention",
+      "path": "/loyalty",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Repeat",
+      "label": "Session Packages",
+      "path": "/packages",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CreditCard",
+      "label": "Referrals",
+      "path": "/referrals",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Session Billing",
+      "path": "/pos",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "TrendingUp",
+      "label": "Revenue Forecast",
+      "path": "/revenue-forecast",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Operations",
+      "path": "/field-operations",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessagesSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "Operations"
+    },
+    {
+      "icon": "Armchair",
+      "label": "Room Rental",
+      "path": "/seat-rental",
+      "section": "System",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "multi_branch"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

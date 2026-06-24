@@ -1,0 +1,423 @@
+{
+  "mode": "clinic",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Clinic Dashboard",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Clinic Locations",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Practitioner Scorecards",
+      "path": "/scorecards",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Clinic Dashboard",
+      "path": "/dashboard",
+      "section": "Clinic Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Consultation Schedule",
+      "path": "/schedule",
+      "section": "Clinic Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Consultations",
+      "path": "/bookings",
+      "section": "Clinic Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Clinic Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Consultations",
+      "path": "/bookings",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Patient Check-in",
+      "path": "/clients",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Schedule",
+      "path": "/schedule",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "Billing",
+      "path": "/pos",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Dashboard",
+      "path": "/dashboard",
+      "section": "My Practice",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Consultations",
+      "path": "/bookings",
+      "section": "My Practice",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "My Schedule",
+      "path": "/schedule",
+      "section": "My Practice",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "My Reviews",
+      "path": "/reviews",
+      "section": "My Practice",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Practice",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Stethoscope",
+      "label": "Procedures & Treatments",
+      "path": "/services",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Practitioner Directory",
+      "path": "/staff",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Patients",
+      "path": "/clients",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "FileText",
+      "label": "Patient Intake",
+      "path": "/patient-intake",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Consent & Liability",
+      "path": "/consent-forms",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Aftercare",
+      "path": "/aftercare",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "Billing",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Inventory",
+      "path": "/inventory",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Truck",
+      "label": "Suppliers",
+      "path": "/suppliers",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Repeat",
+      "label": "Treatment Packages",
+      "path": "/packages",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "Patient Reviews",
+      "path": "/reviews",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Camera",
+      "label": "Before & After",
+      "path": "/gallery",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CreditCard",
+      "label": "Referrals",
+      "path": "/referrals",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "Megaphone",
+      "label": "Marketing",
+      "path": "/marketing",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "TrendingUp",
+      "label": "Revenue Forecast",
+      "path": "/revenue-forecast",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Operations",
+      "path": "/field-operations",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessagesSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "Operations"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

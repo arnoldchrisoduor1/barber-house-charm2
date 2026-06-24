@@ -1,0 +1,11 @@
+{
+  email demo@haus.local
+}
+
+*.lvh.me {
+  reverse_proxy web:3000
+}
+
+:8080 {
+  reverse_proxy api:8080
+}

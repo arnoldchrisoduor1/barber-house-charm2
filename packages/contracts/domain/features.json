@@ -1,0 +1,33 @@
+{
+  "planHierarchy": ["solo_pro", "starter", "professional", "enterprise"],
+  "features": [
+    { "key": "online_booking", "label": "Online Booking", "description": "Public booking widget and online appointments", "category": "core", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" },
+    { "key": "client_management", "label": "Client Management", "description": "CRM and client profiles", "category": "core", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" },
+    { "key": "basic_reports", "label": "Basic Reports", "description": "Standard analytics and reports", "category": "core", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" },
+    { "key": "email_support", "label": "Email Support", "description": "Email support channel", "category": "core", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" },
+    { "key": "pos_payments", "label": "POS & Payments", "description": "Point of sale and Pesapal checkout", "category": "sales", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "inventory_tracking", "label": "Inventory Tracking", "description": "Stock, consumption, suppliers", "category": "sales", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "inventory", "label": "Inventory", "description": "Alias for inventory_tracking", "category": "sales", "minPlan": "professional", "default": false, "dependsOn": ["inventory_tracking"], "status": "deprecated" },
+    { "key": "sms_reminders", "label": "SMS & WhatsApp Reminders", "description": "Automated reminders via SMS/WhatsApp", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "promotions_referrals", "label": "Promotions & Referrals", "description": "Promo codes and referral program", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "promotions", "label": "Promotions", "description": "Promo campaigns", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": ["promotions_referrals"], "status": "ga" },
+    { "key": "referrals", "label": "Referrals", "description": "Referral tracking", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": ["promotions_referrals"], "status": "ga" },
+    { "key": "priority_support", "label": "Priority Support", "description": "Priority support SLA", "category": "core", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "multi_branch", "label": "Multi-Branch", "description": "Multiple locations and branches", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "advanced_analytics", "label": "Advanced Analytics", "description": "Scorecards, call centre, deep analytics", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "custom_branding", "label": "Custom Branding", "description": "White-label branding", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "api_access", "label": "API Access", "description": "Enterprise API keys", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "staff_commissions_payroll", "label": "Commissions & Payroll", "description": "Staff commissions and payroll exports", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "staff_commissions", "label": "Staff Commissions", "description": "Commission reports", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": ["staff_commissions_payroll"], "status": "ga" },
+    { "key": "payroll", "label": "Payroll", "description": "Payroll and payslips", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": ["staff_commissions_payroll"], "status": "ga" },
+    { "key": "bookings", "label": "Bookings Module", "description": "Full booking and scheduling", "category": "core", "minPlan": "starter", "default": true, "dependsOn": ["online_booking"], "status": "ga" },
+    { "key": "queue", "label": "Walk-in Queue", "description": "Live walk-in queue board", "category": "operations", "minPlan": "starter", "default": true, "dependsOn": ["bookings"], "status": "ga" },
+    { "key": "loyalty", "label": "Loyalty Program", "description": "Points and rewards", "category": "growth", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" },
+    { "key": "crm", "label": "CRM", "description": "Customer relationship management", "category": "core", "minPlan": "starter", "default": true, "dependsOn": ["client_management"], "status": "ga" },
+    { "key": "coverage_zones", "label": "Coverage Zones", "description": "Mobile service areas and geocoding", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "clinical", "label": "Clinical Module", "description": "Patient intake, aftercare, consent", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "therapy_notes", "label": "Therapy Notes", "description": "Session notes and progress tracking", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "shop_orders", "label": "Shop Orders", "description": "Online product orders", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": ["inventory_tracking"], "status": "ga" },
+    { "key": "platform_admin", "label": "Platform Admin", "description": "Internal platform console", "category": "platform", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "beta" }
+  ]
+}

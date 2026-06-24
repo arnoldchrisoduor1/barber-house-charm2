@@ -1,0 +1,435 @@
+{
+  "mode": "spa",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Wellness Dashboard",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Locations",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Wallet",
+      "label": "Commissions",
+      "path": "/commissions",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "staff_commissions_payroll"
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Therapist Scorecards",
+      "path": "/scorecards",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Spa Dashboard",
+      "path": "/dashboard",
+      "section": "Spa Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Session Schedule",
+      "path": "/schedule",
+      "section": "Spa Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Sessions",
+      "path": "/bookings",
+      "section": "Spa Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Spa Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Sessions",
+      "path": "/bookings",
+      "section": "Front Desk",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Guest Check-in",
+      "path": "/clients",
+      "section": "Front Desk",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Schedule",
+      "path": "/schedule",
+      "section": "Front Desk",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Front Desk",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Front Desk",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Dashboard",
+      "path": "/dashboard",
+      "section": "My Room",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Sessions",
+      "path": "/bookings",
+      "section": "My Room",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "My Schedule",
+      "path": "/schedule",
+      "section": "My Room",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "My Reviews",
+      "path": "/reviews",
+      "section": "My Room",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Room",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Sparkles",
+      "label": "Treatments & Services",
+      "path": "/services",
+      "section": "Treatments",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Therapist Directory",
+      "path": "/staff",
+      "section": "Treatments",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Guests",
+      "path": "/clients",
+      "section": "Treatments",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Crown",
+      "label": "Loyalty",
+      "path": "/loyalty",
+      "section": "Guest Experience",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Repeat",
+      "label": "Packages",
+      "path": "/packages",
+      "section": "Guest Experience",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Gift",
+      "label": "Gift Cards",
+      "path": "/gift-cards",
+      "section": "Guest Experience",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Guest Experience",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Camera",
+      "label": "Ambience Gallery",
+      "path": "/gallery",
+      "section": "Guest Experience",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Consent & Allergies",
+      "path": "/consent-forms",
+      "section": "Guest Experience",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Coins",
+      "label": "Tips",
+      "path": "/tips",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingBag",
+      "label": "Retail Products",
+      "path": "/retail-products",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "TrendingUp",
+      "label": "Revenue Forecast",
+      "path": "/revenue-forecast",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Operations",
+      "path": "/field-operations",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessagesSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "Operations"
+    },
+    {
+      "icon": "Paintbrush",
+      "label": "Branding",
+      "path": "/branding",
+      "section": "System",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "custom_branding"
+    },
+    {
+      "icon": "Armchair",
+      "label": "Room Rental",
+      "path": "/seat-rental",
+      "section": "System",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "multi_branch"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

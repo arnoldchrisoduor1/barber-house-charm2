@@ -1,0 +1,22 @@
+{
+  "name": "@haus/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./domain/*": "./domain/*",
+    "./openapi": "./openapi/openapi.yaml"
+  },
+  "scripts": {
+    "build": "tsc",
+    "generate": "openapi-typescript openapi/openapi.yaml -o src/api-types.ts && tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.8.0",
+    "typescript": "^5.8.3"
+  }
+}

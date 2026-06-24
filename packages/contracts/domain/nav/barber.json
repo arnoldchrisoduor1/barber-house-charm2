@@ -1,0 +1,465 @@
+{
+  "mode": "barber",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Executive Dashboard",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Branch Overview",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Wallet",
+      "label": "Commissions",
+      "path": "/commissions",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "staff_commissions_payroll"
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Payroll & Payslips",
+      "path": "/payroll",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "staff_commissions_payroll"
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Barber Scorecards",
+      "path": "/scorecards",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Branch Dashboard",
+      "path": "/dashboard",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Today's Schedule",
+      "path": "/schedule",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CheckSquare",
+      "label": "Barber Attendance",
+      "path": "/staff",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Bookings",
+      "path": "/bookings",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Waitlist",
+      "path": "/waitlist",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Phone",
+      "label": "Walk-in Queue",
+      "path": "/queue",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "Live Bookings",
+      "path": "/bookings",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Client Check-in",
+      "path": "/clients",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Queue Manager",
+      "path": "/queue",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "Schedule",
+      "path": "/schedule",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Clock Mode",
+      "path": "/qr-clock",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Dashboard",
+      "path": "/dashboard",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Bookings",
+      "path": "/bookings",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "My Schedule",
+      "path": "/schedule",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Clock In",
+      "path": "/qr-clock",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "My Reviews",
+      "path": "/reviews",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "My Clients",
+      "path": "/clients",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Scissors",
+      "label": "Barbershop Services",
+      "path": "/services",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Barber Directory",
+      "path": "/staff",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Clients",
+      "path": "/clients",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Shield",
+      "label": "Client Ownership",
+      "path": "/client-ownership",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Megaphone",
+      "label": "Marketing",
+      "path": "/marketing",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Coins",
+      "label": "Tips",
+      "path": "/tips",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingBag",
+      "label": "Retail Products",
+      "path": "/retail-products",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "TrendingUp",
+      "label": "Revenue Forecast",
+      "path": "/revenue-forecast",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Radio",
+      "label": "Field Operations",
+      "path": "/field-operations",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessagesSquare",
+      "label": "Staff Chat",
+      "path": "/staff-chat",
+      "section": "Operations"
+    },
+    {
+      "icon": "Paintbrush",
+      "label": "Branding",
+      "path": "/branding",
+      "section": "System",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "custom_branding"
+    },
+    {
+      "icon": "Armchair",
+      "label": "Chair Rental",
+      "path": "/seat-rental",
+      "section": "System",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "multi_branch"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

@@ -1,0 +1,562 @@
+{
+  "mode": "products",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "Store Dashboard",
+      "path": "/dashboard",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Building2",
+      "label": "Store Locations",
+      "path": "/branches",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "BarChart3",
+      "label": "Reports & Analytics",
+      "path": "/reports",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Wallet",
+      "label": "Commissions",
+      "path": "/commissions",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "staff_commissions_payroll"
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Payroll",
+      "path": "/payroll",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "staff_commissions_payroll"
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "TrendingUp",
+      "label": "Revenue Forecast",
+      "path": "/revenue-forecast",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Store Dashboard",
+      "path": "/dashboard",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS / Till",
+      "path": "/pos",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Stock on Hand",
+      "path": "/inventory",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Online Orders",
+      "path": "/shop-orders",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "CheckSquare",
+      "label": "Staff Attendance",
+      "path": "/staff",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Attendance",
+      "path": "/qr-attendance",
+      "section": "Store Floor",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Cashier Dashboard",
+      "path": "/dashboard",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS / Till",
+      "path": "/pos",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Customer Lookup",
+      "path": "/clients",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Online Orders",
+      "path": "/shop-orders",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Stock Lookup",
+      "path": "/inventory",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Clock Mode",
+      "path": "/qr-clock",
+      "section": "Till",
+      "roles": [
+        "receptionist"
+      ]
+    },
+    {
+      "icon": "LayoutDashboard",
+      "label": "Sales Floor Hub",
+      "path": "/dashboard",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "Ring Up Sale",
+      "path": "/pos",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "My Customers",
+      "path": "/clients",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Stock Lookup",
+      "path": "/inventory",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "ShoppingBag",
+      "label": "Product Catalogue",
+      "path": "/retail-products",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "QrCode",
+      "label": "QR Clock In",
+      "path": "/qr-clock",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "Sales Floor",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "ShoppingBag",
+      "label": "Product Catalogue",
+      "path": "/retail-products",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Inventory & Stock",
+      "path": "/inventory",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Package",
+      "label": "Consumption",
+      "path": "/consumption",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Truck",
+      "label": "Suppliers",
+      "path": "/suppliers",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Lock",
+      "label": "Price Lock",
+      "path": "/price-lock",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "UserCircle",
+      "label": "Staff Directory",
+      "path": "/staff",
+      "section": "Team",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "Customers",
+      "path": "/clients",
+      "section": "Team",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS / Till",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Payments Demo",
+      "path": "/payments-demo",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Online Orders",
+      "path": "/shop-orders",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Reconciliation",
+      "path": "/reconciliation",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Crown",
+      "label": "Loyalty",
+      "path": "/loyalty",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Repeat",
+      "label": "Bundles & Kits",
+      "path": "/packages",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Gift",
+      "label": "Gift Cards",
+      "path": "/gift-cards",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Tag",
+      "label": "Promotions",
+      "path": "/promotions",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "CreditCard",
+      "label": "Referrals",
+      "path": "/referrals",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessageSquare",
+      "label": "WhatsApp Blast",
+      "path": "/whatsapp",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "sms_reminders"
+    },
+    {
+      "icon": "Megaphone",
+      "label": "Marketing",
+      "path": "/marketing",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Camera",
+      "label": "Product Gallery",
+      "path": "/gallery",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "MessagesSquare",
+      "label": "Team Chat",
+      "path": "/staff-chat",
+      "section": "Operations"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Haus Connect",
+      "path": "/call-centre",
+      "section": "Operations",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Paintbrush",
+      "label": "Branding",
+      "path": "/branding",
+      "section": "System",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "custom_branding"
+    },
+    {
+      "icon": "Bell",
+      "label": "Notifications",
+      "path": "/notifications",
+      "section": "System"
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

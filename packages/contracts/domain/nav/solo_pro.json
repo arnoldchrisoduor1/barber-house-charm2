@@ -1,0 +1,108 @@
+{
+  "mode": "solo_pro",
+  "items": [
+    {
+      "icon": "LayoutDashboard",
+      "label": "My Dashboard",
+      "path": "/dashboard",
+      "section": "My Workspace",
+      "roles": [
+        "ceo",
+        "director",
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Calendar",
+      "label": "My Bookings",
+      "path": "/bookings",
+      "section": "My Workspace",
+      "roles": [
+        "ceo",
+        "director",
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "CalendarDays",
+      "label": "My Schedule",
+      "path": "/schedule",
+      "section": "My Workspace",
+      "roles": [
+        "ceo",
+        "director",
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Users",
+      "label": "My Clients",
+      "path": "/clients",
+      "section": "My Workspace",
+      "roles": [
+        "ceo",
+        "director",
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "Sparkles",
+      "label": "My Services",
+      "path": "/services",
+      "section": "My Workspace",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "DollarSign",
+      "label": "My Earnings",
+      "path": "/my-earnings",
+      "section": "My Workspace",
+      "roles": [
+        "ceo",
+        "director",
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Crown",
+      "label": "Loyalty",
+      "path": "/loyalty",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ]
+    },
+    {
+      "icon": "Settings",
+      "label": "Settings",
+      "path": "/settings",
+      "section": "System"
+    },
+    {
+      "icon": "HeadphonesIcon",
+      "label": "Support",
+      "path": "/support",
+      "section": "System"
+    }
+  ]
+}

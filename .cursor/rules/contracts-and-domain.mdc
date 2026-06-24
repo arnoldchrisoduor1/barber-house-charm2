@@ -1,0 +1,30 @@
+---
+description: Shared contracts (OpenAPI) and domain data conventions
+globs: packages/contracts/**/*
+alwaysApply: false
+---
+
+# Contracts & Shared Domain
+
+`packages/contracts` is the single source of truth for the HTTP surface and cross-app domain constants. Both `apps/web` and `apps/api` consume it; they must never drift.
+
+## OpenAPI
+
+- `openapi/openapi.yaml` is authoritative for routes, params, request/response shapes, error envelope (RFC 7807).
+- Update the spec FIRST, then regenerate the TS client (`ts/`), then implement Go handlers to match.
+- Versioned under `/api/v1`; breaking changes ship as `/api/v2` with overlap.
+
+## Domain JSON (`domain/`)
+
+Single source for what the prototype hardcoded in components:
+
+- `mode-terms.json` — ported from `MODE_TERMS` (9 modes + mixed). Staff/client/booking/station labels per mode.
+- `nav/*.json` — nav manifest keyed by `{mode, role}`; items: `{ path, label, section, roles[], requiredFeature? }`.
+- `features.json` — the ONE feature registry (entries: `key,label,description,category,minPlan,default,dependsOn,status`). Plan order: `solo_pro < starter < professional < enterprise`. See `feature-flags.mdc`. Adding a feature = add an entry (defaults off); never hardcode entitlement in code.
+- `pricing.json` — `BASE_MONTHLY_KES`, billing cycles + discounts, currency table.
+
+## Rules
+
+- Web reads these for rendering (nav, terms, pricing display). Go embeds the same JSON for authoritative checks (entitlement, charge amounts).
+- Never duplicate these constants inside a component or a Go module — import from contracts.
+- Changing a feature key, plan, price, or nav item is a contracts change reviewed once, consumed everywhere.

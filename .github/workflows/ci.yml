@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --prefix packages/contracts
+      - run: npm run generate --prefix packages/contracts
+      - run: |
+          diff -q packages/contracts/domain/features.json apps/api/contracts/domain/features.json || (echo "features.json out of sync" && exit 1)
+
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: haus
+          POSTGRES_PASSWORD: haus
+          POSTGRES_DB: haus
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - run: go build ./...
+        working-directory: apps/api
+      - run: go test ./...
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgres://haus:haus@localhost:5432/haus?sslmode=disable
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install --prefix packages/contracts && npm run generate --prefix packages/contracts
+      - run: npm install --prefix apps/web
+      - run: npm run build --prefix apps/web

@@ -1,0 +1,14 @@
+{
+  "mode": "mixed",
+  "mergeStrategy": "union_dedupe_by_section_path",
+  "sourceModes": [
+    "barber",
+    "beauty",
+    "spa",
+    "nail_bar",
+    "clinic",
+    "mobile",
+    "therapy",
+    "products"
+  ]
+}

@@ -2,6 +2,29 @@
 docs/node_modules
 docs/dist
 
+# Monorepo
+node_modules
+.pnpm-store
+.turbo
+dist
+.next
+*.tsbuildinfo
+
+# Go
+apps/api/bin/
+*.exe
+*.test
+
+# Env
+.env
+.env.local
+.env.*.local
+
 # General
 .DS_Store
 *.local
+
+# Playwright
+playwright-report/
+test-results/
+apps/web/e2e/.auth/

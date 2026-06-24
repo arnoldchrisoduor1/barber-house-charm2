@@ -1,0 +1,27 @@
+{
+  "baseMonthlyKES": {
+    "solo_pro": 999,
+    "starter": 1599,
+    "professional": 2599,
+    "enterprise": 6999
+  },
+  "billingCycles": {
+    "monthly": { "months": 1, "discount": 0 },
+    "quarterly": { "months": 3, "discount": 0.1 },
+    "annually": { "months": 12, "discount": 0.2 }
+  },
+  "platforms": ["barber", "beauty", "spa", "nail_bar", "clinic", "mobile", "therapy", "solo_pro", "products"],
+  "trialDays": 7,
+  "currencies": {
+    "KES": { "code": "KES", "symbol": "KES", "name": "Kenyan Shilling", "rateFromKES": 1 },
+    "USD": { "code": "USD", "symbol": "$", "name": "US Dollar", "rateFromKES": 0.0077 },
+    "EUR": { "code": "EUR", "symbol": "€", "name": "Euro", "rateFromKES": 0.0072 },
+    "GBP": { "code": "GBP", "symbol": "£", "name": "British Pound", "rateFromKES": 0.0061 },
+    "UGX": { "code": "UGX", "symbol": "UGX", "name": "Ugandan Shilling", "rateFromKES": 28.5 },
+    "TZS": { "code": "TZS", "symbol": "TZS", "name": "Tanzanian Shilling", "rateFromKES": 19.5 }
+  },
+  "localeCurrencyMap": {
+    "en-KE": "KES", "sw": "KES", "sw-KE": "KES",
+    "en-US": "USD", "en-GB": "GBP", "de": "EUR", "fr": "EUR"
+  }
+}

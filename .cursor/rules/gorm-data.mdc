@@ -1,0 +1,39 @@
+---
+description: GORM models, repositories, and migrations
+globs: apps/api/internal/**/{model,repository}*.go
+alwaysApply: false
+---
+
+# GORM & Data Access
+
+GORM is chosen for speed of development. These guardrails prevent its footguns.
+
+## Models
+
+- Embed a `Base` with `ID uuid` (`default:gen_random_uuid()`), `CreatedAt`, `UpdatedAt`.
+- Tenant tables add `OrganizationID uuid.UUID gorm:"type:uuid;not null"` and a composite index leading with `organization_id`.
+- Use Postgres enum types (`type:booking_status`) — keep Go string consts in sync with `infra/migrations`.
+- Money is integer KES.
+
+## Repositories
+
+- All tenant queries apply `db.Scopes(tenancy.OrgScope(orgID))`. No exceptions.
+- Repos expose interfaces; services depend on the interface for testability.
+- Eager-load explicitly (`Preload("Services")`) — never `Preload(clause.Associations)` blanket. Watch N+1.
+- Write multi-row mutations in a transaction (`db.Transaction(func(tx)...)`).
+
+```go
+func (r *bookingRepo) List(ctx context.Context, orgID uuid.UUID, f Filter) ([]Booking, error) {
+    var out []Booking
+    q := r.db.WithContext(ctx).Scopes(tenancy.OrgScope(orgID))
+    if f.Status != "" { q = q.Where("status = ?", f.Status) }
+    return out, q.Find(&out).Error
+}
+```
+
+## Migrations
+
+- Schema changes are reviewed **golang-migrate** SQL pairs in `infra/migrations` (`.up.sql`/`.down.sql`).
+- `AutoMigrate` is allowed **only** when `APP_ENV=local`. Never authoritative in ci/staging/prod.
+- Zero-downtime: expand → dual-write → backfill (async) → switch reads → contract.
+- Enum source of truth includes `solo_pro` + `products` (business_type) and `solo_pro` (subscription_plan); `branches` has `organization_id`; `transactions` exists from the start.

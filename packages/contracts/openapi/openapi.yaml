@@ -1,0 +1,442 @@
+openapi: 3.1.0
+info:
+  title: Haus of Wellness API
+  version: 1.0.0
+  description: Multi-tenant wellness platform API
+servers:
+  - url: /api/v1
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+  /auth/register:
+    post:
+      summary: Register user and bootstrap organization
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/login:
+    post:
+      summary: Login
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /auth/logout:
+    post:
+      summary: Logout
+      operationId: logout
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: No content
+  /auth/refresh:
+    post:
+      summary: Refresh session
+      operationId: refresh
+      responses:
+        "200":
+          description: OK
+  /me:
+    get:
+      summary: Current user context
+      operationId: getMe
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        default:
+          $ref: "#/components/responses/Problem"
+  /organizations/{orgId}/bookings:
+    get:
+      summary: List bookings
+      operationId: listBookings
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/orgId"
+        - name: filter[status]
+          in: query
+          schema:
+            type: string
+        - name: page[cursor]
+          in: query
+          schema:
+            type: string
+        - name: page[limit]
+          in: query
+          schema:
+            type: integer
+            default: 25
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingListResponse"
+    post:
+      summary: Create booking
+      operationId: createBooking
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/orgId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /organizations/{orgId}/bookings/{bookingId}:
+    patch:
+      summary: Update booking
+      operationId: updateBooking
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/orgId"
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookingRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /organizations/{orgId}/availability/check:
+    post:
+      summary: Check staff availability
+      operationId: checkAvailability
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/orgId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AvailabilityCheckRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityCheckResponse"
+  /organizations/{orgId}/transactions:
+    post:
+      summary: Create POS transaction
+      operationId: createTransaction
+      security:
+        - cookieAuth: []
+      parameters:
+        - $ref: "#/components/parameters/orgId"
+      responses:
+        "201":
+          description: Created
+  /webhooks/pesapal/ipn:
+    post:
+      summary: Pesapal IPN callback
+      operationId: pesapalIPN
+      responses:
+        "200":
+          description: OK
+  /realtime/token:
+    post:
+      summary: Issue WebSocket channel token
+      operationId: realtimeToken
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: OK
+  /platform/tenants:
+    get:
+      summary: List tenants (platform admin)
+      operationId: platformListTenants
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: OK
+  /platform/features:
+    get:
+      summary: Feature registry
+      operationId: platformListFeatures
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: OK
+    patch:
+      summary: Update global feature flag
+      operationId: platformUpdateFeatureFlag
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: OK
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: haus_session
+  parameters:
+    orgId:
+      name: orgId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    Problem:
+      description: RFC 7807 problem
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+    RegisterRequest:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        fullName:
+          type: string
+        businessMode:
+          type: string
+          enum: [barber, beauty, spa, nail_bar, clinic, mobile, therapy, solo_pro, products]
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        fullName:
+          type: string
+    MeResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        roles:
+          type: array
+          items:
+            type: string
+        activeOrg:
+          $ref: "#/components/schemas/Organization"
+        subscription:
+          $ref: "#/components/schemas/Subscription"
+        features:
+          type: array
+          items:
+            type: string
+    Organization:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        businessType:
+          type: string
+    Subscription:
+      type: object
+      properties:
+        plan:
+          type: string
+        status:
+          type: string
+        businessType:
+          type: string
+        trialEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        staffId:
+          type: string
+          format: uuid
+          nullable: true
+        bookingDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        status:
+          type: string
+        isWalkin:
+          type: boolean
+    BookingListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        meta:
+          type: object
+          properties:
+            nextCursor:
+              type: string
+              nullable: true
+    CreateBookingRequest:
+      type: object
+      required: [customerId, bookingDate, startTime, endTime]
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        staffId:
+          type: string
+          format: uuid
+        bookingDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        isWalkin:
+          type: boolean
+    UpdateBookingRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        staffId:
+          type: string
+          format: uuid
+    AvailabilityCheckRequest:
+      type: object
+      required: [staffId, bookingDate, startTime, endTime]
+      properties:
+        staffId:
+          type: string
+          format: uuid
+        bookingDate:
+          type: string
+          format: date
+        startTime:
+          type: string
+        endTime:
+          type: string
+        excludeBookingId:
+          type: string
+          format: uuid
+    AvailabilityCheckResponse:
+      type: object
+      properties:
+        available:
+          type: boolean

@@ -1,0 +1,58 @@
+---
+description: Feature registry & flags — every capability is a flag, add/remove without breaking
+alwaysApply: true
+---
+
+# Feature Registry & Flags
+
+Most functionality is gated by a **feature key**. Adding or removing a feature must never break the app. There is **one registry**, resolved server-side.
+
+## The registry (single source of truth)
+
+`packages/contracts/domain/features.json` — every feature is an entry:
+
+```jsonc
+{
+  "key": "pos_payments",
+  "label": "POS & Payments",
+  "description": "Point of sale + Pesapal checkout",
+  "category": "sales",
+  "minPlan": "professional",        // plan entitlement
+  "default": false,                  // value before any plan/override applies
+  "dependsOn": [],                   // other feature keys required
+  "status": "ga"                     // ga | beta | deprecated
+}
+```
+
+Backend mirrors this in DB: `features` (catalog), `organization_features` (per-org override), optional `feature_flags` (global kill-switch / % rollout).
+
+## Resolution (server only — `/me` returns effective `features[]`)
+
+Precedence, first match wins:
+1. **Global kill-switch off** → disabled (always wins; emergency off).
+2. **Per-org override** (`organization_features`) → explicit on/off.
+3. **Plan entitlement** (`minPlan` vs org plan) → on if plan rank ≥ minPlan.
+4. **`default`** otherwise.
+Then: if any `dependsOn` resolves disabled → this feature is disabled too.
+
+The client **never** computes entitlement. It reads `features[]` from `/me`.
+
+## Guard pattern
+
+- **Backend:** `RequireFeature("key")` middleware on routes **and** a service-level check before any gated write. Unknown key = **disabled (fail-closed)**.
+- **Frontend:** `useFeature("key")` / `<Feature flag="key" fallback={...}>`. Nav items, routes, and components register against feature keys.
+
+```tsx
+// ✅ feature-gated section degrades, never throws
+<Feature flag="loyalty" fallback={null}>
+  <LoyaltyWidget />
+</Feature>
+```
+
+## Add / remove safely (the invariant)
+
+- **Adding** a feature: new registry entry defaults **off** (or behind `minPlan`). Existing behavior is unchanged until explicitly enabled. New sections = add a registry entry + a nav/route manifest item keyed to it.
+- **Removing / disabling** a feature: nav item disappears, route returns "unavailable" (404/redirect), component renders `null`. **No throw, no crash, no dangling import.**
+- **Never** hardcode a feature boolean or `if (plan === 'enterprise')` in components/handlers — always resolve from the registry.
+- Deleting a registry key must not break callers: a missing/unknown key resolves to disabled. Mark `deprecated` before removal; remove the gated code in the same change.
+- Every gated route/component references a key that exists in the registry (CI check: no orphan feature keys, no gated code without a registry entry).

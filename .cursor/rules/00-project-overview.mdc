@@ -1,0 +1,35 @@
+---
+description: Haus of Wellness — project overview, stack, and source-of-truth pointers
+alwaysApply: true
+---
+
+# Haus of Wellness — Project Context
+
+Multi-tenant SaaS for grooming/beauty/wellness/retail. **9 business modes** share one core domain, re-skinned per mode (labels, nav, theme, a few special screens). Spa mode brand = "Haus of Spa"; multi-mode umbrella = "Haus of Wellness".
+
+## Stack (target)
+
+- **Frontend:** Next.js (App Router) + TypeScript + Tailwind + shadcn/ui. Port of the Vite prototype at `../barber-house-charm`.
+- **Backend:** Go + Fiber + GORM. Replaces the docs' Laravel target and the prototype's Supabase.
+- **Data:** PostgreSQL 16 + Redis 7. Jobs via asynq. Realtime via Go WebSocket hub.
+- **Monorepo:** `apps/web`, `apps/api`, `packages/contracts`, `infra/`.
+- **Integrations:** Payments **Pesapal** (collect) + **OpenFloat** (disburse) with a double-entry ledger; storage **MinIO** (dev) / R2-S3 (prod); SMS **Africa's Talking**; WhatsApp **Meta Cloud API**; maps **Google Maps**.
+- **Tenancy:** subdomain `{slug}.hausofwellness.com`. **Hosting:** VPS + Docker Compose (MVP), k8s later.
+
+## Sources of truth (read before building)
+
+- Build plans: `plans/*.md` (start at `plans/README.md`).
+- Product rules + schema + routes: `docs/public/docs-sources/*.md`.
+- Real UI, design tokens, domain logic, Supabase schema: `../barber-house-charm` (prototype).
+- Stack translation: `plans/08-laravel-supabase-to-go-mapping.md`.
+
+When docs (Laravel) and prototype (Supabase) conflict, prefer prototype code for UI/domain shapes, then reconcile via the mapping doc to the Go stack.
+
+## Non-negotiables
+
+1. Tenant isolation via `organization_id` on every tenant table + GORM scope + middleware.
+2. No business rules (money, inventory, booking conflicts, entitlement) in the client — Go decides.
+3. Nav, mode terms, feature→plan map, pricing live in `packages/contracts/domain/*.json` — no hardcoded duplicates.
+4. Reuse the prototype's design tokens verbatim (`plans/10-design-system-tokens.md`).
+5. Every capability is a **feature flag** in the registry; adding/removing a feature must not break the app (`feature-flags.mdc`, `plans/12`).
+6. A separate **platform admin console** (`admin.` subdomain, `platform_admin` role, `/api/v1/platform/*`) runs the SaaS and manages feature flags (`plans/12`).
