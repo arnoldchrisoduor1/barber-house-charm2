@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 
 	"github.com/haus-of-wellness/api/internal/platform/authz"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
@@ -26,7 +27,139 @@ func (h *Handler) List(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": rows})
 }
 
+func (h *Handler) Get(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.Get(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) Create(c *fiber.Ctx) error {
+	var dto CreateItemDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.Create(c.UserContext(), orgID, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
+func (h *Handler) Update(c *fiber.Ctx) error {
+	var dto UpdateItemDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.Update(c.UserContext(), orgID, id, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) Delete(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	if err := h.svc.Delete(c.UserContext(), orgID, id); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *Handler) ListPriceLocks(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	rows, err := h.svc.ListPriceLocks(c.UserContext(), orgID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
+}
+
+func (h *Handler) GetPriceLock(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.GetPriceLock(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) CreatePriceLock(c *fiber.Ctx) error {
+	var dto CreatePriceLockDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.CreatePriceLock(c.UserContext(), orgID, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
+func (h *Handler) UpdatePriceLock(c *fiber.Ctx) error {
+	var dto UpdatePriceLockDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.UpdatePriceLock(c.UserContext(), orgID, id, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) DeletePriceLock(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	if err := h.svc.DeletePriceLock(c.UserContext(), orgID, id); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
-	g := org.Group("/inventory", authz.RequireFeature(features, "inventory_tracking"))
+	inventoryGate := authz.RequireFeature(features, "inventory_tracking")
+
+	g := org.Group("/inventory", inventoryGate)
 	g.Get("/", h.List)
+	g.Post("/", h.Create)
+	g.Get("/:id", h.Get)
+	g.Put("/:id", h.Update)
+	g.Delete("/:id", h.Delete)
+
+	pl := org.Group("/price-locks", inventoryGate)
+	pl.Get("/", h.ListPriceLocks)
+	pl.Post("/", h.CreatePriceLock)
+	pl.Get("/:id", h.GetPriceLock)
+	pl.Put("/:id", h.UpdatePriceLock)
+	pl.Delete("/:id", h.DeletePriceLock)
 }

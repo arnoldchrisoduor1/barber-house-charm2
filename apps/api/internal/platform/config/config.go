@@ -20,6 +20,10 @@ type Config struct {
 	JWTRefreshTTL    time.Duration
 
 	CORSOrigins []string
+
+	SMTPHost string
+	SMTPPort int
+	SMTPFrom string
 }
 
 func Load() (*Config, error) {
@@ -33,6 +37,9 @@ func Load() (*Config, error) {
 		JWTAccessTTL:     getDurationEnv("JWT_ACCESS_TTL", 15*time.Minute),
 		JWTRefreshTTL:    getDurationEnv("JWT_REFRESH_TTL", 7*24*time.Hour),
 		CORSOrigins:      splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000")),
+		SMTPHost:         getEnv("SMTP_HOST", ""),
+		SMTPPort:         getIntEnv("SMTP_PORT", 1025),
+		SMTPFrom:         getEnv("SMTP_FROM", "noreply@hausofwellness.local"),
 	}
 
 	if cfg.JWTAccessSecret == "" || cfg.JWTRefreshSecret == "" {
@@ -58,6 +65,18 @@ func getDurationEnv(key string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return d
+}
+
+func getIntEnv(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return fallback
+	}
+	return n
 }
 
 func splitCSV(s string) []string {

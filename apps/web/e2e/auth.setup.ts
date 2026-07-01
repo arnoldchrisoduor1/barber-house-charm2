@@ -6,16 +6,26 @@ import { DEMO_EMAIL, DEMO_PASSWORD } from "./fixtures";
 
 const authFile = path.join(__dirname, ".auth", "user.json");
 
-setup("authenticate demo user", async ({ page }) => {
+setup("authenticate demo user", async ({ page, context }) => {
   fs.mkdirSync(path.dirname(authFile), { recursive: true });
 
-  await page.goto("/login");
-  await page.getByLabel("Email").fill(DEMO_EMAIL);
-  await page.getByLabel("Password").fill(DEMO_PASSWORD);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  let loginResponse = await context.request.post("/api/v1/auth/login", {
+    data: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
+  });
+  if (!loginResponse.ok()) {
+    await expect(async () => {
+      loginResponse = await context.request.post("/api/v1/auth/login", {
+        data: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
+      });
+      expect(loginResponse.ok()).toBeTruthy();
+    }).toPass({ timeout: 120_000 });
+  }
 
-  await page.waitForURL(/\/(admin|dashboard|portal)/, { timeout: 30_000 });
-  await expect(page.locator("body")).not.toContainText("Login failed");
+  const meResponse = await context.request.get("/api/v1/me");
+  expect(meResponse.ok()).toBeTruthy();
 
-  await page.context().storageState({ path: authFile });
+  await page.goto("/admin");
+  await expect(page).toHaveURL(/\/admin/);
+
+  await context.storageState({ path: authFile });
 });

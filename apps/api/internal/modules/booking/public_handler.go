@@ -19,6 +19,49 @@ func NewPublicHandler(bookings *Service, tenancy *tenancymod.Service) *PublicHan
 	return &PublicHandler{bookings: bookings, tenancy: tenancy}
 }
 
+func (h *PublicHandler) Catalog(c *fiber.Ctx) error {
+	slug := strings.TrimSpace(c.Params("slug"))
+	if slug == "" {
+		return httpx.ValidationProblem(c, "slug required", nil)
+	}
+	org, err := h.tenancy.FindBySlug(c.UserContext(), slug)
+	if err != nil || org == nil {
+		return httpx.ProblemJSON(c, fiber.StatusNotFound, "Not Found", "organization not found")
+	}
+	var branchID *uuid.UUID
+	if raw := c.Query("branch_id"); raw != "" {
+		id, err := uuid.Parse(raw)
+		if err == nil {
+			branchID = &id
+		}
+	}
+	resp, err := h.bookings.Catalog(c.UserContext(), org.ID, branchID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(resp)
+}
+
+func (h *PublicHandler) StaffAvailability(c *fiber.Ctx) error {
+	slug := strings.TrimSpace(c.Params("slug"))
+	if slug == "" {
+		return httpx.ValidationProblem(c, "slug required", nil)
+	}
+	org, err := h.tenancy.FindBySlug(c.UserContext(), slug)
+	if err != nil || org == nil {
+		return httpx.ProblemJSON(c, fiber.StatusNotFound, "Not Found", "organization not found")
+	}
+	q, err := parseStaffAvailabilityQuery(c)
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid query", nil)
+	}
+	resp, err := h.bookings.StaffAvailability(c.UserContext(), org.ID, q)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"availability": resp})
+}
+
 func (h *PublicHandler) Create(c *fiber.Ctx) error {
 	slug := strings.TrimSpace(c.Params("slug"))
 	if slug == "" {
@@ -29,31 +72,11 @@ func (h *PublicHandler) Create(c *fiber.Ctx) error {
 		return httpx.ProblemJSON(c, fiber.StatusNotFound, "Not Found", "organization not found")
 	}
 
-	var dto struct {
-		Phone       string `json:"phone"`
-		BookingDate string `json:"bookingDate"`
-		StartTime   string `json:"startTime"`
-		EndTime     string `json:"endTime"`
-		FullName    string `json:"fullName"`
-	}
+	var dto PortalBookingDTO
 	if err := c.BodyParser(&dto); err != nil {
 		return httpx.ValidationProblem(c, "invalid request body", nil)
 	}
-	if dto.Phone == "" || dto.BookingDate == "" || dto.StartTime == "" {
-		return httpx.ValidationProblem(c, "phone, bookingDate, and startTime required", nil)
-	}
-	if dto.EndTime == "" {
-		dto.EndTime = dto.StartTime
-	}
-
-	customerID := uuid.NewSHA1(uuid.NameSpaceURL, []byte("public:"+org.ID.String()+":"+dto.Phone))
-	booking, err := h.bookings.Create(c.UserContext(), org.ID, CreateBookingDTO{
-		CustomerID:  customerID,
-		BookingDate: dto.BookingDate,
-		StartTime:   dto.StartTime,
-		EndTime:     dto.EndTime,
-		Notes:       "Public booking: " + dto.FullName + " " + dto.Phone,
-	})
+	booking, err := h.bookings.CreatePortalBooking(c.UserContext(), org.ID, dto)
 	if err != nil {
 		return httpx.From(c, err)
 	}
@@ -61,5 +84,7 @@ func (h *PublicHandler) Create(c *fiber.Ctx) error {
 }
 
 func RegisterPublicRoutes(router fiber.Router, h *PublicHandler) {
+	router.Get("/organizations/public/:slug/catalog", h.Catalog)
+	router.Get("/organizations/public/:slug/staff-availability", h.StaffAvailability)
 	router.Post("/organizations/public/:slug/bookings", h.Create)
 }

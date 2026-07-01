@@ -27,6 +27,12 @@ services:
       timeout: 3s
       retries: 10
 
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -65,12 +71,16 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_ACCESS_SECRET: dev-access-secret-change-me
       JWT_REFRESH_SECRET: dev-refresh-secret-change-me
+      JWT_ACCESS_TTL: 24h
       CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001
       S3_ENDPOINT: http://minio:9000
       S3_ACCESS_KEY: minio
       S3_SECRET_KEY: minio12345
       S3_BUCKET: haus-media
       S3_USE_SSL: "false"
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_FROM: noreply@hausofwellness.local
     ports:
       - "18432:8080"
     depends_on:
@@ -78,6 +88,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailhog:
+        condition: service_started
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped

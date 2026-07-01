@@ -23,6 +23,7 @@ type Service struct {
 	tenancySvc *tenancymod.Service
 	features   *featuremod.Service
 	platform   *platformmod.Service
+	twoFactor  *TwoFactorService
 }
 
 func NewService(
@@ -31,8 +32,9 @@ func NewService(
 	tenancySvc *tenancymod.Service,
 	features *featuremod.Service,
 	platform *platformmod.Service,
+	twoFactor *TwoFactorService,
 ) *Service {
-	return &Service{repo: repo, jwt: jwt, tenancySvc: tenancySvc, features: features, platform: platform}
+	return &Service{repo: repo, jwt: jwt, tenancySvc: tenancySvc, features: features, platform: platform, twoFactor: twoFactor}
 }
 
 func slugifyOrgName(name string) string {
@@ -55,6 +57,11 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*AuthRespo
 	}
 	if req.Email == "" || req.Password == "" || req.OrgName == "" || req.OrgSlug == "" {
 		return nil, httpx.ErrConflict
+	}
+
+	registerRole, err := resolveRegisterRole(req.Role)
+	if err != nil {
+		return nil, err
 	}
 
 	existing, err := s.repo.FindUserByEmail(ctx, req.Email)
@@ -100,7 +107,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*AuthRespo
 		if err := tx.Create(&member).Error; err != nil {
 			return err
 		}
-		role := tenancymod.UserRole{OrganizationID: org.ID, UserID: user.ID, Role: "ceo"}
+		role := tenancymod.UserRole{OrganizationID: org.ID, UserID: user.ID, Role: registerRole}
 		if err := tx.Create(&role).Error; err != nil {
 			return err
 		}
@@ -121,7 +128,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*AuthRespo
 		return nil, fmt.Errorf("register bootstrap: %w", err)
 	}
 
-	return s.issueTokens(ctx, user.ID, org.ID, []string{"ceo"})
+	return s.issueTokens(ctx, user.ID, org.ID, []string{registerRole})
 }
 
 func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
@@ -133,6 +140,23 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 	ok, err := platformauth.VerifyPassword(user.PasswordHash, req.Password)
 	if err != nil || !ok {
 		return nil, httpx.ErrUnauthorized
+	}
+
+	if s.twoFactor != nil {
+		enabled, err := s.twoFactor.IsEnabled(ctx, user.ID)
+		if err != nil {
+			return nil, err
+		}
+		if enabled {
+			challenge, err := s.twoFactor.BeginLoginChallenge(ctx, user.ID, user.Email)
+			if err != nil {
+				return nil, err
+			}
+			return &AuthResponse{
+				Requires2FA:    true,
+				ChallengeToken: challenge.ChallengeToken,
+			}, nil
+		}
 	}
 
 	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, user.ID)
@@ -211,6 +235,53 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 		},
 		Features: features,
 	}, nil
+}
+
+func (s *Service) Complete2FAChallenge(ctx context.Context, challengeToken, otp string) (*AuthResponse, error) {
+	if s.twoFactor == nil {
+		return nil, httpx.ErrUnauthorized
+	}
+	userID, err := s.twoFactor.CompleteLoginChallenge(ctx, challengeToken, otp)
+	if err != nil {
+		return nil, err
+	}
+	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.issueTokens(ctx, userID, org.ID, roles)
+}
+
+func (s *Service) Setup2FA(ctx context.Context, userID uuid.UUID) error {
+	if s.twoFactor == nil {
+		return httpx.ErrForbidden
+	}
+	user, err := s.repo.FindUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	return s.twoFactor.Setup(ctx, userID, user.Email)
+}
+
+func (s *Service) Verify2FA(ctx context.Context, userID uuid.UUID, otp string) error {
+	if s.twoFactor == nil {
+		return httpx.ErrForbidden
+	}
+	return s.twoFactor.VerifySetup(ctx, userID, otp)
+}
+
+func (s *Service) Disable2FA(ctx context.Context, userID uuid.UUID, otp string) error {
+	if s.twoFactor == nil {
+		return httpx.ErrForbidden
+	}
+	return s.twoFactor.Disable(ctx, userID, otp)
+}
+
+func (s *Service) TwoFactorStatus(ctx context.Context, userID uuid.UUID) (bool, error) {
+	if s.twoFactor == nil {
+		return false, nil
+	}
+	return s.twoFactor.IsEnabled(ctx, userID)
 }
 
 func (s *Service) issueTokens(_ context.Context, userID, orgID uuid.UUID, roles []string) (*AuthResponse, error) {

@@ -1,0 +1,54 @@
+import { test, expect } from "@playwright/test";
+
+import { ensureAuthenticated } from "../helpers/ensure-auth";
+import { waitForWorkspace } from "../helpers/crud";
+
+test.beforeEach(async ({ context }) => {
+  await ensureAuthenticated(context);
+});
+
+test("POS page shows catalog, cart, and recent sales", async ({ page }) => {
+  await page.goto("/pos");
+  await waitForWorkspace(page);
+  await expect(page.getByRole("button", { name: /^services$/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: /^products$/i })).toBeVisible();
+  await expect(page.getByText(/cart/i).first()).toBeVisible();
+  await expect(page.getByText(/recent sales/i)).toBeVisible();
+});
+
+test("POS checkout bills a service with cash and records the sale", async ({ page }) => {
+  await page.goto("/pos");
+  await waitForWorkspace(page);
+
+  const serviceTile = page.getByRole("button", { name: /classic haircut/i });
+  await expect(serviceTile).toBeVisible({ timeout: 30_000 });
+  await serviceTile.click();
+
+  await expect(page.getByText(/classic haircut/i).first()).toBeVisible();
+  await page.getByRole("button", { name: /^checkout$/i }).click();
+
+  await expect(page.getByRole("heading", { name: /take payment/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /take payment/i })).toContainText(/KES [1-9]/);
+  await page.getByRole("button", { name: /complete sale/i }).click();
+
+  await expect(page.getByText(/sale complete/i)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/recent sales/i)).toBeVisible();
+  await expect(page.getByText(/classic haircut/i).first()).toBeVisible();
+});
+
+test("POS can add a customer from the cart panel", async ({ page }) => {
+  await page.goto("/pos");
+  await waitForWorkspace(page);
+
+  await page.getByTitle(/add customer/i).click();
+  await expect(page.getByRole("heading", { name: /add customer/i })).toBeVisible();
+
+  const unique = Date.now().toString().slice(-6);
+  await page.getByLabel(/full name/i).fill(`POS Walk-in ${unique}`);
+  await page.getByLabel(/phone/i).fill(`+2547${unique}`);
+  await page.getByRole("button", { name: /^add customer$/i }).click();
+
+  await expect(page.getByRole("heading", { name: /add customer/i })).toHaveCount(0, { timeout: 15_000 });
+  await page.getByRole("combobox", { name: /pos customer/i }).click();
+  await expect(page.getByRole("option", { name: new RegExp(`POS Walk-in ${unique}`, "i") })).toBeVisible();
+});

@@ -1,0 +1,38 @@
+---
+description: Every new route/section ships with Playwright E2E coverage; keep specs wired in playwright.config.ts
+alwaysApply: true
+---
+
+# Playwright E2E (mandatory for new sections)
+
+Every new sidebar section, dashboard page, auth flow, or public route **must** include Playwright tests in the same change (or immediately after). No merge without E2E for user-facing routes.
+
+## What to add per change
+
+| Change type | Minimum test |
+|-------------|----------------|
+| New nav manifest path | Run `npm run generate:e2e-routes` (updates `e2e/generated/nav-routes.ts`) |
+| New CRUD module | Entry in `e2e/crud-manifest.ts` + lifecycle in `crud-flows.spec.ts` |
+| New non-nav page | Add to `e2e/smoke/` or `e2e/flows/` spec + wire in `playwright.config.ts` |
+| New auth/security flow | Spec under `e2e/flows/` |
+| New API surface used by UI | Assert in `e2e/api.spec.ts` or page interaction |
+
+## Conventions
+
+- Specs live in `apps/web/e2e/` (`smoke/`, `flows/`, helpers in `helpers/`).
+- Shared creds: `e2e/fixtures.ts` (`E2E_DEMO_*` env overrides).
+- Authenticated tests: `auth.setup.ts` → `e2e/.auth/user.json`.
+- **Wire every `*.spec.ts` in `playwright.config.ts`** — orphan specs do not run.
+- Nav routes auto-sync: `node apps/web/scripts/generate-e2e-routes.mjs` (CI: `--check`).
+- Skip live Pesapal, OpenFloat, live WhatsApp, Calendly.
+- Local run (stack + seed required): `PLAYWRIGHT_BASE_URL=http://localhost:3001 npm run test:e2e` from `apps/web`.
+
+## PR checklist
+
+1. Regenerate nav routes if manifest changed: `npm run generate:e2e-routes`.
+2. CRUD modules: update `crud-manifest.ts`.
+3. New spec file registered in `playwright.config.ts`.
+4. `npm run test:e2e` passes against seeded demo org.
+5. CI `e2e` job passes (compose + seed + smoke).
+
+See `apps/web/e2e/README.md` for full docs.

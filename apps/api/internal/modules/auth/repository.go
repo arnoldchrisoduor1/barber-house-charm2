@@ -50,3 +50,31 @@ func httpxNotFound() error {
 func (r *Repository) DB() *gorm.DB {
 	return r.db
 }
+
+func (r *Repository) FindTwoFactor(ctx context.Context, userID uuid.UUID) (*UserTwoFactor, error) {
+	var row UserTwoFactor
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &row, err
+}
+
+func (r *Repository) UpsertTwoFactor(ctx context.Context, row *UserTwoFactor) error {
+	var existing UserTwoFactor
+	err := r.db.WithContext(ctx).Where("user_id = ?", row.UserID).First(&existing).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return r.db.WithContext(ctx).Create(row).Error
+	}
+	if err != nil {
+		return err
+	}
+	existing.IsEnabled = row.IsEnabled
+	existing.EnabledAt = row.EnabledAt
+	return r.db.WithContext(ctx).Save(&existing).Error
+}
+
+func (r *Repository) DisableTwoFactor(ctx context.Context, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Model(&UserTwoFactor{}).Where("user_id = ?", userID).
+		Updates(map[string]any{"is_enabled": false, "enabled_at": nil}).Error
+}

@@ -60,3 +60,33 @@ func (h *Handler) CreateBranch(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusCreated).JSON(branch)
 }
+
+type updateSubscriptionRequest struct {
+	Plan string `json:"plan"`
+}
+
+var validSubscriptionPlans = map[string]struct{}{
+	"solo_pro":     {},
+	"starter":      {},
+	"professional": {},
+	"enterprise":   {},
+}
+
+func (h *Handler) UpdateSubscription(c *fiber.Ctx) error {
+	var req updateSubscriptionRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if req.Plan == "" {
+		return httpx.ValidationProblem(c, "plan required", nil)
+	}
+	if _, ok := validSubscriptionPlans[req.Plan]; !ok {
+		return httpx.ValidationProblem(c, "invalid plan", map[string]any{"plan": req.Plan})
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	sub, err := h.svc.UpdateSubscriptionPlan(c.UserContext(), orgID, req.Plan)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(sub)
+}

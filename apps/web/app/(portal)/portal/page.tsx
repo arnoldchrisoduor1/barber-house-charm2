@@ -6,10 +6,12 @@ import { AppShell } from "@/components/AppShell";
 import { Feature } from "@/components/Feature";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 
 export default function PortalHomePage() {
   const { terms, label } = useBusinessCategory();
+  const { isAuthenticated } = useAuth();
 
   return (
     <AppShell title="Customer Portal">
@@ -24,7 +26,7 @@ export default function PortalHomePage() {
               Book {terms.bookingPlural.toLowerCase()}, manage your profile, and view history.
             </p>
             <Button asChild className="bg-gradient-gold text-primary-foreground">
-              <Link href="/login">Sign in to portal</Link>
+              <Link href="/portal/book">Book now</Link>
             </Button>
           </CardContent>
         </Card>
@@ -36,7 +38,11 @@ export default function PortalHomePage() {
               <CardDescription>Rewards and points</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Your loyalty balance will appear here.</p>
+              <p className="text-sm text-muted-foreground">
+                {isAuthenticated
+                  ? "Your loyalty balance will appear here."
+                  : "Sign in to view your loyalty balance."}
+              </p>
             </CardContent>
           </Card>
         </Feature>

@@ -12,10 +12,11 @@ import (
 type Service struct {
 	repo      *Repository
 	publisher QueuePublisher
+	crm       CRMRepository
 }
 
-func NewService(repo *Repository, publisher QueuePublisher) *Service {
-	return &Service{repo: repo, publisher: publisher}
+func NewService(repo *Repository, publisher QueuePublisher, crm CRMRepository) *Service {
+	return &Service{repo: repo, publisher: publisher, crm: crm}
 }
 
 type CreateBookingDTO struct {
@@ -29,8 +30,22 @@ type CreateBookingDTO struct {
 	IsWalkin    bool       `json:"isWalkin"`
 }
 
-func (s *Service) List(ctx context.Context, orgID uuid.UUID) ([]Booking, error) {
-	return s.repo.List(ctx, orgID)
+func (s *Service) List(ctx context.Context, orgID uuid.UUID, filter ListFilter) ([]Booking, error) {
+	return s.repo.List(ctx, orgID, filter)
+}
+
+func (s *Service) ListServices(ctx context.Context, orgID, bookingID uuid.UUID) ([]BookingService, error) {
+	if _, err := s.repo.Get(ctx, orgID, bookingID); err != nil {
+		return nil, httpx.ErrNotFound
+	}
+	return s.repo.ListServices(ctx, orgID, bookingID)
+}
+
+func (s *Service) MarkCompleted(ctx context.Context, orgID, bookingID uuid.UUID) error {
+	if _, err := s.repo.Get(ctx, orgID, bookingID); err != nil {
+		return httpx.ErrNotFound
+	}
+	return s.repo.MarkCompleted(ctx, orgID, bookingID)
 }
 
 func (s *Service) Get(ctx context.Context, orgID, id uuid.UUID) (*Booking, error) {

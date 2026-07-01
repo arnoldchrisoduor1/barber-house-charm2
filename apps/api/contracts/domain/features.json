@@ -12,6 +12,7 @@
     { "key": "promotions_referrals", "label": "Promotions & Referrals", "description": "Promo codes and referral program", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
     { "key": "promotions", "label": "Promotions", "description": "Promo campaigns", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": ["promotions_referrals"], "status": "ga" },
     { "key": "referrals", "label": "Referrals", "description": "Referral tracking", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": ["promotions_referrals"], "status": "ga" },
+    { "key": "marketing", "label": "Marketing", "description": "Campaigns, packages, gift cards, reviews", "category": "growth", "minPlan": "professional", "default": false, "dependsOn": ["promotions_referrals"], "status": "ga" },
     { "key": "priority_support", "label": "Priority Support", "description": "Priority support SLA", "category": "core", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
     { "key": "multi_branch", "label": "Multi-Branch", "description": "Multiple locations and branches", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },
     { "key": "advanced_analytics", "label": "Advanced Analytics", "description": "Scorecards, call centre, deep analytics", "category": "enterprise", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "ga" },

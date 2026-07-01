@@ -1,17 +1,14 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { AppShell } from "@/components/AppShell";
-import { Feature } from "@/components/Feature";
-
-const CoverageMap = dynamic(() => import("@/components/CoverageMap"), { ssr: false });
+import { AnalyticsPage } from "@/components/AnalyticsPage";
 
 export default function CoverageZonesPage() {
   return (
-    <AppShell title="Coverage zones">
-      <Feature flag="coverage_zones">
-        <CoverageMap />
-      </Feature>
-    </AppShell>
+    <AnalyticsPage
+      title="Coverage Zones"
+      feature="coverage_zones"
+      path="analytics/coverage-zones"
+      queryKey="coverage-zones"
+    />
   );
 }

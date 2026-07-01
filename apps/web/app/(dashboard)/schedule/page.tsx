@@ -26,7 +26,7 @@ export default function SchedulePage() {
     queryKey: ["org", orgId, "staff-schedules"],
     enabled: !!orgId,
     queryFn: () =>
-      apiClient<{ data: Schedule[] }>(`/organizations/${orgId}/staff/schedules`),
+      apiClient<{ data: Schedule[] }>(`/organizations/${orgId}/staff-schedules`),
   });
 
   return (

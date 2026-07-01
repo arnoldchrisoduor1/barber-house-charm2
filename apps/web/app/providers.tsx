@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
+import { Toaster } from "sonner";
 
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, BusinessCategoryProvider } from "@/hooks/useAuth";
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -19,9 +21,14 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BusinessCategoryProvider>{children}</BusinessCategoryProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <BusinessCategoryProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </BusinessCategoryProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

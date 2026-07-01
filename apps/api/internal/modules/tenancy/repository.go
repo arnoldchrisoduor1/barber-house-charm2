@@ -3,6 +3,7 @@ package tenancy
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -84,6 +85,42 @@ func (r *Repository) GetSubscription(ctx context.Context, orgID uuid.UUID) (*Sub
 		return &Subscription{OrganizationID: orgID, Plan: "starter", Status: "trial"}, nil
 	}
 	return &sub, err
+}
+
+func (r *Repository) UpdateSubscriptionPlan(ctx context.Context, orgID uuid.UUID, plan string) (*Subscription, error) {
+	now := time.Now()
+	trialEnds := now.Add(7 * 24 * time.Hour)
+	periodEnd := now.Add(30 * 24 * time.Hour)
+
+	var sub Subscription
+	err := r.db.WithContext(ctx).Where("organization_id = ?", orgID).First(&sub).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		sub = Subscription{
+			OrganizationID:     orgID,
+			Plan:               plan,
+			Status:             "active",
+			TrialEndsAt:        &trialEnds,
+			CurrentPeriodStart: &now,
+			CurrentPeriodEnd:   &periodEnd,
+		}
+		if err := r.db.WithContext(ctx).Create(&sub).Error; err != nil {
+			return nil, err
+		}
+		return &sub, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	sub.Plan = plan
+	sub.Status = "active"
+	sub.TrialEndsAt = &trialEnds
+	sub.CurrentPeriodStart = &now
+	sub.CurrentPeriodEnd = &periodEnd
+	if err := r.db.WithContext(ctx).Save(&sub).Error; err != nil {
+		return nil, err
+	}
+	return &sub, nil
 }
 
 func (r *Repository) ListBranches(ctx context.Context, orgID uuid.UUID) ([]Branch, error) {

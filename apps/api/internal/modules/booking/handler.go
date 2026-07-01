@@ -1,6 +1,9 @@
 package booking
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -20,11 +23,102 @@ func NewHandler(svc *Service) *Handler {
 
 func (h *Handler) List(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
-	rows, err := h.svc.List(c.UserContext(), orgID)
+	filter := ListFilter{
+		BranchID:      platformtenancy.OptionalBranchID(c),
+		CustomerPhone: strings.TrimSpace(c.Query("customer_phone")),
+		Status:        strings.TrimSpace(c.Query("status")),
+	}
+	rows, err := h.svc.List(c.UserContext(), orgID, filter)
 	if err != nil {
 		return httpx.From(c, err)
 	}
 	return c.JSON(fiber.Map{"data": rows})
+}
+
+func (h *Handler) ListServices(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	rows, err := h.svc.ListServices(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
+}
+
+func (h *Handler) Catalog(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	resp, err := h.svc.Catalog(c.UserContext(), orgID, branchID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(resp)
+}
+
+func (h *Handler) StaffAvailabilityBatch(c *fiber.Ctx) error {
+	q, err := parseStaffAvailabilityQuery(c)
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid query", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	resp, err := h.svc.StaffAvailability(c.UserContext(), orgID, q)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"availability": resp})
+}
+
+// parseStaffAvailabilityQuery manually parses query params because Fiber's
+// QueryParser cannot bind *uuid.UUID or []uuid.UUID fields.
+func parseStaffAvailabilityQuery(c *fiber.Ctx) (StaffAvailabilityQuery, error) {
+	q := StaffAvailabilityQuery{
+		BookingDate: c.Query("booking_date"),
+		StartTime:   c.Query("start_time"),
+	}
+	if d := c.Query("duration_minutes"); d != "" {
+		n, err := strconv.Atoi(d)
+		if err != nil {
+			return q, err
+		}
+		q.DurationMinutes = n
+	}
+	if b := c.Query("branch_id"); b != "" {
+		id, err := uuid.Parse(b)
+		if err != nil {
+			return q, err
+		}
+		q.BranchID = &id
+	}
+	if raw := c.Query("staff_ids"); raw != "" {
+		for _, part := range strings.Split(raw, ",") {
+			part = strings.TrimSpace(part)
+			if part == "" {
+				continue
+			}
+			id, err := uuid.Parse(part)
+			if err != nil {
+				return q, err
+			}
+			q.StaffIDs = append(q.StaffIDs, id)
+		}
+	}
+	return q, nil
+}
+
+func (h *Handler) PortalCreate(c *fiber.Ctx) error {
+	var dto PortalBookingDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.CreatePortalBooking(c.UserContext(), orgID, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
 }
 
 func (h *Handler) Get(c *fiber.Ctx) error {
@@ -98,10 +192,14 @@ func (h *Handler) Availability(c *fiber.Ctx) error {
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	g := org.Group("/bookings", authz.RequireFeature(features, "bookings"))
 	g.Get("/", h.List)
+	g.Get("/catalog", h.Catalog)
 	g.Get("/availability", h.Availability)
+	g.Get("/staff-availability", h.StaffAvailabilityBatch)
+	g.Post("/portal", h.PortalCreate)
 	g.Get("/waitlist", h.ListWaitlist)
 	g.Post("/waitlist", h.CreateWaitlist)
 	g.Post("/", h.Create)
+	g.Get("/:id/services", h.ListServices)
 	g.Get("/:id", h.Get)
 	g.Put("/:id", h.Update)
 	g.Delete("/:id", h.Delete)

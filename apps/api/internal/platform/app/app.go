@@ -15,23 +15,31 @@ import (
 
 	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/config"
+	platformemail "github.com/haus-of-wellness/api/internal/platform/email"
 	"github.com/haus-of-wellness/api/internal/platform/idempotency"
 	"github.com/haus-of-wellness/api/internal/platform/logging"
 	platformrealtime "github.com/haus-of-wellness/api/internal/platform/realtime"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
 	authmod "github.com/haus-of-wellness/api/internal/modules/auth"
+	analyticsmod "github.com/haus-of-wellness/api/internal/modules/analytics"
 	bookingmod "github.com/haus-of-wellness/api/internal/modules/booking"
+	consumptionmod "github.com/haus-of-wellness/api/internal/modules/consumption"
 	crmmod "github.com/haus-of-wellness/api/internal/modules/crm"
 	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
 	inventorymod "github.com/haus-of-wellness/api/internal/modules/inventory"
 	openfloatmod "github.com/haus-of-wellness/api/internal/modules/integrations/openfloat"
 	pesapalmod "github.com/haus-of-wellness/api/internal/modules/integrations/pesapal"
 	ledgermod "github.com/haus-of-wellness/api/internal/modules/ledger"
+	marketingmod "github.com/haus-of-wellness/api/internal/modules/marketing"
 	notificationsmod "github.com/haus-of-wellness/api/internal/modules/notifications"
 	platformmod "github.com/haus-of-wellness/api/internal/modules/platform"
 	payoutmod "github.com/haus-of-wellness/api/internal/modules/payouts"
 	posmod "github.com/haus-of-wellness/api/internal/modules/pos"
+	retailmod "github.com/haus-of-wellness/api/internal/modules/retail"
+	servicesmod "github.com/haus-of-wellness/api/internal/modules/services"
+	settingsmod "github.com/haus-of-wellness/api/internal/modules/settings"
 	staffmod "github.com/haus-of-wellness/api/internal/modules/staff"
+	suppliersmod "github.com/haus-of-wellness/api/internal/modules/suppliers"
 	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
 )
 
@@ -67,7 +75,9 @@ func New(deps Dependencies) (*fiber.App, error) {
 	platformSvc := platformmod.NewService(platformRepo)
 
 	authRepo := authmod.NewRepository(deps.DB)
-	authSvc := authmod.NewService(authRepo, jwtSvc, tenancySvc, featureSvc, platformSvc)
+	emailSender := platformemail.NewSender(deps.Config, deps.Logger)
+	twoFactorSvc := authmod.NewTwoFactorService(authRepo, deps.Redis, emailSender)
+	authSvc := authmod.NewService(authRepo, jwtSvc, tenancySvc, featureSvc, platformSvc, twoFactorSvc)
 	authHandler := authmod.NewHandler(authSvc)
 
 	tenancyHandler := tenancymod.NewHandler(tenancySvc)
@@ -78,25 +88,26 @@ func New(deps Dependencies) (*fiber.App, error) {
 
 	idemStore := idempotency.NewStore(deps.Redis, 0)
 
+	crmRepo := crmmod.NewRepository(deps.DB)
+
 	bookingRepo := bookingmod.NewRepository(deps.DB)
-	bookingSvc := bookingmod.NewService(bookingRepo, realtimeHub)
+	bookingSvc := bookingmod.NewService(bookingRepo, realtimeHub, crmRepo)
 	bookingHandler := bookingmod.NewHandler(bookingSvc)
 	publicBookingHandler := bookingmod.NewPublicHandler(bookingSvc, tenancySvc)
-
-	posRepo := posmod.NewRepository(deps.DB)
-	posSvc := posmod.NewService(posRepo)
-	posHandler := posmod.NewHandler(posSvc)
 
 	ledgerRepo := ledgermod.NewRepository(deps.DB)
 	ledgerSvc := ledgermod.NewService(ledgerRepo)
 	ledgerHandler := ledgermod.NewHandler(ledgerSvc)
+
+	posRepo := posmod.NewRepository(deps.DB)
+	posSvc := posmod.NewService(posRepo, ledgerSvc)
+	posHandler := posmod.NewHandler(posSvc)
 
 	openfloatClient := openfloatmod.NewClient(deps.Logger)
 	payoutRepo := payoutmod.NewRepository(deps.DB)
 	payoutSvc := payoutmod.NewService(payoutRepo, openfloatClient, idemStore, ledgerSvc)
 	payoutHandler := payoutmod.NewHandler(payoutSvc)
 
-	crmRepo := crmmod.NewRepository(deps.DB)
 	crmSvc := crmmod.NewService(crmRepo)
 	crmHandler := crmmod.NewHandler(crmSvc)
 
@@ -107,6 +118,34 @@ func New(deps Dependencies) (*fiber.App, error) {
 	staffRepo := staffmod.NewRepository(deps.DB)
 	staffSvc := staffmod.NewService(staffRepo)
 	staffHandler := staffmod.NewHandler(staffSvc)
+
+	servicesRepo := servicesmod.NewRepository(deps.DB)
+	servicesSvc := servicesmod.NewService(servicesRepo)
+	servicesHandler := servicesmod.NewHandler(servicesSvc)
+
+	retailRepo := retailmod.NewRepository(deps.DB)
+	retailSvc := retailmod.NewService(retailRepo)
+	retailHandler := retailmod.NewHandler(retailSvc)
+
+	suppliersRepo := suppliersmod.NewRepository(deps.DB)
+	suppliersSvc := suppliersmod.NewService(suppliersRepo)
+	suppliersHandler := suppliersmod.NewHandler(suppliersSvc)
+
+	consumptionRepo := consumptionmod.NewRepository(deps.DB)
+	consumptionSvc := consumptionmod.NewService(consumptionRepo)
+	consumptionHandler := consumptionmod.NewHandler(consumptionSvc)
+
+	marketingRepo := marketingmod.NewRepository(deps.DB)
+	marketingSvc := marketingmod.NewService(marketingRepo)
+	marketingHandler := marketingmod.NewHandler(marketingSvc)
+
+	analyticsRepo := analyticsmod.NewRepository(deps.DB)
+	analyticsSvc := analyticsmod.NewService(analyticsRepo)
+	analyticsHandler := analyticsmod.NewHandler(analyticsSvc)
+
+	settingsRepo := settingsmod.NewRepository(deps.DB)
+	settingsSvc := settingsmod.NewService(settingsRepo)
+	settingsHandler := settingsmod.NewHandler(settingsSvc)
 
 	platformHandler := platformmod.NewHandler(platformSvc)
 	platformFeaturesHandler := platformmod.NewFeaturesHandler(featureSvc)
@@ -182,6 +221,13 @@ func New(deps Dependencies) (*fiber.App, error) {
 	payoutmod.RegisterOrgRoutes(org, payoutHandler)
 	crmmod.RegisterOrgRoutes(org, featureSvc, crmHandler)
 	inventorymod.RegisterOrgRoutes(org, featureSvc, inventoryHandler)
+	servicesmod.RegisterOrgRoutes(org, featureSvc, servicesHandler)
+	retailmod.RegisterOrgRoutes(org, featureSvc, retailHandler)
+	suppliersmod.RegisterOrgRoutes(org, featureSvc, suppliersHandler)
+	consumptionmod.RegisterOrgRoutes(org, featureSvc, consumptionHandler)
+	marketingmod.RegisterOrgRoutes(org, featureSvc, marketingHandler)
+	analyticsmod.RegisterOrgRoutes(org, featureSvc, analyticsHandler)
+	settingsmod.RegisterOrgRoutes(org, featureSvc, settingsHandler)
 	staffmod.RegisterOrgRoutes(org, staffHandler)
 	platformmod.RegisterOrgAuditRoute(org, platformHandler)
 	notificationsmod.RegisterOrgRoutes(org, jwtSvc, notificationsHandler)

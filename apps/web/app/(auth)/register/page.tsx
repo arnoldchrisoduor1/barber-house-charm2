@@ -1,19 +1,91 @@
 "use client";
 
+import { modeTerms } from "@haus/contracts";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import {
+  Brain,
+  Car,
+  Flower2,
+  Gem,
+  Scissors,
+  ShoppingBag,
+  Sparkles,
+  Stethoscope,
+  UserCircle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, type BusinessCategory } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { ApiError } from "@/lib/api-client";
 
-export default function RegisterPage() {
+const HOUSES: {
+  key: BusinessCategory;
+  Icon: typeof Scissors;
+}[] = [
+  { key: "barber", Icon: Scissors },
+  { key: "beauty", Icon: Sparkles },
+  { key: "spa", Icon: Flower2 },
+  { key: "nail_bar", Icon: Gem },
+  { key: "clinic", Icon: Stethoscope },
+  { key: "mobile", Icon: Car },
+  { key: "therapy", Icon: Brain },
+  { key: "solo_pro", Icon: UserCircle },
+  { key: "products", Icon: ShoppingBag },
+];
+
+const STAFF_ROLE_MAP: Record<string, string> = {
+  barber: "senior_barber",
+  stylist: "senior_barber",
+  therapist: "senior_barber",
+  nail_tech: "senior_barber",
+  practitioner: "senior_barber",
+  mobile_pro: "senior_barber",
+  receptionist: "receptionist",
+  branch_manager: "branch_manager",
+};
+
+function resolveRegisterRole(portal: string | null, role: string | null): string {
+  if (portal === "business" || portal === "solo") return "ceo";
+  if (portal === "client") return "receptionist";
+  if (role && STAFF_ROLE_MAP[role]) return STAFF_ROLE_MAP[role];
+  return "ceo";
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register } = useAuth();
+  const { setCategory } = useBusinessCategory();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const categoryParam = (searchParams.get("category") as BusinessCategory | null) ?? "barber";
+  const specialtyParam = searchParams.get("specialty");
+  const portalParam = searchParams.get("portal");
+  const roleParam = searchParams.get("role");
+
+  const businessType = useMemo(() => {
+    if (categoryParam === "solo_pro" && specialtyParam) return specialtyParam;
+    return categoryParam;
+  }, [categoryParam, specialtyParam]);
+
+  const registerRole = resolveRegisterRole(portalParam, roleParam);
+  const houseLabel =
+    modeTerms.brandLabels[businessType as keyof typeof modeTerms.brandLabels] ??
+    modeTerms.brandLabels.barber;
+
+  useEffect(() => {
+    setCategory(categoryParam);
+  }, [categoryParam, setCategory]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,6 +98,8 @@ export default function RegisterPage() {
         password: String(form.get("password")),
         fullName: String(form.get("fullName")),
         organizationName: String(form.get("organizationName")),
+        businessType,
+        role: registerRole,
       });
       router.push("/dashboard");
     } catch (err) {
@@ -38,13 +112,32 @@ export default function RegisterPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center p-6">
       <div className="mesh-ambient" aria-hidden />
-      <Card className="relative z-10 w-full max-w-md glass">
+      <Card className="relative z-10 w-full max-w-lg glass">
         <CardHeader>
-          <CardTitle>Create account</CardTitle>
-          <CardDescription>Start your organization on Haus of Wellness</CardDescription>
+          <CardTitle>Create your {houseLabel} account</CardTitle>
+          <CardDescription>
+            Portal: {portalParam ?? "business"} · Role: {registerRole.replace(/_/g, " ")}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
+          <div className="mb-6 grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {HOUSES.map(({ key, Icon }) => (
+              <Link
+                key={key}
+                href={`/register?category=${key}${portalParam ? `&portal=${portalParam}` : ""}${roleParam ? `&role=${roleParam}` : ""}`}
+                className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-center text-[10px] transition-colors ${
+                  businessType === key || categoryParam === key
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:border-primary/40"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="line-clamp-2">{modeTerms.brandLabels[key]}</span>
+              </Link>
+            ))}
+          </div>
+          <form className="space-y-4" onSubmit={onSubmit} noValidate>
+            <fieldset className="space-y-4" disabled={!mounted || loading}>
             <label className="block space-y-1">
               <span className="text-sm text-muted-foreground">Full name</span>
               <input
@@ -81,12 +174,16 @@ export default function RegisterPage() {
               />
             </label>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
-            <Button type="submit" disabled={loading} className="w-full bg-gradient-gold text-primary-foreground">
+            <Button type="submit" className="w-full bg-gradient-gold text-primary-foreground">
               {loading ? "Creating..." : "Create account"}
             </Button>
+            </fieldset>
           </form>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            <Link href="/get-started" className="text-primary hover:underline">
+              ← Choose a different Haus
+            </Link>
+            {" · "}
             <Link href="/login" className="text-primary hover:underline">
               Sign in
             </Link>
@@ -94,5 +191,13 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading…</div>}>
+      <RegisterForm />
+    </Suspense>
   );
 }

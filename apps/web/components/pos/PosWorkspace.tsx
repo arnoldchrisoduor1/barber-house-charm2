@@ -1,0 +1,507 @@
+"use client";
+
+import { Minus, Plus, Search, ShoppingCart, Trash2, UserPlus, CalendarClock } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CustomerDialog } from "@/components/pos/CustomerDialog";
+import { PaymentDialog } from "@/components/pos/PaymentDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { useBranchFilter } from "@/hooks/useBranchFilter";
+import {
+  cartTotal,
+  checkoutPos,
+  createPosCustomer,
+  fetchPosCatalog,
+  fetchPosCustomers,
+  fetchPosTransactions,
+  formatKes,
+  type PosCartLine,
+  type PosCatalogItem,
+  type PosCustomer,
+  type PosTransaction,
+} from "@/lib/api/pos";
+import { fetchBookings, fetchBookingServices } from "@/lib/api/booking";
+
+type CatalogTab = "services" | "products";
+
+export function PosWorkspace() {
+  const { activeOrg } = useAuth();
+  const orgId = activeOrg?.id ?? "";
+  const { apiParams, activeBranchId } = useBranchFilter();
+  const queryClient = useQueryClient();
+
+  const [tab, setTab] = useState<CatalogTab>("services");
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState<PosCartLine[]>([]);
+  const [customerId, setCustomerId] = useState<string>("walk-in");
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<PosTransaction | null>(null);
+  const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
+
+  const catalogQuery = useQuery({
+    queryKey: ["pos-catalog", orgId, apiParams],
+    queryFn: () => fetchPosCatalog(orgId, apiParams),
+    enabled: !!orgId,
+  });
+
+  const customersQuery = useQuery({
+    queryKey: ["pos-customers", orgId],
+    queryFn: () => fetchPosCustomers(orgId),
+    enabled: !!orgId,
+  });
+
+  const transactionsQuery = useQuery({
+    queryKey: ["pos-transactions", orgId, apiParams],
+    queryFn: () => fetchPosTransactions(orgId, apiParams),
+    enabled: !!orgId,
+  });
+
+  const scheduledBookingsQuery = useQuery({
+    queryKey: ["pos-scheduled-bookings", orgId, apiParams],
+    queryFn: () =>
+      fetchBookings(orgId, { status: "scheduled", branchId: apiParams.branch_id }),
+    enabled: !!orgId,
+  });
+
+  const customers = customersQuery.data ?? [];
+  const selectedCustomer = customers.find((c) => c.id === customerId);
+
+  const catalogItems = useMemo(() => {
+    const items =
+      tab === "services" ? (catalogQuery.data?.services ?? []) : (catalogQuery.data?.products ?? []);
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q),
+    );
+  }, [catalogQuery.data, search, tab]);
+
+  const total = cartTotal(cart);
+
+  const addToCart = useCallback((item: PosCatalogItem) => {
+    if (item.type === "product" && (item.quantity ?? 0) <= 0) return;
+    setCart((prev) => {
+      const existing = prev.find((line) => line.id === item.id && line.type === item.type);
+      if (existing) {
+        return prev.map((line) =>
+          line.id === item.id && line.type === item.type
+            ? { ...line, quantity: line.quantity + 1 }
+            : line,
+        );
+      }
+      return [
+        ...prev,
+        {
+          id: item.id,
+          type: item.type,
+          name: item.name,
+          unitPriceKes: item.priceKes,
+          quantity: 1,
+        },
+      ];
+    });
+  }, []);
+
+  const updateQty = (line: PosCartLine, delta: number) => {
+    setCart((prev) =>
+      prev
+        .map((item) =>
+          item.id === line.id && item.type === line.type
+            ? { ...item, quantity: Math.max(1, item.quantity + delta) }
+            : item,
+        )
+        .filter((item) => item.quantity > 0),
+    );
+  };
+
+  const removeLine = (line: PosCartLine) => {
+    setCart((prev) => prev.filter((item) => !(item.id === line.id && item.type === line.type)));
+  };
+
+  const handleCreateCustomer = async (payload: { fullName: string; phone: string }) => {
+    const created = await createPosCustomer(orgId, payload);
+    await queryClient.refetchQueries({ queryKey: ["pos-customers", orgId] });
+    setCustomerId(created.id);
+  };
+
+  const loadBookingToCart = async (bookingId: string, customerIdForBooking: string) => {
+    setCheckoutError(null);
+    const [serviceLines, catalog] = await Promise.all([
+      fetchBookingServices(orgId, bookingId),
+      catalogQuery.data
+        ? Promise.resolve(catalogQuery.data)
+        : fetchPosCatalog(orgId, apiParams),
+    ]);
+    const cartLines: PosCartLine[] = [];
+    for (const line of serviceLines) {
+      const match = catalog.services.find(
+        (svc) => svc.name.toLowerCase() === line.serviceName.toLowerCase(),
+      );
+      if (!match) {
+        setCheckoutError(`Service "${line.serviceName}" is not in the active catalog.`);
+        return;
+      }
+      cartLines.push({
+        id: match.id,
+        type: "service",
+        name: match.name,
+        unitPriceKes: match.priceKes,
+        quantity: 1,
+      });
+    }
+    if (cartLines.length === 0) {
+      setCheckoutError("This booking has no billable services.");
+      return;
+    }
+    setCart(cartLines);
+    setCustomerId(customerIdForBooking);
+    setActiveBookingId(bookingId);
+    setTab("services");
+  };
+
+  const handleCheckout = async (payment: {
+    method: "cash" | "mpesa" | "card";
+    reference?: string;
+    cashTendered?: number;
+  }) => {
+    setCheckoutError(null);
+    try {
+      const tx = await checkoutPos(orgId, {
+        customerId: customerId === "walk-in" ? undefined : customerId,
+        branchId: activeBranchId ?? undefined,
+        bookingId: activeBookingId ?? undefined,
+        paymentMethod: payment.method,
+        reference: payment.reference,
+        cashTendered: payment.cashTendered,
+        lines: cart.map((line) => ({
+          itemType: line.type,
+          itemId: line.id,
+          quantity: line.quantity,
+        })),
+      });
+      setCart([]);
+      setPaymentOpen(false);
+      setActiveBookingId(null);
+      setLastReceipt(tx);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["pos-transactions", orgId] }),
+        queryClient.invalidateQueries({ queryKey: ["pos-catalog", orgId] }),
+        queryClient.invalidateQueries({ queryKey: ["pos-customers", orgId] }),
+        queryClient.invalidateQueries({ queryKey: ["pos-scheduled-bookings", orgId] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard-reports", orgId] }),
+      ]);
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : "Checkout failed");
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    if (!lastReceipt) return;
+    const timer = window.setTimeout(() => setLastReceipt(null), 8000);
+    return () => window.clearTimeout(timer);
+  }, [lastReceipt]);
+
+  if (!orgId) {
+    return <p className="text-sm text-muted-foreground">Select an organization to use POS.</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="glass" data-testid="pos-scheduled-bookings">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <CalendarClock className="h-5 w-5" />
+            Scheduled appointments
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {scheduledBookingsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading appointments…</p>
+          ) : (scheduledBookingsQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No scheduled appointments to bill.</p>
+          ) : (
+            <div className="space-y-2">
+              {(scheduledBookingsQuery.data ?? []).slice(0, 8).map((booking) => (
+                <div
+                  key={booking.id}
+                  data-testid={`pos-booking-${booking.id}`}
+                  className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-sm font-medium">
+                      {booking.bookingDate.slice(0, 10)} {booking.startTime}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">Status: {booking.status}</p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={activeBookingId === booking.id ? "default" : "outline"}
+                    onClick={() => loadBookingToCart(booking.id, booking.customerId)}
+                  >
+                    Bill appointment
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                variant={tab === "services" ? "default" : "outline"}
+                onClick={() => setTab("services")}
+              >
+                Services
+              </Button>
+              <Button
+                variant={tab === "products" ? "default" : "outline"}
+                onClick={() => setTab("products")}
+              >
+                Products
+              </Button>
+            </div>
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder={`Search ${tab}…`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {catalogQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading catalog…</p>
+          ) : catalogQuery.isError ? (
+            <p className="text-sm text-destructive">Failed to load catalog.</p>
+          ) : catalogItems.length === 0 ? (
+            <Card className="glass">
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                No {tab} found. Add items from the Services or Retail Products sections.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {catalogItems.map((item) => {
+                const outOfStock = item.type === "product" && (item.quantity ?? 0) <= 0;
+                return (
+                  <button
+                    key={`${item.type}-${item.id}`}
+                    type="button"
+                    disabled={outOfStock}
+                    onClick={() => addToCart(item)}
+                    className={`rounded-xl border p-4 text-left transition-colors ${
+                      outOfStock
+                        ? "cursor-not-allowed border-border/50 opacity-50"
+                        : "border-border bg-card hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {item.category || item.type}
+                    </p>
+                    <p className="mt-1 font-medium">{item.name}</p>
+                    <p className="mt-2 font-heading text-lg text-primary">{formatKes(item.priceKes)}</p>
+                    {item.type === "product" ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {outOfStock ? "Out of stock" : `${item.quantity} in stock`}
+                      </p>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <Card className="glass flex h-full flex-col">
+          <CardHeader className="border-b border-border/60">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShoppingCart className="h-5 w-5" />
+              Cart ({cart.length})
+            </CardTitle>
+            <div className="flex items-center gap-2 pt-2">
+              <Select value={customerId} onValueChange={setCustomerId}>
+                <SelectTrigger aria-label="POS customer">
+                  <SelectValue placeholder="Customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="walk-in">Walk-in customer</SelectItem>
+                  {customers.map((customer: PosCustomer) => (
+                    <SelectItem key={customer.id} value={customer.id}>
+                      {customer.fullName}
+                      {customer.phone ? ` · ${customer.phone}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                title="Add customer"
+                onClick={() => setCustomerDialogOpen(true)}
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col gap-4 p-4">
+            {cart.length === 0 ? (
+              <p className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+                Tap a service or product to add it
+              </p>
+            ) : (
+              <div className="max-h-[320px] space-y-3 overflow-y-auto">
+                {cart.map((line) => (
+                  <div
+                    key={`${line.type}-${line.id}`}
+                    className="rounded-lg border border-border/60 p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">{line.name}</p>
+                        <p className="text-[10px] uppercase text-muted-foreground">{line.type}</p>
+                      </div>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => removeLine(line)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQty(line, -1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-8 text-center text-sm">{line.quantity}</span>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => updateQty(line, 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <p className="text-sm font-semibold">
+                        {formatKes(line.unitPriceKes * line.quantity)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-auto space-y-3 border-t border-border/60 pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-heading text-2xl">{formatKes(total)}</span>
+              </div>
+              {checkoutError ? <p className="text-sm text-destructive">{checkoutError}</p> : null}
+              {lastReceipt ? (
+                <p className="rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
+                  Sale complete — {formatKes(lastReceipt.amountKes)} via {lastReceipt.paymentMethod}
+                </p>
+              ) : null}
+              <Button
+                className="w-full bg-gradient-gold text-primary-foreground font-semibold"
+                disabled={cart.length === 0}
+                onClick={() => setPaymentOpen(true)}
+              >
+                Checkout
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="glass">
+        <CardHeader>
+          <CardTitle>Recent sales</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {transactionsQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading transactions…</p>
+          ) : (transactionsQuery.data ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No sales yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 text-left text-muted-foreground">
+                    <th className="py-2 pr-4">When</th>
+                    <th className="py-2 pr-4">Items</th>
+                    <th className="py-2 pr-4">Payment</th>
+                    <th className="py-2">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(transactionsQuery.data ?? []).slice(0, 10).map((tx) => (
+                    <tr key={tx.id} className="border-b border-border/40">
+                      <td className="py-3 pr-4 align-top">
+                        {tx.createdAt ? new Date(tx.createdAt).toLocaleString() : "—"}
+                      </td>
+                      <td className="py-3 pr-4 align-top">
+                        {(tx.items ?? []).length === 0
+                          ? "—"
+                          : (tx.items ?? [])
+                              .map((item) => `${item.name} ×${item.quantity}`)
+                              .join(", ")}
+                      </td>
+                      <td className="py-3 pr-4 align-top capitalize">{tx.paymentMethod}</td>
+                      <td className="py-3 align-top font-medium">{formatKes(tx.amountKes)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <PaymentDialog
+        open={paymentOpen}
+        total={total}
+        defaultPhone={selectedCustomer?.phone}
+        onClose={() => setPaymentOpen(false)}
+        onConfirm={handleCheckout}
+      />
+
+      <CustomerDialog
+        open={customerDialogOpen}
+        onClose={() => setCustomerDialogOpen(false)}
+        onCreate={handleCreateCustomer}
+      />
+    </div>
+  );
+}

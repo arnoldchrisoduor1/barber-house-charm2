@@ -2,6 +2,7 @@ package crm
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 
 	"github.com/haus-of-wellness/api/internal/platform/authz"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
@@ -19,11 +20,25 @@ func NewHandler(svc *Service) *Handler {
 
 func (h *Handler) List(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
-	rows, err := h.svc.List(c.UserContext(), orgID)
+	branchID := platformtenancy.OptionalBranchID(c)
+	rows, err := h.svc.List(c.UserContext(), orgID, branchID)
 	if err != nil {
 		return httpx.From(c, err)
 	}
 	return c.JSON(fiber.Map{"data": rows})
+}
+
+func (h *Handler) Get(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.Get(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
 }
 
 func (h *Handler) Create(c *fiber.Ctx) error {
@@ -39,8 +54,58 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(row)
 }
 
+func (h *Handler) Update(c *fiber.Ctx) error {
+	var dto UpdateCustomerDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.Update(c.UserContext(), orgID, id, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) Delete(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	if err := h.svc.Delete(c.UserContext(), orgID, id); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *Handler) ListOwnership(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	var staffID *uuid.UUID
+	if raw := c.Query("staff_id"); raw != "" {
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return httpx.ValidationProblem(c, "invalid staff_id", nil)
+		}
+		staffID = &id
+	}
+	rows, err := h.svc.ListOwnership(c.UserContext(), orgID, staffID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
+}
+
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	g := org.Group("/customers", authz.RequireFeature(features, "crm"))
 	g.Get("/", h.List)
+	g.Get("/ownership", h.ListOwnership)
 	g.Post("/", h.Create)
+	g.Get("/:id", h.Get)
+	g.Put("/:id", h.Update)
+	g.Delete("/:id", h.Delete)
 }

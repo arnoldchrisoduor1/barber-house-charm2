@@ -1,59 +1,29 @@
-import Link from "next/link";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BusinessChoiceSection } from "@/components/marketing/BusinessChoiceSection";
+import { DetailSection } from "@/components/marketing/DetailSection";
+import { FeaturesSection } from "@/components/marketing/FeaturesSection";
+import { Footer } from "@/components/marketing/Footer";
+import { HeroSection } from "@/components/marketing/HeroSection";
+import { MarketingNavbar } from "@/components/marketing/MarketingNavbar";
+import { PricingSection } from "@/components/marketing/PricingSection";
+import { StatsSection } from "@/components/marketing/StatsSection";
+import { TestimonialsSection } from "@/components/marketing/TestimonialsSection";
 
 export default function MarketingHomePage() {
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      <div className="mesh-aurora" aria-hidden />
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-16">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="label-eyebrow">Haus of Wellness</p>
-            <h1 className="font-display text-4xl text-gradient-aurora sm:text-5xl">
-              One platform. Nine business modes.
-            </h1>
-          </div>
-          <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link href="/login">Sign in</Link>
-            </Button>
-            <Button asChild className="bg-gradient-gold text-primary-foreground shadow-gold">
-              <Link href="/register">Get started</Link>
-            </Button>
-          </div>
-        </header>
-
-        <main className="mt-16 grid gap-6 sm:grid-cols-3">
-          {[
-            {
-              title: "Barber & Beauty",
-              description: "Appointments, POS, staff scheduling, and client CRM in one shell.",
-            },
-            {
-              title: "Spa & Wellness",
-              description: "Treatment rooms, guest journeys, and luxury theming out of the box.",
-            },
-            {
-              title: "Retail & Products",
-              description: "Inventory, bundles, and storefront flows for product-led businesses.",
-            },
-          ].map((item) => (
-            <Card key={item.title} className="glass stat-tile border-border/60">
-              <CardHeader>
-                <CardTitle>{item.title}</CardTitle>
-                <CardDescription>{item.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button asChild variant="link" className="px-0">
-                  <Link href="/register">Start free trial</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </main>
+    <div className="relative min-h-screen overflow-x-hidden bg-background scroll-smooth">
+      <div className="pointer-events-none fixed inset-0 -z-10 opacity-60">
+        <div className="absolute -top-40 left-1/4 h-[600px] w-[600px] rounded-full bg-primary/[0.07] blur-[160px]" />
+        <div className="absolute top-1/3 right-0 h-[500px] w-[500px] rounded-full bg-[hsl(var(--glow-violet))]/[0.05] blur-[160px]" />
       </div>
+      <MarketingNavbar />
+      <HeroSection />
+      <StatsSection />
+      <BusinessChoiceSection />
+      <FeaturesSection />
+      <DetailSection />
+      <PricingSection />
+      <TestimonialsSection />
+      <Footer />
     </div>
   );
 }

@@ -19,6 +19,27 @@ export function getPrice(
   return Math.round(monthly * months * (1 - discount));
 }
 
+export function getMonthlyEquivalent(
+  plan: SubscriptionPlan,
+  cycle: keyof typeof pricing.billingCycles,
+  platformCount = 1
+): number {
+  const { months } = pricing.billingCycles[cycle];
+  return Math.round(getPrice(plan, cycle, platformCount) / months);
+}
+
+export function getSavingsPercent(cycle: keyof typeof pricing.billingCycles): number {
+  return Math.round(pricing.billingCycles[cycle].discount * 100);
+}
+
+export const CYCLE_LABELS = {
+  monthly: { label: "Monthly", suffix: "/mo" },
+  quarterly: { label: "Quarterly", suffix: "/quarter" },
+  annually: { label: "Annually", suffix: "/year" },
+} as const;
+
+export type BillingCycle = keyof typeof pricing.billingCycles;
+
 export function planRank(plan: SubscriptionPlan): number {
   return pricing.baseMonthlyKES
     ? (["solo_pro", "starter", "professional", "enterprise"] as const).indexOf(plan)

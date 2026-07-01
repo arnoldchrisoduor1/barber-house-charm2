@@ -13,4 +13,5 @@ func RegisterRoutes(router fiber.Router, jwt *platformauth.JWTService, checker p
 	org.Get("/members", h.ListMembers)
 	org.Get("/branches", h.ListBranches)
 	org.Post("/branches", h.CreateBranch)
+	org.Patch("/subscription", h.UpdateSubscription)
 }

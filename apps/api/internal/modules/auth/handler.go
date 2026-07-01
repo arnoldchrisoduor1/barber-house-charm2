@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v2"
 
 	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
@@ -50,6 +52,11 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 	}
 	resp, err := h.svc.Register(c.UserContext(), req)
 	if err != nil {
+		if errors.Is(err, ErrInvalidRole) {
+			return httpx.ValidationProblem(c, "invalid role", map[string]any{
+				"role": "must be one of ceo, director, branch_manager, senior_barber, junior_barber, receptionist",
+			})
+		}
 		return httpx.From(c, err)
 	}
 	setAuthCookies(c, resp)
@@ -65,7 +72,9 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 	if err != nil {
 		return httpx.From(c, err)
 	}
-	setAuthCookies(c, resp)
+	if !resp.Requires2FA {
+		setAuthCookies(c, resp)
+	}
 	return c.JSON(resp)
 }
 
@@ -103,5 +112,71 @@ func (h *Handler) Me(c *fiber.Ctx) error {
 	if err != nil {
 		return httpx.From(c, err)
 	}
+	return c.JSON(resp)
+}
+
+func (h *Handler) Setup2FA(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	if err := h.svc.Setup2FA(c.UserContext(), user.ID); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"status": "otp_sent"})
+}
+
+func (h *Handler) Verify2FA(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	var req TwoFAOTPRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if err := h.svc.Verify2FA(c.UserContext(), user.ID, req.OTP); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"enabled": true})
+}
+
+func (h *Handler) Disable2FA(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	var req TwoFAOTPRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if err := h.svc.Disable2FA(c.UserContext(), user.ID, req.OTP); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"enabled": false})
+}
+
+func (h *Handler) TwoFactorStatus(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	enabled, err := h.svc.TwoFactorStatus(c.UserContext(), user.ID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"enabled": enabled})
+}
+
+func (h *Handler) Challenge2FA(c *fiber.Ctx) error {
+	var req TwoFAChallengeRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	resp, err := h.svc.Complete2FAChallenge(c.UserContext(), req.ChallengeToken, req.OTP)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	setAuthCookies(c, resp)
 	return c.JSON(resp)
 }

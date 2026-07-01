@@ -43,3 +43,17 @@ pnpm --filter @haus/contracts generate
 cd apps/web && npm run dev
 cd apps/api && go run ./cmd/api
 ```
+
+
+# Build API + web images
+docker compose -f infra/docker/compose.yml build api web
+
+# Apply DB migrations
+docker compose -f infra/docker/compose.yml run --rm migrate
+
+# Start the full stack
+docker compose -f infra/docker/compose.yml up -d
+
+# Start Playwright E2E UI (run from apps/web)
+cd apps/web
+PLAYWRIGHT_BASE_URL="http://localhost:3001" PLAYWRIGHT_API_URL="http://localhost:18432" PLAYWRIGHT_CHANNEL="chromium" npm run test:e2e -- --ui

@@ -1,25 +1,14 @@
 "use client";
 
-import { ModulePage } from "@/components/ModulePage";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AnalyticsPage } from "@/components/AnalyticsPage";
 
 export default function FieldOperationsPage() {
   return (
-    <ModulePage
+    <AnalyticsPage
       title="Field Operations"
-      description="Dispatch, routes, and on-site workflows for mobile and multi-location modes."
-    >
-      <Card className="glass max-w-xl">
-        <CardHeader>
-          <CardTitle>Field ops hub</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Mode-specific field operations — dispatch boards, route planning, and technician status —
-            will render here based on your business category.
-          </p>
-        </CardContent>
-      </Card>
-    </ModulePage>
+      feature="coverage_zones"
+      path="analytics/field-operations"
+      queryKey="field-operations"
+    />
   );
 }

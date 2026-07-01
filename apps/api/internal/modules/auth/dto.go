@@ -9,6 +9,7 @@ type RegisterRequest struct {
 	OrgName      string `json:"orgName"`
 	OrgSlug      string `json:"orgSlug"`
 	BusinessType string `json:"businessType"`
+	Role         string `json:"role"`
 }
 
 type LoginRequest struct {
@@ -16,14 +17,26 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
+type TwoFAOTPRequest struct {
+	OTP string `json:"otp"`
+}
+
+type TwoFAChallengeRequest struct {
+	ChallengeToken string `json:"challengeToken"`
+	OTP            string `json:"otp"`
+}
+
 type RefreshRequest struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+
 type AuthResponse struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
-	ExpiresIn    int64  `json:"expiresIn"`
+	AccessToken    string `json:"accessToken,omitempty"`
+	RefreshToken   string `json:"refreshToken,omitempty"`
+	ExpiresIn      int64  `json:"expiresIn,omitempty"`
+	Requires2FA    bool   `json:"requires2FA,omitempty"`
+	ChallengeToken string `json:"challengeToken,omitempty"`
 }
 
 type MeResponse struct {

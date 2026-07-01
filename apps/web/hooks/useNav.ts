@@ -4,6 +4,8 @@ import { useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useFeatureSet } from "@/hooks/useFeature";
+import { usePortalView } from "@/hooks/usePortalView";
+import { CLIENT_PORTAL_NAV } from "@/lib/portal-view";
 import { navByMode, resolveNavMode, type NavItem } from "@/lib/nav-manifest";
 
 export interface NavSection {
@@ -13,6 +15,7 @@ export interface NavSection {
 
 export function useNav() {
   const { roles } = useAuth();
+  const { effectiveRoles, activePortal, portalLabel } = usePortalView();
   const { mode: categoryMode } = useBusinessCategory();
   const features = useFeatureSet();
   const { me } = useAuth();
@@ -27,8 +30,14 @@ export function useNav() {
   const manifest = navByMode[navMode] ?? navByMode.barber;
 
   const items = useMemo(() => {
-    return manifest.items.filter((item) => {
-      if (item.roles?.length && !item.roles.some((role) => roles.includes(role))) {
+    const navRoles = effectiveRoles.length ? effectiveRoles : roles;
+    const sourceItems: NavItem[] =
+      activePortal === "client"
+        ? CLIENT_PORTAL_NAV.map((item) => ({ ...item }))
+        : manifest.items;
+
+    return sourceItems.filter((item) => {
+      if (item.roles?.length && !item.roles.some((role) => navRoles.includes(role))) {
         return false;
       }
       if (item.requiredFeature && !features.has(item.requiredFeature)) {
@@ -36,7 +45,7 @@ export function useNav() {
       }
       return true;
     });
-  }, [manifest.items, roles, features]);
+  }, [manifest.items, roles, effectiveRoles, features, activePortal]);
 
   const sections = useMemo<NavSection[]>(() => {
     const grouped = new Map<string, NavItem[]>();
@@ -55,5 +64,7 @@ export function useNav() {
     mode: navMode,
     items,
     sections,
+    portalLabel,
+    activePortal,
   };
 }

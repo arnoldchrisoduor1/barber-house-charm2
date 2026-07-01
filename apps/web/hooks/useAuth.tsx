@@ -14,6 +14,11 @@ import { modeTerms, type BusinessMode } from "@haus/contracts";
 import type { MeResponse } from "@/lib/api-client";
 import { api } from "@/lib/api-client";
 
+export interface AuthLoginResponse {
+  requires2FA?: boolean;
+  challengeToken?: string;
+}
+
 type ActiveOrg = NonNullable<MeResponse["activeOrg"]>;
 
 interface AuthContextValue {
@@ -23,13 +28,15 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   roles: string[];
   features: string[];
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthLoginResponse>;
+  verify2FA: (challengeToken: string, otp: string) => Promise<void>;
   register: (payload: {
     email: string;
     password: string;
     fullName: string;
     organizationName: string;
     businessType?: string;
+    role?: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
@@ -58,7 +65,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: (payload: { email: string; password: string }) =>
-      api.post("/auth/login", payload),
+      api.post<AuthLoginResponse>("/auth/login", payload),
+  });
+
+  const verify2FAMutation = useMutation({
+    mutationFn: (payload: { challengeToken: string; otp: string }) =>
+      api.post("/auth/2fa/challenge", payload),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
   });
 
@@ -69,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: string;
       organizationName: string;
       businessType?: string;
+      role?: string;
     }) =>
       api.post("/auth/register", {
         email: payload.email,
@@ -77,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         orgName: payload.organizationName,
         orgSlug: slugifyOrgName(payload.organizationName),
         businessType: payload.businessType ?? "barber",
+        role: payload.role ?? "ceo",
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
   });
@@ -101,8 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: Boolean(meQuery.data?.user),
       roles: meQuery.data?.roles ?? [],
       features: meQuery.data?.features ?? [],
-      login: async (email, password) => {
-        await loginMutation.mutateAsync({ email, password });
+      login: async (email, password) => loginMutation.mutateAsync({ email, password }),
+      verify2FA: async (challengeToken, otp) => {
+        await verify2FAMutation.mutateAsync({ challengeToken, otp });
       },
       register: async (payload) => {
         await registerMutation.mutateAsync(payload);
@@ -112,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       refreshMe,
     }),
-    [meQuery.data, meQuery.isLoading, loginMutation, registerMutation, logoutMutation, refreshMe],
+    [meQuery.data, meQuery.isLoading, loginMutation, verify2FAMutation, registerMutation, logoutMutation, refreshMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

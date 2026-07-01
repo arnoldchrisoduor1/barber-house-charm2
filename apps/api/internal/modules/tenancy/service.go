@@ -47,6 +47,10 @@ func (s *Service) GetSubscription(ctx context.Context, orgID uuid.UUID) (*Subscr
 	return s.repo.GetSubscription(ctx, orgID)
 }
 
+func (s *Service) UpdateSubscriptionPlan(ctx context.Context, orgID uuid.UUID, plan string) (*Subscription, error) {
+	return s.repo.UpdateSubscriptionPlan(ctx, orgID, plan)
+}
+
 func (s *Service) ListBranches(ctx context.Context, orgID uuid.UUID) ([]Branch, error) {
 	return s.repo.ListBranches(ctx, orgID)
 }

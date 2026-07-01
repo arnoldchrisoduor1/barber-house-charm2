@@ -17,11 +17,16 @@ import {
   Settings,
   Bell,
   Circle,
+  Crown,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { PortalSwitcher } from "@/components/PortalSwitcher";
+import { BranchSwitcher } from "@/components/BranchSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { UserProfileMenu } from "@/components/UserProfileMenu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useBusinessCategory } from "@/hooks/useBusinessCategory";
@@ -41,6 +46,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Package,
   Settings,
   Bell,
+  Crown,
 };
 
 function resolveIcon(name: string): LucideIcon {
@@ -55,7 +61,7 @@ interface AppShellProps {
 export function AppShell({ children, title }: AppShellProps) {
   const pathname = usePathname();
   const { label, terms } = useBusinessCategory();
-  const { sections } = useNav();
+  const { sections, portalLabel } = useNav();
   const { me, logout } = useAuth();
 
   return (
@@ -67,6 +73,9 @@ export function AppShell({ children, title }: AppShellProps) {
             <p className="label-eyebrow">Haus of Wellness</p>
             <h1 className="font-display text-xl text-gradient-gold">{label}</h1>
             <p className="mt-1 text-xs text-muted-foreground">{terms.dashboardSubtitle}</p>
+            <p className="mt-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+              {portalLabel} portal
+            </p>
           </div>
 
           <nav className="flex-1 overflow-y-auto p-3 space-y-4">
@@ -100,7 +109,7 @@ export function AppShell({ children, title }: AppShellProps) {
             ))}
           </nav>
 
-          <div className="border-t border-sidebar-border p-4 space-y-2">
+          <div className="border-t border-sidebar-border p-4 space-y-2 lg:hidden">
             <p className="truncate text-xs text-muted-foreground">{me?.user?.email}</p>
             <Button variant="outline" size="sm" className="w-full" onClick={() => logout()}>
               Sign out
@@ -110,11 +119,19 @@ export function AppShell({ children, title }: AppShellProps) {
       </aside>
 
       <main className="relative flex-1 overflow-auto">
-        {title ? (
-          <header className="sticky top-0 z-10 border-b border-border bg-background/80 px-6 py-4 backdrop-blur">
-            <h2 className="font-heading text-lg font-semibold">{title}</h2>
-          </header>
-        ) : null}
+        <header className="sticky top-0 z-10 border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              {title ? <h2 className="font-heading text-lg font-semibold truncate">{title}</h2> : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:ml-auto">
+              <BranchSwitcher />
+              <PortalSwitcher />
+              <ThemeToggle />
+              <UserProfileMenu />
+            </div>
+          </div>
+        </header>
         <div className="p-6">{children}</div>
       </main>
     </div>
