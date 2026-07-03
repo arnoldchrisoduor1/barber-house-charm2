@@ -9,8 +9,3 @@ hauseoftech.com, www.hauseoftech.com {
 api.hauseoftech.com {
   reverse_proxy api:8080
 }
-
-# Local multi-tenant dev (optional)
-*.lvh.me {
-  reverse_proxy web:3000
-}
