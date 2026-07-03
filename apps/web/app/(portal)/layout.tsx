@@ -4,6 +4,12 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgRealtime } from "@/hooks/useOrgRealtime";
+
+function PortalRealtimeProvider({ children }: { children: ReactNode }) {
+  useOrgRealtime();
+  return <>{children}</>;
+}
 
 export default function PortalLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,5 +30,7 @@ export default function PortalLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <PortalRealtimeProvider>{children}</PortalRealtimeProvider>
+  );
 }

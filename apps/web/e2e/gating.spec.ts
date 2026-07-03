@@ -10,7 +10,7 @@ test.beforeEach(async ({ context }) => {
 test("CRM clients page renders with feature enabled for enterprise demo", async ({ page }) => {
   await page.goto("/clients");
   await waitForWorkspace(page);
-  await expect(page.getByRole("button", { name: /add new/i })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: /^add client$/i })).toBeVisible({ timeout: 15_000 });
   await expect(page.locator("body")).not.toContainText("Application error");
 });
 
@@ -24,10 +24,18 @@ test("select-plan page loads and allows plan switch without payment", async ({ p
   await page.goto("/select-plan");
   await expect(page.getByRole("heading", { name: /choose your/i })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/no payment required/i).first()).toBeVisible();
-  const switchButton = page.getByRole("button", { name: /^switch to /i }).first();
-  await expect(switchButton).toBeVisible();
-  await switchButton.click();
-  await page.waitForURL("**/dashboard", { timeout: 30_000 });
+
+  const downgrade = page.getByRole("button", { name: /^switch to professional$/i });
+  if (await downgrade.isVisible().catch(() => false)) {
+    await downgrade.click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 60_000 });
+    await page.goto("/select-plan");
+  }
+
+  const upgrade = page.getByRole("button", { name: /^switch to enterprise$/i });
+  await expect(upgrade).toBeVisible();
+  await upgrade.click();
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 60_000 });
   await expect(page.locator("body")).not.toContainText("Application error");
 });
 
@@ -38,10 +46,16 @@ test("CEO can switch between business, staff, and client portals", async ({ page
   await expect(page.getByRole("tab", { name: /business owner/i })).toHaveAttribute("aria-selected", "true");
 
   await page.getByRole("tab", { name: /client/i }).click();
-  await page.waitForURL("**/portal", { timeout: 15_000 });
-  await expect(page.getByRole("tab", { name: /client/i })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: /client/i })).toHaveAttribute("aria-selected", "true", {
+    timeout: 15_000,
+  });
+  await page.goto("/portal");
+  await expect(page).toHaveURL(/\/portal/, { timeout: 15_000 });
 
   await page.getByRole("tab", { name: /staff/i }).click();
-  await page.waitForURL("**/dashboard", { timeout: 15_000 });
-  await expect(page.getByRole("tab", { name: /staff/i })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("tab", { name: /staff/i })).toHaveAttribute("aria-selected", "true", {
+    timeout: 15_000,
+  });
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 });
 });

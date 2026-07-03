@@ -5,11 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useOrgRealtime } from "@/hooks/useOrgRealtime";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading, roles } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
+
+  useOrgRealtime();
 
   useEffect(() => {
     if (isLoading) return;

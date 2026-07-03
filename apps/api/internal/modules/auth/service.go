@@ -214,6 +214,7 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 		}
 	}
 
+	sid, _ := s.repo.StaffIDForUser(ctx, org.ID, userID)
 	return &MeResponse{
 		User: UserDTO{
 			ID:       user.ID.String(),
@@ -234,7 +235,16 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 			TrialEndsAt:  sub.TrialEndsAt,
 		},
 		Features: features,
+		StaffID:  staffIDString(sid),
 	}, nil
+}
+
+func staffIDString(id *uuid.UUID) *string {
+	if id == nil {
+		return nil
+	}
+	s := id.String()
+	return &s
 }
 
 func (s *Service) Complete2FAChallenge(ctx context.Context, challengeToken, otp string) (*AuthResponse, error) {
@@ -298,4 +308,24 @@ func (s *Service) issueTokens(_ context.Context, userID, orgID uuid.UUID, roles 
 		RefreshToken: refresh,
 		ExpiresIn:    int64(time.Until(exp).Seconds()),
 	}, nil
+}
+
+func (s *Service) ChangePassword(ctx context.Context, userID uuid.UUID, req ChangePasswordRequest) error {
+	if req.CurrentPassword == "" || req.NewPassword == "" {
+		return httpx.ErrConflict
+	}
+	user, err := s.repo.FindUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	ok, err := platformauth.VerifyPassword(user.PasswordHash, req.CurrentPassword)
+	if err != nil || !ok {
+		return httpx.ErrUnauthorized
+	}
+	hash, err := platformauth.HashPassword(req.NewPassword)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = hash
+	return s.repo.DB().WithContext(ctx).Save(user).Error
 }

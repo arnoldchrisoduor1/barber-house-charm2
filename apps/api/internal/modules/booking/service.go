@@ -128,6 +128,28 @@ func (s *Service) Delete(ctx context.Context, orgID, id uuid.UUID) error {
 	return s.repo.Delete(ctx, orgID, id)
 }
 
+type PatchStatusDTO struct {
+	Status string `json:"status"`
+}
+
+func (s *Service) PatchStatus(ctx context.Context, orgID, id uuid.UUID, status string) (*Booking, error) {
+	b, err := s.repo.Get(ctx, orgID, id)
+	if err != nil {
+		return nil, httpx.ErrNotFound
+	}
+	b.Status = status
+	if err := s.repo.Update(ctx, orgID, b); err != nil {
+		return nil, err
+	}
+	if s.publisher != nil {
+		_ = s.publisher.PublishQueue(ctx, orgID, "queue.updated", map[string]any{
+			"booking_id": id,
+			"status":     status,
+		})
+	}
+	return b, nil
+}
+
 type AvailabilityQuery struct {
 	StaffID     uuid.UUID `query:"staff_id"`
 	BookingDate string    `query:"booking_date"`

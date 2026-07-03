@@ -79,6 +79,13 @@ jobs:
             sleep 5
           done
           exit 1
+      - name: Wait for production web
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf -o /dev/null -w "%{http_code}" http://localhost:3001/login | grep -qE '^[23]'; then exit 0; fi
+            sleep 5
+          done
+          exit 1
       - name: Seed demo data
         run: docker compose -f infra/docker/compose.yml run --rm api /app/seed
       - name: Install Playwright
@@ -91,6 +98,7 @@ jobs:
           PLAYWRIGHT_BASE_URL: http://localhost:3001
           PLAYWRIGHT_API_URL: http://localhost:18432
           PLAYWRIGHT_CHANNEL: chromium
+          E2E_PROD: "1"
           CI: "true"
       - name: Upload Playwright report
         if: failure()

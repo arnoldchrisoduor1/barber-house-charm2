@@ -4,10 +4,38 @@ End-to-end tests for Haus of Wellness web app + API proxy.
 
 ## Prerequisites
 
-1. Start the stack from repo root:
+Use the **production Next.js container** for E2E — not `next dev`. Dev mode compiles routes on first visit and slows the suite dramatically.
+
+### Recommended: production stack (Docker)
+
+From `apps/web`:
 
 ```bash
-docker compose -f infra/docker/compose.yml up -d --build
+# First run or after frontend changes (builds web image)
+npm run e2e:stack:up:build
+
+# Subsequent runs (reuses images)
+npm run e2e:stack:up
+
+# Run tests against http://localhost:3001 (production web on port 3001)
+E2E_PROD=1 npm run test:e2e
+
+# One-shot: start stack + full suite
+npm run test:e2e:prod:build   # first time
+npm run test:e2e:prod         # cached images
+
+# Tear down when finished
+npm run e2e:stack:down
+```
+
+**Stop any local `next dev` on port 3001** before starting the stack — only one process can bind that port.
+
+The `web` service serves a pre-built standalone Next.js app (`infra/docker/Dockerfile.web`). API + Postgres + Redis run in the same compose file.
+
+### Manual stack (equivalent)
+
+```bash
+docker compose -f infra/docker/compose.yml up -d --build postgres redis mailhog minio migrate api web
 docker compose -f infra/docker/compose.yml run --rm api /app/seed
 ```
 
@@ -32,9 +60,10 @@ npm run test:e2e
 ```
 
 ```powershell
-# PowerShell
+# PowerShell — against production Docker web (port 3001)
 $env:PLAYWRIGHT_BASE_URL="http://localhost:3001"
 $env:PLAYWRIGHT_API_URL="http://localhost:18432"
+$env:E2E_PROD="1"
 npm run test:e2e
 ```
 

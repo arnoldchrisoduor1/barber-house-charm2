@@ -18,6 +18,8 @@ type ListFilter struct {
 	BranchID      *uuid.UUID
 	CustomerPhone string
 	Status        string
+	Date          string
+	StaffID       *uuid.UUID
 }
 
 func NewRepository(db *gorm.DB) *Repository {
@@ -38,6 +40,12 @@ func (r *Repository) List(ctx context.Context, orgID uuid.UUID, filter ListFilte
 	}
 	if filter.Status != "" {
 		q = q.Where("status = ?", filter.Status)
+	}
+	if filter.Date != "" {
+		q = q.Where("booking_date = ?", filter.Date)
+	}
+	if filter.StaffID != nil {
+		q = q.Where("staff_id = ?", *filter.StaffID)
 	}
 	err := q.Order("booking_date DESC").Find(&rows).Error
 	return rows, err

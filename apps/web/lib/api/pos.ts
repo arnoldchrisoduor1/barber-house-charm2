@@ -1,7 +1,7 @@
 import { api } from "@/lib/api-client";
 import { pickRowField } from "@/lib/record-fields";
 
-export type PosCatalogType = "service" | "product";
+export type PosCatalogType = "service" | "product" | "package";
 
 export interface PosCatalogItem {
   id: string;
@@ -95,9 +95,10 @@ function mapTransactionRow(row: Record<string, unknown>): PosTransaction {
 }
 
 export async function fetchPosCatalog(orgId: string, params?: Record<string, string>) {
-  const [servicesRes, productsRes] = await Promise.all([
+  const [servicesRes, productsRes, packagesRes] = await Promise.all([
     api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/services`, { params }),
     api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/retail-products`, { params }),
+    api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/service-packages`, { params }),
   ]);
 
   const services = (servicesRes.data ?? [])
@@ -108,7 +109,11 @@ export async function fetchPosCatalog(orgId: string, params?: Record<string, str
     .filter((row) => pickRowField(row, "is_active") !== false)
     .map((row) => mapCatalogRow(row, "product"));
 
-  return { services, products };
+  const packages = (packagesRes.data ?? [])
+    .filter((row) => pickRowField(row, "is_active") !== false)
+    .map((row) => mapCatalogRow(row, "package"));
+
+  return { services, products, packages };
 }
 
 export async function fetchPosCustomers(orgId: string) {

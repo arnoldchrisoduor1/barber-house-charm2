@@ -1,93 +1,71 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { DollarSign, Percent, Wallet } from "lucide-react";
 
 import { ModulePage } from "@/components/ModulePage";
-import { Feature } from "@/components/Feature";
+import { StatTile } from "@/components/dashboard/StatTile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
-import { apiClient } from "@/lib/api-client";
-import { useEntityList } from "@/lib/api/crud";
-
-type StaffRow = Record<string, unknown>;
-
-function staffLabel(row: StaffRow): string {
-  return String(row.display_name ?? row.displayName ?? row.id ?? "Staff");
-}
-
-function staffId(row: StaffRow): string {
-  return String(row.id ?? row.ID ?? "");
-}
+import { useCurrentStaffId } from "@/hooks/useCurrentStaffId";
+import { api } from "@/lib/api-client";
+import { formatDate, formatKES } from "@/lib/format";
+import { pickRowField } from "@/lib/record-fields";
 
 export default function MyEarningsPage() {
   const { activeOrg } = useAuth();
-  const orgId = activeOrg?.id;
-  const { data: staff = [], isLoading: staffLoading } = useEntityList<StaffRow>(orgId, "staff");
-  const [selectedStaffId, setSelectedStaffId] = useState<string>("");
-
-  const staffIdToUse = selectedStaffId || (staff[0] ? staffId(staff[0]) : "");
+  const staffId = useCurrentStaffId();
+  const orgId = activeOrg?.id ?? "";
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["org", orgId, "analytics-my-earnings", staffIdToUse],
-    enabled: Boolean(orgId && staffIdToUse),
-    queryFn: () =>
-      apiClient<Record<string, unknown>>(
-        `/organizations/${orgId}/analytics/my-earnings?staff_id=${staffIdToUse}`,
-      ),
+    queryKey: ["org", orgId, "analytics-my-earnings", staffId],
+    enabled: Boolean(orgId && staffId),
+    queryFn: async () => {
+      const resp = await api.get<Record<string, unknown>>(
+        `/organizations/${orgId}/analytics/my-earnings${staffId ? `?staff_id=${staffId}` : ""}`,
+      );
+      return resp;
+    },
   });
 
-  const body = (
-    <Card className="glass">
-      <CardHeader>
-        <CardTitle>My Earnings</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {staffLoading ? (
-          <p className="text-muted-foreground">Loading staff…</p>
-        ) : staff.length === 0 ? (
-          <p className="text-muted-foreground">No staff members found.</p>
-        ) : (
-          <div className="max-w-xs space-y-1.5">
-            <label className="text-sm text-muted-foreground">Staff member</label>
-            <Select
-              value={staffIdToUse}
-              onValueChange={setSelectedStaffId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select staff" />
-              </SelectTrigger>
-              <SelectContent>
-                {staff.map((row) => (
-                  <SelectItem key={staffId(row)} value={staffId(row)}>
-                    {staffLabel(row)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        {isLoading && staffIdToUse ? <p className="text-muted-foreground">Loading earnings…</p> : null}
-        {error ? <p className="text-destructive">Failed to load earnings.</p> : null}
-        {data ? (
-          <pre className="max-h-[60vh] overflow-auto rounded-md bg-muted/40 p-4 text-xs">
-            {JSON.stringify(data, null, 2)}
-          </pre>
-        ) : null}
-      </CardContent>
-    </Card>
-  );
+  const revenue = Number(pickRowField(data ?? {}, "revenue_kes") ?? 0);
+  const commission = Number(pickRowField(data ?? {}, "commission_kes") ?? 0);
+  const rate = Number(pickRowField(data ?? {}, "commission_rate") ?? 0);
+  const displayName = String(pickRowField(data ?? {}, "display_name") ?? "You");
+  const periodStart = pickRowField(data ?? {}, "period_start");
+  const periodEnd = pickRowField(data ?? {}, "period_end");
 
   return (
-    <ModulePage title="My Earnings" feature="advanced_analytics">
-      <Feature flag="advanced_analytics">{body}</Feature>
+    <ModulePage title="My Earnings" feature="advanced_analytics" description="Your commission and revenue for the current period.">
+      {!staffId ? (
+        <Card className="glass">
+          <CardContent className="py-8">
+            <p className="text-muted-foreground">No staff profile linked to your account.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {error ? <p className="text-destructive">Failed to load earnings.</p> : null}
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3" data-testid="my-earnings-stats">
+            <StatTile icon={Wallet} label="Revenue" value={data ? formatKES(revenue) : "—"} loading={isLoading} />
+            <StatTile icon={DollarSign} label="Commission" value={data ? formatKES(commission) : "—"} loading={isLoading} color="text-green-400" />
+            <StatTile icon={Percent} label="Rate" value={data ? `${rate}%` : "—"} loading={isLoading} />
+          </div>
+          <Card className="glass mt-6">
+            <CardHeader>
+              <CardTitle>{displayName}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm text-muted-foreground">
+              {periodStart && periodEnd ? (
+                <p>
+                  Period: {formatDate(String(periodStart))} – {formatDate(String(periodEnd))}
+                </p>
+              ) : null}
+              <p>Commission is calculated from completed transactions in the last 30 days.</p>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </ModulePage>
   );
 }

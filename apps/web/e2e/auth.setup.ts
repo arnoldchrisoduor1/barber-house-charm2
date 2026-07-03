@@ -21,11 +21,24 @@ setup("authenticate demo user", async ({ page, context }) => {
     }).toPass({ timeout: 120_000 });
   }
 
-  const meResponse = await context.request.get("/api/v1/me");
+  let meResponse = await context.request.get("/api/v1/me");
   expect(meResponse.ok()).toBeTruthy();
+  let me = await meResponse.json();
+  const orgId = me.activeOrg?.id as string | undefined;
+  expect(orgId).toBeTruthy();
+
+  const upgrade = await context.request.patch(`/api/v1/organizations/${orgId}/subscription`, {
+    data: { plan: "enterprise" },
+  });
+  expect(upgrade.ok()).toBeTruthy();
+  meResponse = await context.request.get("/api/v1/me");
+  expect(meResponse.ok()).toBeTruthy();
+  me = await meResponse.json();
+  expect(me.subscription?.plan).toBe("enterprise");
+  expect(me.features).toContain("pos_payments");
 
   await page.goto("/admin");
-  await expect(page).toHaveURL(/\/admin/);
+  await expect(page).toHaveURL(/\/admin/, { timeout: 30_000 });
 
   await context.storageState({ path: authFile });
 });

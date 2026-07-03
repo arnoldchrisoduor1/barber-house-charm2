@@ -30,6 +30,11 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+type ChangePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}
+
 
 type AuthResponse struct {
 	AccessToken    string `json:"accessToken,omitempty"`
@@ -45,6 +50,7 @@ type MeResponse struct {
 	Roles        []string        `json:"roles"`
 	Subscription SubscriptionDTO `json:"subscription"`
 	Features     []string        `json:"features"`
+	StaffID      *string         `json:"staffId,omitempty"`
 }
 
 type UserDTO struct {

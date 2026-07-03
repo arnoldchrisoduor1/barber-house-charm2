@@ -2,6 +2,7 @@ package tenancy
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
@@ -59,6 +60,28 @@ func (h *Handler) CreateBranch(c *fiber.Ctx) error {
 		return httpx.From(c, err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(branch)
+}
+
+func (h *Handler) UpdateBranch(c *fiber.Ctx) error {
+	var req createBranchRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	var isActive *bool
+	if v := c.Query("is_active"); v != "" {
+		b := v == "true" || v == "1"
+		isActive = &b
+	}
+	branch, err := h.svc.UpdateBranch(c.UserContext(), orgID, id, req.Name, req.Address, req.Phone, isActive)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(branch)
 }
 
 type updateSubscriptionRequest struct {

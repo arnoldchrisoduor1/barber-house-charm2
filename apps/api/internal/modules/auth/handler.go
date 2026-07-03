@@ -180,3 +180,18 @@ func (h *Handler) Challenge2FA(c *fiber.Ctx) error {
 	setAuthCookies(c, resp)
 	return c.JSON(resp)
 }
+
+func (h *Handler) ChangePassword(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	var req ChangePasswordRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if err := h.svc.ChangePassword(c.UserContext(), user.ID, req); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}

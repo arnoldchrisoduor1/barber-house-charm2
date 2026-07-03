@@ -69,6 +69,25 @@ func (s *Service) CreateBranch(ctx context.Context, orgID uuid.UUID, name, addre
 	return b, nil
 }
 
+func (s *Service) UpdateBranch(ctx context.Context, orgID, branchID uuid.UUID, name, address, phone string, isActive *bool) (*Branch, error) {
+	b, err := s.repo.GetBranch(ctx, orgID, branchID)
+	if err != nil {
+		return nil, httpx.ErrNotFound
+	}
+	if name != "" {
+		b.Name = name
+	}
+	b.Address = address
+	b.Phone = phone
+	if isActive != nil {
+		b.IsActive = *isActive
+	}
+	if err := s.repo.UpdateBranch(ctx, orgID, b); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
 func (s *Service) ListMembers(ctx context.Context, orgID uuid.UUID) ([]OrganizationMember, error) {
 	return s.repo.ListMembers(ctx, orgID)
 }

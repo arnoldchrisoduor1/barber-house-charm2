@@ -139,10 +139,23 @@ export async function submitPortalBooking(orgId: string, payload: PortalBookingP
 export interface BookingRow {
   id: string;
   customerId: string;
+  staffId?: string;
+  branchId?: string;
   bookingDate: string;
   startTime: string;
   endTime: string;
   status: string;
+  notes?: string;
+}
+
+export interface UpdateBookingPayload {
+  customerId: string;
+  staffId?: string;
+  branchId?: string;
+  bookingDate: string;
+  startTime: string;
+  endTime: string;
+  notes?: string;
 }
 
 export interface BookingServiceLine {
@@ -152,13 +165,19 @@ export interface BookingServiceLine {
 }
 
 function mapBookingRow(row: Record<string, unknown>): BookingRow {
+  const staffId = pickRowField(row, "staff_id") ?? pickRowField(row, "staffId");
+  const branchId = pickRowField(row, "branch_id") ?? pickRowField(row, "branchId");
+  const notes = pickRowField(row, "notes");
   return {
     id: String(pickRowField(row, "id") ?? ""),
-    customerId: String(pickRowField(row, "customer_id") ?? ""),
-    bookingDate: String(pickRowField(row, "booking_date") ?? ""),
-    startTime: String(pickRowField(row, "start_time") ?? ""),
-    endTime: String(pickRowField(row, "end_time") ?? ""),
+    customerId: String(pickRowField(row, "customer_id") ?? pickRowField(row, "customerId") ?? ""),
+    staffId: staffId ? String(staffId) : undefined,
+    branchId: branchId ? String(branchId) : undefined,
+    bookingDate: String(pickRowField(row, "booking_date") ?? pickRowField(row, "bookingDate") ?? ""),
+    startTime: String(pickRowField(row, "start_time") ?? pickRowField(row, "startTime") ?? ""),
+    endTime: String(pickRowField(row, "end_time") ?? pickRowField(row, "endTime") ?? ""),
     status: String(pickRowField(row, "status") ?? "scheduled"),
+    notes: notes ? String(notes) : undefined,
   };
 }
 
@@ -185,6 +204,28 @@ export async function fetchBookingServices(orgId: string, bookingId: string) {
     durationMinutes: Number(pickRowField(row, "duration_minutes") ?? 30),
     priceKes: Number(pickRowField(row, "price_kes") ?? 0),
   }));
+}
+
+export async function patchBookingStatus(orgId: string, bookingId: string, status: string) {
+  return apiClient(`/organizations/${orgId}/bookings/${bookingId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function updateBooking(orgId: string, bookingId: string, payload: UpdateBookingPayload) {
+  return apiClient(`/organizations/${orgId}/bookings/${bookingId}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      customerId: payload.customerId,
+      staffId: payload.staffId ?? null,
+      branchId: payload.branchId ?? null,
+      bookingDate: payload.bookingDate,
+      startTime: payload.startTime,
+      endTime: payload.endTime,
+      notes: payload.notes ?? "",
+    }),
+  });
 }
 
 export function formatKes(amount: number): string {

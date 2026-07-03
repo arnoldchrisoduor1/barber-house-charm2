@@ -66,5 +66,11 @@ export const CLIENT_PORTAL_NAV = [
   { icon: "LayoutDashboard", label: "Home", path: "/portal", section: "My Portal" },
   { icon: "Calendar", label: "Book appointment", path: "/portal/book", section: "My Portal" },
   { icon: "Calendar", label: "My bookings", path: "/portal/bookings", section: "My Portal" },
-  { icon: "Crown", label: "Loyalty", path: "/portal", section: "My Portal", requiredFeature: "loyalty" },
+  { icon: "CalendarClock", label: "Reschedule", path: "/portal/reschedule", section: "My Portal" },
+  { icon: "Wallet", label: "Wallet", path: "/portal/wallet", section: "My Portal" },
+  { icon: "Bell", label: "Notifications", path: "/portal/notifications", section: "My Portal" },
+  { icon: "Crown", label: "Loyalty", path: "/portal/loyalty", section: "My Portal", requiredFeature: "loyalty" },
+  { icon: "Star", label: "Reviews", path: "/portal/reviews", section: "My Portal", requiredFeature: "customer_reviews" },
+  { icon: "Gift", label: "Referrals", path: "/portal/referrals", section: "My Portal", requiredFeature: "referrals" },
+  { icon: "UserCircle", label: "Profile", path: "/portal/profile", section: "My Portal" },
 ] as const;

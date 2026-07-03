@@ -11,12 +11,16 @@ export type CrudModuleTestDef = {
   createFields: (unique: string) => CrudFieldInput[];
   editFields?: (unique: string) => CrudFieldInput[];
   rowMatch: (unique: string) => string | RegExp;
+  addButton?: RegExp;
+  supportsDelete?: boolean;
 };
 
 export const CRUD_MANIFEST: CrudModuleTestDef[] = [
   {
     path: "/staff",
     prefix: "Staff",
+    addButton: /^add staff$/i,
+    supportsDelete: false,
     createFields: (u) => [{ label: "Name", value: u }],
     editFields: (u) => [{ label: "Title", value: `${u} Updated` }],
     rowMatch: (u) => u,
@@ -24,18 +28,22 @@ export const CRUD_MANIFEST: CrudModuleTestDef[] = [
   {
     path: "/clients",
     prefix: "Client",
+    addButton: /^add client$/i,
+    supportsDelete: false,
     createFields: (u) => [
       { label: "Full name", value: u },
       { label: "Phone", value: "+254700111222" },
     ],
-    editFields: (u) => [{ label: "Loyalty tier", value: "gold" }],
+    editFields: () => [{ label: "Loyalty tier", value: "gold" }],
     rowMatch: (u) => u,
   },
   {
     path: "/services",
     prefix: "Service",
+    addButton: /^add service$/i,
+    supportsDelete: false,
     createFields: (u) => [{ label: "Service name", value: u }],
-    editFields: (u) => [{ label: "Duration (min)", value: "45" }],
+    editFields: () => [{ label: "Duration (min)", value: "45" }],
     rowMatch: (u) => u,
   },
   {
@@ -48,8 +56,9 @@ export const CRUD_MANIFEST: CrudModuleTestDef[] = [
   {
     path: "/retail-products",
     prefix: "Product",
+    addButton: /^add product$/i,
     createFields: (u) => [{ label: "Product name", value: u }],
-    editFields: (u) => [{ label: "Price (KES)", value: "2500" }],
+    editFields: () => [{ label: "Price (KES)", value: "2500" }],
     rowMatch: (u) => u,
   },
   {
@@ -131,6 +140,7 @@ export const CRUD_MANIFEST: CrudModuleTestDef[] = [
   {
     path: "/reviews",
     prefix: "Review",
+    addButton: /^add review$/i,
     createFields: (u) => [
       { label: "Customer ID", value: "placeholder" },
       { label: "Rating (1-5)", value: "5" },
@@ -141,6 +151,7 @@ export const CRUD_MANIFEST: CrudModuleTestDef[] = [
   {
     path: "/marketing",
     prefix: "Campaign",
+    addButton: /^new campaign$/i,
     createFields: (u) => [{ label: "Campaign name", value: u }],
     editFields: () => [{ label: "Status", value: "draft" }],
     rowMatch: (u) => u,
@@ -162,27 +173,10 @@ export const CRUD_MANIFEST: CrudModuleTestDef[] = [
   {
     path: "/seat-rental",
     prefix: "Seat",
+    addButton: /^add seat$/i,
     createFields: (u) => [
       { label: "Seat label", value: u },
       { label: "Monthly rent (KES)", value: "15000" },
-    ],
-    rowMatch: (u) => u,
-  },
-  {
-    path: "/support",
-    prefix: "Enquiry",
-    createFields: (u) => [
-      { label: "Subject", value: u },
-      { label: "Message", value: `${u} message body` },
-    ],
-    rowMatch: (u) => u,
-  },
-  {
-    path: "/notifications",
-    prefix: "Notice",
-    createFields: (u) => [
-      { label: "Title", value: u },
-      { label: "Body", value: `${u} body` },
     ],
     rowMatch: (u) => u,
   },

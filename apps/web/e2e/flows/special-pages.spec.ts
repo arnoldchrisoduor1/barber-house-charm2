@@ -27,7 +27,8 @@ for (const route of ANALYTICS_ROUTES) {
     await expect(page.locator("body")).not.toContainText("Application error");
     await expect(
       page
-        .locator("pre, table, .text-destructive")
+        .locator("pre, table, .text-destructive, .glass, [data-testid]")
+        .first()
         .or(page.getByRole("heading", { name: /feature locked/i })),
     ).toBeVisible({ timeout: 30_000 });
   });

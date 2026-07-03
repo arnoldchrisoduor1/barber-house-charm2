@@ -12,13 +12,18 @@ import (
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 )
 
-type Service struct {
-	repo   *Repository
-	ledger *ledgermod.Service
+type QueuePublisher interface {
+	PublishQueue(ctx context.Context, orgID uuid.UUID, eventType string, payload any) error
 }
 
-func NewService(repo *Repository, ledger *ledgermod.Service) *Service {
-	return &Service{repo: repo, ledger: ledger}
+type Service struct {
+	repo      *Repository
+	ledger    *ledgermod.Service
+	publisher QueuePublisher
+}
+
+func NewService(repo *Repository, ledger *ledgermod.Service, publisher QueuePublisher) *Service {
+	return &Service{repo: repo, ledger: ledger, publisher: publisher}
 }
 
 type CreateTransactionDTO struct {
@@ -85,6 +90,12 @@ func (s *Service) Checkout(ctx context.Context, orgID uuid.UUID, dto CheckoutDTO
 		if err := s.ledger.RecordCollection(ctx, orgID, int64(tx.AmountKES), ref, &tx.ID); err != nil {
 			return nil, err
 		}
+	}
+	if s.publisher != nil {
+		_ = s.publisher.PublishQueue(ctx, orgID, "payment.completed", map[string]any{
+			"transaction_id": tx.ID,
+			"amount_kes":     tx.AmountKES,
+		})
 	}
 
 	return tx, nil

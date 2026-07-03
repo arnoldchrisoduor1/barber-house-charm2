@@ -34,6 +34,7 @@ import (
 	notificationsmod "github.com/haus-of-wellness/api/internal/modules/notifications"
 	platformmod "github.com/haus-of-wellness/api/internal/modules/platform"
 	payoutmod "github.com/haus-of-wellness/api/internal/modules/payouts"
+	payrollmod "github.com/haus-of-wellness/api/internal/modules/payroll"
 	posmod "github.com/haus-of-wellness/api/internal/modules/pos"
 	retailmod "github.com/haus-of-wellness/api/internal/modules/retail"
 	servicesmod "github.com/haus-of-wellness/api/internal/modules/services"
@@ -100,7 +101,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	ledgerHandler := ledgermod.NewHandler(ledgerSvc)
 
 	posRepo := posmod.NewRepository(deps.DB)
-	posSvc := posmod.NewService(posRepo, ledgerSvc)
+	posSvc := posmod.NewService(posRepo, ledgerSvc, realtimeHub)
 	posHandler := posmod.NewHandler(posSvc)
 
 	openfloatClient := openfloatmod.NewClient(deps.Logger)
@@ -118,6 +119,12 @@ func New(deps Dependencies) (*fiber.App, error) {
 	staffRepo := staffmod.NewRepository(deps.DB)
 	staffSvc := staffmod.NewService(staffRepo)
 	staffHandler := staffmod.NewHandler(staffSvc)
+	staffQR := staffmod.NewQRService(staffRepo, deps.Config.JWTAccessSecret)
+	staffQRHandler := staffmod.NewQRHandler(staffQR)
+
+	payrollRepo := payrollmod.NewRepository(deps.DB)
+	payrollSvc := payrollmod.NewService(payrollRepo)
+	payrollHandler := payrollmod.NewHandler(payrollSvc)
 
 	servicesRepo := servicesmod.NewRepository(deps.DB)
 	servicesSvc := servicesmod.NewService(servicesRepo)
@@ -144,7 +151,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	analyticsHandler := analyticsmod.NewHandler(analyticsSvc)
 
 	settingsRepo := settingsmod.NewRepository(deps.DB)
-	settingsSvc := settingsmod.NewService(settingsRepo)
+	settingsSvc := settingsmod.NewService(settingsRepo, realtimeHub)
 	settingsHandler := settingsmod.NewHandler(settingsSvc)
 
 	platformHandler := platformmod.NewHandler(platformSvc)
@@ -229,6 +236,8 @@ func New(deps Dependencies) (*fiber.App, error) {
 	analyticsmod.RegisterOrgRoutes(org, featureSvc, analyticsHandler)
 	settingsmod.RegisterOrgRoutes(org, featureSvc, settingsHandler)
 	staffmod.RegisterOrgRoutes(org, staffHandler)
+	staffmod.RegisterQRRoutes(org, featureSvc, staffQRHandler)
+	payrollmod.RegisterOrgRoutes(org, featureSvc, payrollHandler)
 	platformmod.RegisterOrgAuditRoute(org, platformHandler)
 	notificationsmod.RegisterOrgRoutes(org, jwtSvc, notificationsHandler)
 

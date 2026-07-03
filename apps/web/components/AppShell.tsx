@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Calendar,
+  CalendarClock,
   Users,
   Scissors,
   UserCircle,
@@ -18,6 +19,8 @@ import {
   Bell,
   Circle,
   Crown,
+  Star,
+  Gift,
   type LucideIcon,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -35,6 +38,7 @@ import { useNav } from "@/hooks/useNav";
 const ICON_MAP: Record<string, LucideIcon> = {
   LayoutDashboard,
   Calendar,
+  CalendarClock,
   Users,
   Scissors,
   UserCircle,
@@ -47,6 +51,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Settings,
   Bell,
   Crown,
+  Star,
+  Gift,
 };
 
 function resolveIcon(name: string): LucideIcon {

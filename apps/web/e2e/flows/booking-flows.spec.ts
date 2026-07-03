@@ -1,11 +1,14 @@
 import { expect, test } from "@playwright/test";
 
 import { DEMO_ORG_SLUG } from "../fixtures";
+import { findPublicBookingSlot } from "../helpers/booking";
 import { ensureAuthenticated } from "../helpers/ensure-auth";
 import { waitForWorkspace } from "../helpers/crud";
 
 test.describe("Public client booking wizard", () => {
-  test("walks through services, date, staff, and confirms a booking", async ({ page }) => {
+  test("walks through services, date, staff, and confirms a booking", async ({ page, request }) => {
+    const slot = await findPublicBookingSlot(request, DEMO_ORG_SLUG);
+
     await page.goto(`/book/${DEMO_ORG_SLUG}`);
     await expect(page.getByRole("heading", { name: /book an appointment/i })).toBeVisible({
       timeout: 20_000,
@@ -18,18 +21,16 @@ test.describe("Public client booking wizard", () => {
     await serviceTile.click();
     await page.getByRole("button", { name: /continue/i }).click();
 
-    // Step 2: date & time
+    // Step 2: date & time (use a slot verified available via API)
     await expect(page.getByLabel(/date/i)).toBeVisible();
-    const future = new Date();
-    future.setDate(future.getDate() + 3);
-    await page.getByLabel(/date/i).fill(future.toISOString().slice(0, 10));
-    await page.getByLabel(/time/i).fill("10:00");
+    await page.getByLabel(/date/i).fill(slot.bookingDate);
+    await page.getByLabel(/time/i).fill(slot.startTime);
     await page.getByRole("button", { name: /continue/i }).click();
 
     // Step 3: choose professional (availability resolved server-side)
     await expect(page.getByRole("heading", { name: /choose your professional/i })).toBeVisible({ timeout: 20_000 });
-    const staffTile = page.getByRole("button").filter({ hasText: /alex|stylist|barber/i }).first();
-    await expect(staffTile).toBeVisible({ timeout: 20_000 });
+    const staffTile = page.getByRole("button").filter({ hasText: /alex|senior stylist|barber/i }).first();
+    await expect(staffTile).toBeVisible({ timeout: 30_000 });
     await staffTile.click();
     await page.getByRole("button", { name: /continue/i }).click();
 

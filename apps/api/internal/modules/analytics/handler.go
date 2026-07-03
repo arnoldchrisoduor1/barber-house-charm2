@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/haus-of-wellness/api/internal/platform/authz"
+	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
 	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
@@ -57,11 +58,75 @@ func (h *Handler) CallCentre(c *fiber.Ctx) error {
 
 func (h *Handler) MyEarnings(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
-	staffID, err := uuid.Parse(c.Query("staff_id"))
-	if err != nil {
+	staffIDStr := c.Query("staff_id")
+	var staffID uuid.UUID
+	var err error
+	if staffIDStr != "" {
+		staffID, err = uuid.Parse(staffIDStr)
+		if err != nil {
+			return httpx.ValidationProblem(c, "invalid staff_id", nil)
+		}
+	} else if u := platformauth.UserFrom(c); u != nil {
+		staffID, err = h.svc.StaffIDForUser(c.UserContext(), orgID, u.ID)
+		if err != nil {
+			return httpx.ValidationProblem(c, "staff profile not found for user", nil)
+		}
+	} else {
 		return httpx.ValidationProblem(c, "staff_id required", nil)
 	}
 	data, err := h.svc.MyEarnings(c.UserContext(), orgID, staffID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(data)
+}
+
+func (h *Handler) RevenueChart(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	days := c.QueryInt("days", 7)
+	data, err := h.svc.RevenueChart(c.UserContext(), orgID, branchID, days)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": data})
+}
+
+func (h *Handler) PaymentMethods(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	data, err := h.svc.PaymentMethods(c.UserContext(), orgID, branchID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": data})
+}
+
+func (h *Handler) TopServices(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	limit := c.QueryInt("limit", 5)
+	data, err := h.svc.TopServices(c.UserContext(), orgID, branchID, limit)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": data})
+}
+
+func (h *Handler) StaffLeaderboard(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	data, err := h.svc.StaffLeaderboard(c.UserContext(), orgID, branchID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": data})
+}
+
+func (h *Handler) DashboardExtras(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	data, err := h.svc.DashboardExtras(c.UserContext(), orgID, branchID)
 	if err != nil {
 		return httpx.From(c, err)
 	}
@@ -125,6 +190,11 @@ func (h *Handler) FieldOperations(c *fiber.Ctx) error {
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	g := org.Group("/analytics", authz.RequireFeature(features, "basic_reports"))
 	g.Get("/reports", h.Reports)
+	g.Get("/revenue-chart", h.RevenueChart)
+	g.Get("/payment-methods", h.PaymentMethods)
+	g.Get("/top-services", h.TopServices)
+	g.Get("/staff-leaderboard", h.StaffLeaderboard)
+	g.Get("/dashboard-extras", h.DashboardExtras)
 
 	adv := org.Group("/analytics", authz.RequireFeature(features, "advanced_analytics"))
 	adv.Get("/scorecards", h.Scorecards)

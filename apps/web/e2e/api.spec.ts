@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { createPublicBooking } from "./helpers/booking";
+
 import { DEMO_EMAIL, DEMO_PASSWORD } from "./fixtures";
 
 const apiBase = process.env.PLAYWRIGHT_API_URL ?? "http://localhost:18432";
@@ -125,29 +127,7 @@ test.describe("backend API (via web proxy + session)", () => {
   });
 
   test("public booking with service + staff creates a scheduled booking", async ({ request }) => {
-    const catalog = await request.get(`/api/v1/organizations/public/demo-salon/catalog`);
-    const catalogBody = await catalog.json();
-    const serviceId = catalogBody.services[0]?.ID ?? catalogBody.services[0]?.id;
-    const staffId = catalogBody.staff[0]?.ID ?? catalogBody.staff[0]?.id;
-    expect(serviceId).toBeTruthy();
-    expect(staffId).toBeTruthy();
-
-    const future = new Date();
-    future.setDate(future.getDate() + 5);
-    const slotOffset = Date.now() % 32;
-    const startHour = 9 + Math.floor(slotOffset / 4);
-    const startMinute = (slotOffset % 4) * 15;
-    const startTime = `${String(startHour).padStart(2, "0")}:${String(startMinute).padStart(2, "0")}`;
-    const res = await request.post(`/api/v1/organizations/public/demo-salon/bookings`, {
-      data: {
-        staffId,
-        serviceIds: [serviceId],
-        bookingDate: future.toISOString().slice(0, 10),
-        startTime,
-        fullName: "API Booking Guest",
-        phone: `+25478${Date.now().toString().slice(-7)}`,
-      },
-    });
+    const { res } = await createPublicBooking(request);
     expect(res.ok()).toBeTruthy();
     const booking = await res.json();
     expect(booking.Status ?? booking.status).toMatch(/scheduled/i);

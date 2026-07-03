@@ -51,6 +51,17 @@ func (r *Repository) DB() *gorm.DB {
 	return r.db
 }
 
+func (r *Repository) StaffIDForUser(ctx context.Context, orgID, userID uuid.UUID) (*uuid.UUID, error) {
+	var id uuid.UUID
+	err := r.db.WithContext(ctx).Table("staff").
+		Where("organization_id = ? AND user_id = ? AND is_active = true", orgID, userID).
+		Select("id").Scan(&id).Error
+	if err != nil || id == uuid.Nil {
+		return nil, nil
+	}
+	return &id, nil
+}
+
 func (r *Repository) FindTwoFactor(ctx context.Context, userID uuid.UUID) (*UserTwoFactor, error) {
 	var row UserTwoFactor
 	err := r.db.WithContext(ctx).Where("user_id = ?", userID).First(&row).Error

@@ -95,4 +95,5 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g.Post("/checkout", h.Checkout)
 	g.Get("/:id", h.Get)
 	g.Post("/", h.Create)
+	registerExtrasRoutes(org, features, h)
 }

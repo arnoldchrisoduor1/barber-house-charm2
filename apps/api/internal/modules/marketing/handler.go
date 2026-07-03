@@ -634,4 +634,5 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	campaigns.Get("/:id", h.GetCampaign)
 	campaigns.Put("/:id", h.UpdateCampaign)
 	campaigns.Delete("/:id", h.DeleteCampaign)
+	registerPortalRoutes(org, features, h)
 }

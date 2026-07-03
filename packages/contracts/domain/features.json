@@ -29,6 +29,9 @@
     { "key": "clinical", "label": "Clinical Module", "description": "Patient intake, aftercare, consent", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
     { "key": "therapy_notes", "label": "Therapy Notes", "description": "Session notes and progress tracking", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
     { "key": "shop_orders", "label": "Shop Orders", "description": "Online product orders", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": ["inventory_tracking"], "status": "ga" },
-    { "key": "platform_admin", "label": "Platform Admin", "description": "Internal platform console", "category": "platform", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "beta" }
+    { "key": "platform_admin", "label": "Platform Admin", "description": "Internal platform console", "category": "platform", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "beta" },
+    { "key": "tips_management", "label": "Tips Management", "description": "Tips ledger and pooling", "category": "operations", "minPlan": "starter", "default": false, "dependsOn": ["pos_payments"], "status": "ga" },
+    { "key": "qr_clock", "label": "QR Clock In/Out", "description": "QR-based staff attendance and clock", "category": "operations", "minPlan": "starter", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "customer_reviews", "label": "Customer Reviews", "description": "Client and staff review submission", "category": "growth", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" }
   ]
 }

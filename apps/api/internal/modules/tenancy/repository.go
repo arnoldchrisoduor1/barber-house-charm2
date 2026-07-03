@@ -133,6 +133,16 @@ func (r *Repository) CreateBranch(ctx context.Context, branch *Branch) error {
 	return r.db.WithContext(ctx).Create(branch).Error
 }
 
+func (r *Repository) GetBranch(ctx context.Context, orgID, id uuid.UUID) (*Branch, error) {
+	var row Branch
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).First(&row, "id = ?", id).Error
+	return &row, err
+}
+
+func (r *Repository) UpdateBranch(ctx context.Context, orgID uuid.UUID, branch *Branch) error {
+	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Save(branch).Error
+}
+
 func (r *Repository) ListMembers(ctx context.Context, orgID uuid.UUID) ([]OrganizationMember, error) {
 	var members []OrganizationMember
 	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Find(&members).Error

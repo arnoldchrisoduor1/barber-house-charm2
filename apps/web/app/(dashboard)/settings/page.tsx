@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { api, apiClient } from "@/lib/api-client";
 
-type Tab = "profile" | "security" | "theme" | "notifications";
+type Tab = "profile" | "password" | "security" | "theme" | "notifications";
 
 type NotificationSettings = {
   email_reminders?: boolean;
@@ -48,6 +48,10 @@ export default function SettingsPage() {
   const [whatsappReminders, setWhatsappReminders] = useState(false);
   const [marketingEmails, setMarketingEmails] = useState(false);
   const [bookingConfirmations, setBookingConfirmations] = useState(true);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const { data: twoFAStatus } = useQuery({
     queryKey: ["2fa-status"],
@@ -126,14 +130,43 @@ export default function SettingsPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed"),
   });
 
+  const changePassword = useMutation({
+    mutationFn: () =>
+      api.post("/auth/change-password", {
+        currentPassword,
+        newPassword,
+      }),
+    onSuccess: () => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success("Password updated");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Password change failed"),
+  });
+
   function onNotifSubmit(e: FormEvent) {
     e.preventDefault();
     if (!orgId) return;
     saveNotifications.mutate();
   }
 
+  function onPasswordSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    changePassword.mutate();
+  }
+
   const tabs: { id: Tab; label: string }[] = [
     { id: "profile", label: "Profile" },
+    { id: "password", label: "Password" },
     { id: "security", label: "Security" },
     { id: "theme", label: "Theme" },
     { id: "notifications", label: "Notifications" },
@@ -176,6 +209,56 @@ export default function SettingsPage() {
               <p className="text-muted-foreground">Plan</p>
               <p className="font-medium capitalize">{me?.subscription?.plan ?? "—"}</p>
             </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {tab === "password" ? (
+        <Card className="glass max-w-lg">
+          <CardHeader>
+            <CardTitle>Change password</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-4" onSubmit={onPasswordSubmit}>
+              <div className="space-y-1.5">
+                <Label htmlFor="current-password">Current password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="new-password">New password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirm-password">Confirm new password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </div>
+              <Button type="submit" disabled={changePassword.isPending}>
+                Update password
+              </Button>
+            </form>
           </CardContent>
         </Card>
       ) : null}

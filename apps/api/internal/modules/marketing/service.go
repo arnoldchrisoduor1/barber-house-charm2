@@ -671,3 +671,37 @@ func (s *Service) DeleteCampaign(ctx context.Context, orgID, id uuid.UUID) error
 	}
 	return s.repo.DeleteCampaign(ctx, orgID, id)
 }
+
+func (s *Service) LoyaltyWallet(ctx context.Context, orgID uuid.UUID, phone string) (map[string]any, error) {
+	return s.repo.CustomerByPhone(ctx, orgID, phone)
+}
+
+func (s *Service) RedeemReward(ctx context.Context, orgID, customerID, rewardID uuid.UUID) error {
+	return s.repo.RedeemReward(ctx, orgID, customerID, rewardID)
+}
+
+func (s *Service) MyReferrals(ctx context.Context, orgID uuid.UUID, phone string) (map[string]any, error) {
+	cust, err := s.repo.CustomerByPhone(ctx, orgID, phone)
+	if err != nil {
+		return nil, httpx.ErrNotFound
+	}
+	cid := cust["customer_id"].(uuid.UUID)
+	rows, err := s.repo.ReferralsForCustomer(ctx, orgID, cid)
+	if err != nil {
+		return nil, err
+	}
+	return map[string]any{
+		"referral_code": cust["referral_code"],
+		"referrals":     rows,
+		"total":         len(rows),
+	}, nil
+}
+
+func (s *Service) MyReviews(ctx context.Context, orgID uuid.UUID, phone string) ([]Review, error) {
+	cust, err := s.repo.CustomerByPhone(ctx, orgID, phone)
+	if err != nil {
+		return nil, httpx.ErrNotFound
+	}
+	cid := cust["customer_id"].(uuid.UUID)
+	return s.repo.ReviewsForCustomer(ctx, orgID, cid)
+}

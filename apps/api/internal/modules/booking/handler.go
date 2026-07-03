@@ -27,6 +27,14 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		BranchID:      platformtenancy.OptionalBranchID(c),
 		CustomerPhone: strings.TrimSpace(c.Query("customer_phone")),
 		Status:        strings.TrimSpace(c.Query("status")),
+		Date:          strings.TrimSpace(c.Query("date")),
+	}
+	if sid := strings.TrimSpace(c.Query("staff_id")); sid != "" {
+		id, err := uuid.Parse(sid)
+		if err != nil {
+			return httpx.ValidationProblem(c, "invalid staff_id", nil)
+		}
+		filter.StaffID = &id
 	}
 	rows, err := h.svc.List(c.UserContext(), orgID, filter)
 	if err != nil {
@@ -176,6 +184,23 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func (h *Handler) PatchStatus(c *fiber.Ctx) error {
+	var dto PatchStatusDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.PatchStatus(c.UserContext(), orgID, id, dto.Status)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
 func (h *Handler) Availability(c *fiber.Ctx) error {
 	var q AvailabilityQuery
 	if err := c.QueryParser(&q); err != nil {
@@ -202,5 +227,6 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g.Get("/:id/services", h.ListServices)
 	g.Get("/:id", h.Get)
 	g.Put("/:id", h.Update)
+	g.Patch("/:id/status", h.PatchStatus)
 	g.Delete("/:id", h.Delete)
 }

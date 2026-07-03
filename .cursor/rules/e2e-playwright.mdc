@@ -25,7 +25,7 @@ Every new sidebar section, dashboard page, auth flow, or public route **must** i
 - **Wire every `*.spec.ts` in `playwright.config.ts`** — orphan specs do not run.
 - Nav routes auto-sync: `node apps/web/scripts/generate-e2e-routes.mjs` (CI: `--check`).
 - Skip live Pesapal, OpenFloat, live WhatsApp, Calendly.
-- Local run (stack + seed required): `PLAYWRIGHT_BASE_URL=http://localhost:3001 npm run test:e2e` from `apps/web`.
+- Local run: use production Docker web (`npm run e2e:stack:up` then `E2E_PROD=1 npm run test:e2e` from `apps/web`). Do **not** use `next dev` for E2E — it compiles on demand and slows the suite.
 
 ## PR checklist
 

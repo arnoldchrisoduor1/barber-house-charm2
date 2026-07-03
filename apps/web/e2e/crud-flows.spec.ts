@@ -29,6 +29,8 @@ for (const entry of CRUD_MANIFEST) {
       createFields,
       editFields: entry.editFields?.(unique),
       rowMatch: entry.rowMatch(unique),
+      addButton: entry.addButton,
+      supportsDelete: entry.supportsDelete,
     });
   });
 }

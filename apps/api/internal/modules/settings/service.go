@@ -13,11 +13,16 @@ import (
 )
 
 type Service struct {
-	repo *Repository
+	repo      *Repository
+	publisher QueuePublisher
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+type QueuePublisher interface {
+	PublishQueue(ctx context.Context, orgID uuid.UUID, eventType string, payload any) error
+}
+
+func NewService(repo *Repository, publisher QueuePublisher) *Service {
+	return &Service{repo: repo, publisher: publisher}
 }
 
 func mapNotFound[T any](row *T, err error) (*T, error) {
@@ -166,6 +171,12 @@ func (s *Service) CreateStaffChatMessage(ctx context.Context, orgID, senderID uu
 	}
 	if err := s.repo.CreateStaffChatMessage(ctx, row); err != nil {
 		return nil, err
+	}
+	if s.publisher != nil {
+		_ = s.publisher.PublishQueue(ctx, orgID, "chat.message", map[string]any{
+			"channel":    channel,
+			"message_id": row.ID,
+		})
 	}
 	return row, nil
 }

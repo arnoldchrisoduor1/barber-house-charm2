@@ -12,6 +12,7 @@ func RegisterRoutes(router fiber.Router, jwt *platformauth.JWTService, h *Handle
 	auth.Post("/login", h.Login)
 	auth.Post("/refresh", h.Refresh)
 	auth.Post("/logout", h.Logout)
+	auth.Post("/change-password", platformauth.JWT(jwt, false), h.ChangePassword)
 	auth.Post("/2fa/challenge", h.Challenge2FA)
 
 	twoFA := router.Group("/auth/2fa", platformauth.JWT(jwt, false))

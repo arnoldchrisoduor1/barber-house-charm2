@@ -1,0 +1,10 @@
+ALTER TABLE qr_scans DROP COLUMN IF EXISTS branch_id;
+ALTER TABLE tips DROP COLUMN IF EXISTS transaction_id;
+ALTER TABLE tips DROP COLUMN IF EXISTS status;
+DROP INDEX IF EXISTS idx_customers_referral_code;
+ALTER TABLE customers DROP COLUMN IF EXISTS referral_code;
+DROP TABLE IF EXISTS loyalty_transactions;
+DROP TABLE IF EXISTS pos_shifts;
+DROP TABLE IF EXISTS payslips;
+DROP TABLE IF EXISTS commission_rules;
+DROP TABLE IF EXISTS expenses;
