@@ -27,3 +27,9 @@ apps/api/bin
 # Large / irrelevant
 **/*.md
 !README.md
+
+# Playwright E2E (not needed in production web image)
+apps/web/e2e
+apps/web/playwright.config.ts
+apps/web/test-results
+apps/web/e2e-run*.log

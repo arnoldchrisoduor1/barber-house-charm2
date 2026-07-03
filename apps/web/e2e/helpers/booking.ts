@@ -23,8 +23,9 @@ export async function findPublicBookingSlot(
   durationMinutes = 30,
 ) {
   const catalog = await fetchPublicCatalog(request, orgSlug);
-  const staffId = (catalog.staff[0]?.ID ?? catalog.staff[0]?.id) as string | undefined;
+  const staffId = catalog.staff[0]?.ID ?? catalog.staff[0]?.id;
   expect(staffId).toBeTruthy();
+  if (!staffId) throw new Error("No staff in public catalog");
 
   const day = new Date();
   for (let offset = 1; offset <= 21; offset++) {
@@ -36,7 +37,7 @@ export async function findPublicBookingSlot(
         `/api/v1/organizations/public/${orgSlug}/staff-availability?booking_date=${bookingDate}&start_time=${startTime}&duration_minutes=${durationMinutes}&staff_ids=${staffId}`,
       );
       if (!availRes.ok()) continue;
-      const availBody = await availRes.json();
+      const availBody = (await availRes.json()) as { availability?: Record<string, boolean> };
       const available = availBody.availability?.[staffId];
       if (available === true) {
         return { staffId, bookingDate, startTime };

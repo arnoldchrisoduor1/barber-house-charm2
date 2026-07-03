@@ -1,11 +1,16 @@
 {
-  email demo@haus.local
+  email admin@hauseoftech.com
 }
 
-*.lvh.me {
+hauseoftech.com, www.hauseoftech.com {
   reverse_proxy web:3000
 }
 
-:8080 {
+api.hauseoftech.com {
   reverse_proxy api:8080
+}
+
+# Local multi-tenant dev (optional)
+*.lvh.me {
+  reverse_proxy web:3000
 }
