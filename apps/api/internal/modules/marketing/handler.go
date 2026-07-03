@@ -574,6 +574,9 @@ func (h *Handler) DeleteCampaign(c *fiber.Ctx) error {
 }
 
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
+	// Portal /my and /submit routes must register before admin /:id catch-alls on the same paths.
+	registerPortalRoutes(org, features, h)
+
 	promo := org.Group("/promotions", authz.RequireFeature(features, "promotions"))
 	promo.Get("/", h.ListPromotions)
 	promo.Post("/", h.CreatePromotion)
@@ -634,5 +637,4 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	campaigns.Get("/:id", h.GetCampaign)
 	campaigns.Put("/:id", h.UpdateCampaign)
 	campaigns.Delete("/:id", h.DeleteCampaign)
-	registerPortalRoutes(org, features, h)
 }

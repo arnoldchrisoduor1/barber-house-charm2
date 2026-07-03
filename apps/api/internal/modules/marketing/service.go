@@ -705,3 +705,14 @@ func (s *Service) MyReviews(ctx context.Context, orgID uuid.UUID, phone string) 
 	cid := cust["customer_id"].(uuid.UUID)
 	return s.repo.ReviewsForCustomer(ctx, orgID, cid)
 }
+
+func (s *Service) PortalCreateReview(ctx context.Context, orgID uuid.UUID, dto ReviewDTO) (*Review, error) {
+	canReview, err := s.repo.CustomerHasCompletedBooking(ctx, orgID, dto.CustomerID)
+	if err != nil {
+		return nil, err
+	}
+	if !canReview {
+		return nil, httpx.ErrConflict
+	}
+	return s.CreateReview(ctx, orgID, dto)
+}

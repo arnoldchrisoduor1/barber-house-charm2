@@ -1,19 +1,22 @@
-export type PortalView = "business" | "staff" | "client";
+export type PortalView = "business" | "manager" | "staff" | "client";
 
 export const PORTAL_LABELS: Record<PortalView, string> = {
   business: "Business Owner",
+  manager: "Branch Manager",
   staff: "Staff",
   client: "Client",
 };
 
 export const PORTAL_DESCRIPTIONS: Record<PortalView, string> = {
   business: "Executive dashboard & operations",
+  manager: "Branch operations, bookings & finances",
   staff: "Day-to-day staff workspace",
   client: "Customer booking & loyalty portal",
 };
 
 export const PORTAL_HOME: Record<PortalView, string> = {
   business: "/dashboard",
+  manager: "/dashboard",
   staff: "/dashboard",
   client: "/portal",
 };
@@ -21,6 +24,7 @@ export const PORTAL_HOME: Record<PortalView, string> = {
 export const EXECUTIVE_ROLES = new Set(["ceo", "director"]);
 
 const STAFF_PREVIEW_ROLE = "senior_barber";
+const MANAGER_PREVIEW_ROLE = "branch_manager";
 
 export function canSwitchPortals(roles: string[]): boolean {
   return roles.some((role) => EXECUTIVE_ROLES.has(role));
@@ -28,14 +32,17 @@ export function canSwitchPortals(roles: string[]): boolean {
 
 export function availablePortals(roles: string[]): PortalView[] {
   if (canSwitchPortals(roles)) {
-    return ["business", "staff", "client"];
+    return ["business", "manager", "staff", "client"];
   }
   if (roles.some((role) => role === "customer" || role === "client")) {
     return ["client"];
   }
+  if (roles.includes("branch_manager")) {
+    return ["manager"];
+  }
   if (
     roles.some((role) =>
-      ["senior_barber", "junior_barber", "receptionist", "branch_manager"].includes(role),
+      ["senior_barber", "junior_barber", "receptionist"].includes(role),
     )
   ) {
     return ["staff"];
@@ -55,6 +62,8 @@ export function getEffectiveRoles(actualRoles: string[], portalView: PortalView)
   switch (portalView) {
     case "staff":
       return [STAFF_PREVIEW_ROLE];
+    case "manager":
+      return [MANAGER_PREVIEW_ROLE];
     case "client":
       return ["customer"];
     default:

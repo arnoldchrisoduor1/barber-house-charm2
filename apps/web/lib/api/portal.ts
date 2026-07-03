@@ -78,7 +78,7 @@ export async function fetchMyReviews(orgId: string, phone: string): Promise<Port
 
 export async function submitReview(
   orgId: string,
-  body: { customer_id: string; staff_id?: string; rating: number; comment?: string },
+  body: { customer_id: string; staff_id?: string; booking_id?: string; rating: number; comment?: string },
 ) {
-  return apiClient(`/organizations/${orgId}/reviews`, { method: "POST", body: JSON.stringify(body) });
+  return apiClient(`/organizations/${orgId}/reviews/submit`, { method: "POST", body: JSON.stringify(body) });
 }

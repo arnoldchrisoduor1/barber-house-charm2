@@ -71,10 +71,13 @@ export function AppShell({ children, title }: AppShellProps) {
   const { me, logout } = useAuth();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="relative flex w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
+    <div className="flex h-screen overflow-hidden bg-background" data-testid="app-shell">
+      <aside
+        className="relative flex h-screen w-64 shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
+        data-testid="app-sidebar"
+      >
         <div className="mesh-ambient" aria-hidden />
-        <div className="relative z-10 flex flex-col h-full">
+        <div className="relative z-10 flex h-full min-h-0 flex-col">
           <div className="border-b border-sidebar-border p-4">
             <p className="label-eyebrow">Haus of Wellness</p>
             <h1 className="font-display text-xl text-gradient-gold">{label}</h1>
@@ -124,8 +127,8 @@ export function AppShell({ children, title }: AppShellProps) {
         </div>
       </aside>
 
-      <main className="relative flex-1 overflow-auto">
-        <header className="sticky top-0 z-10 border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
+      <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden" data-testid="app-main">
+        <header className="z-10 shrink-0 border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6 sm:py-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               {title ? <h2 className="font-heading text-lg font-semibold truncate">{title}</h2> : null}
@@ -138,7 +141,7 @@ export function AppShell({ children, title }: AppShellProps) {
             </div>
           </div>
         </header>
-        <div className="p-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-6" data-testid="app-main-scroll">{children}</div>
       </main>
     </div>
   );

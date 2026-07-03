@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -37,11 +38,22 @@ func (s *Service) ListOrganizationsWrapped(ctx context.Context) ([]tenancymod.Or
 }
 
 type AuditEntry struct {
-	ID             uuid.UUID `json:"id"`
-	OrganizationID *uuid.UUID `json:"organizationId,omitempty"`
-	Action         string    `json:"action"`
-	EntityType     string    `json:"entityType,omitempty"`
-	CreatedAt      string    `json:"createdAt"`
+	ID             uuid.UUID  `json:"id" gorm:"column:id"`
+	OrganizationID *uuid.UUID `json:"organizationId,omitempty" gorm:"column:organization_id"`
+	UserID         *uuid.UUID `json:"userId,omitempty" gorm:"column:user_id"`
+	Action         string     `json:"action" gorm:"column:action"`
+	EntityType     string     `json:"entityType,omitempty" gorm:"column:entity_type"`
+	EntityID       *uuid.UUID `json:"entityId,omitempty" gorm:"column:entity_id"`
+	CreatedAt      time.Time  `json:"createdAt" gorm:"column:created_at"`
+}
+
+type OrgAuditEntry struct {
+	OrganizationID uuid.UUID
+	UserID         *uuid.UUID
+	Action         string
+	EntityType     string
+	EntityID       *uuid.UUID
+	Metadata       []byte
 }
 
 func (r *Repository) ListAuditLog(ctx context.Context, orgID *uuid.UUID, limit int) ([]AuditEntry, error) {

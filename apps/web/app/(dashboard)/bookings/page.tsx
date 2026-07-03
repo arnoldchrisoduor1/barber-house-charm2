@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Plus } from "lucide-react";
+import { CalendarDays, Plus, Search } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { BookingWizard } from "@/components/booking/BookingWizard";
 import { Feature } from "@/components/Feature";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,11 +50,20 @@ export default function BookingsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({
-    customerId: "",
-    startTime: "09:00",
-    endTime: "09:30",
-    notes: "",
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [selectedCustomer, setSelectedCustomer] = useState<{
+    id: string;
+    name: string;
+    phone: string;
+  } | null>(null);
+
+  const { data: customers = [], isLoading: customersLoading } = useQuery({
+    queryKey: ["org", orgId, "customers", "booking-dialog"],
+    enabled: !!orgId && dialogOpen,
+    queryFn: async () => {
+      const resp = await api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/customers`);
+      return resp.data ?? [];
+    },
   });
 
   const { data, isLoading, error } = useQuery({
@@ -68,6 +77,18 @@ export default function BookingsPage() {
     },
   });
 
+  const filteredCustomers = useMemo(() => {
+    const q = customerSearch.trim().toLowerCase();
+    if (!q) return customers.slice(0, 8);
+    return customers
+      .filter((row) => {
+        const name = String(pickRowField(row, "full_name") ?? pickRowField(row, "fullName") ?? "").toLowerCase();
+        const phone = String(pickRowField(row, "phone") ?? "").toLowerCase();
+        return name.includes(q) || phone.includes(q);
+      })
+      .slice(0, 8);
+  }, [customers, customerSearch]);
+
   const filtered = useMemo(() => {
     return (data ?? []).filter((row) => {
       const date = String(pickRowField(row, "booking_date") ?? pickRowField(row, "bookingDate") ?? "");
@@ -77,23 +98,6 @@ export default function BookingsPage() {
       return dateMatch && staffMatch;
     });
   }, [data, selectedDate, staffId]);
-
-  const createBooking = useMutation({
-    mutationFn: () =>
-      api.post(`/organizations/${orgId}/bookings`, {
-        customerId: form.customerId,
-        bookingDate: selectedDate,
-        startTime: form.startTime,
-        endTime: form.endTime,
-        notes: form.notes || undefined,
-        staffId: staffId ?? undefined,
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["org", orgId, "bookings"] });
-      setDialogOpen(false);
-      setForm({ customerId: "", startTime: "09:00", endTime: "09:30", notes: "" });
-    },
-  });
 
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => {
@@ -109,10 +113,10 @@ export default function BookingsPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId, "bookings"] }),
   });
 
-  function onCreateSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!form.customerId.trim()) return;
-    createBooking.mutate();
+  function closeBookingDialog() {
+    setDialogOpen(false);
+    setSelectedCustomer(null);
+    setCustomerSearch("");
   }
 
   return (
@@ -152,52 +156,83 @@ export default function BookingsPage() {
               </SelectContent>
             </Select>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="create-booking-btn">
-                <Plus className="mr-2 h-4 w-4" />
-                New booking
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
+          <Button data-testid="create-booking-btn" onClick={() => setDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New booking
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={(open) => (open ? setDialogOpen(true) : closeBookingDialog())}>
+            <DialogContent
+              className="max-h-[90vh] max-w-3xl overflow-y-auto"
+              onPointerDownOutside={(e) => e.preventDefault()}
+            >
               <DialogHeader>
-                <DialogTitle>Create booking</DialogTitle>
+                <DialogTitle>Create booking for customer</DialogTitle>
               </DialogHeader>
-              <form className="space-y-4" onSubmit={onCreateSubmit}>
-                <div className="space-y-1">
-                  <Label htmlFor="customer-id">Customer ID</Label>
-                  <Input
-                    id="customer-id"
-                    value={form.customerId}
-                    onChange={(e) => setForm((f) => ({ ...f, customerId: e.target.value }))}
-                    placeholder="Customer UUID"
-                    required
+              {!selectedCustomer ? (
+                <div className="space-y-4" data-testid="staff-booking-customer-search">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      className="pl-9"
+                      placeholder="Search customer by name or phone…"
+                      value={customerSearch}
+                      onChange={(e) => setCustomerSearch(e.target.value)}
+                      data-testid="staff-booking-search-input"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    {customersLoading ? (
+                      <p className="text-sm text-muted-foreground">Loading customers…</p>
+                    ) : null}
+                    {filteredCustomers.map((row) => {
+                      const id = String(pickRowField(row, "id") ?? "");
+                      const name = String(pickRowField(row, "full_name") ?? pickRowField(row, "fullName") ?? "Guest");
+                      const phone = String(pickRowField(row, "phone") ?? pickRowField(row, "Phone") ?? "");
+                      if (!id) return null;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-left text-sm hover:border-primary/40"
+                          data-testid={`staff-booking-customer-${id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setSelectedCustomer({ id, name, phone });
+                          }}
+                        >
+                          <span className="font-medium">{name}</span>
+                          <span className="text-muted-foreground">{phone}</span>
+                        </button>
+                      );
+                    })}
+                    {filteredCustomers.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No customers match your search.</p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : (
+                <div data-testid="staff-booking-wizard">
+                  <div className="mb-4 flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm">
+                    <span>
+                      Booking for <strong>{selectedCustomer.name}</strong> ({selectedCustomer.phone})
+                    </span>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedCustomer(null)}>
+                      Change customer
+                    </Button>
+                  </div>
+                  <BookingWizard
+                    mode="staff"
+                    orgId={orgId}
+                    title="Book on behalf of customer"
+                    customerName={selectedCustomer.name}
+                    customerPhone={selectedCustomer.phone}
+                    onStaffBooked={() => {
+                      qc.invalidateQueries({ queryKey: ["org", orgId, "bookings"] });
+                      closeBookingDialog();
+                    }}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="start-time">Start</Label>
-                    <Input
-                      id="start-time"
-                      type="time"
-                      value={form.startTime}
-                      onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="end-time">End</Label>
-                    <Input
-                      id="end-time"
-                      type="time"
-                      value={form.endTime}
-                      onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <Button type="submit" disabled={createBooking.isPending} className="w-full">
-                  {createBooking.isPending ? "Creating…" : "Create booking"}
-                </Button>
-              </form>
+              )}
             </DialogContent>
           </Dialog>
         </div>

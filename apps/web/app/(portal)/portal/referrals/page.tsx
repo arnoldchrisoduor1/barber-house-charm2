@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Copy, Gift, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -11,33 +10,21 @@ import { Feature } from "@/components/Feature";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable } from "@/components/DataTable";
-import { useAuth } from "@/hooks/useAuth";
+import { usePortalCustomer } from "@/hooks/usePortalCustomer";
 import { fetchMyReferrals } from "@/lib/api/portal";
 import { formatKes } from "@/lib/api/booking";
-import { readPortalCustomerPhone, usePortalCustomerStore } from "@/lib/store/portal-customer-store";
 
 export default function PortalReferralsPage() {
-  const { activeOrg } = useAuth();
-  const orgId = activeOrg?.id ?? "";
-  const storePhone = usePortalCustomerStore((s) => s.phone);
-  const [customerPhone, setCustomerPhone] = useState<string | null>(null);
-
-  useEffect(() => {
-    setCustomerPhone(readPortalCustomerPhone());
-    const unsub = usePortalCustomerStore.persist.onFinishHydration(() => {
-      setCustomerPhone(readPortalCustomerPhone());
-    });
-    return unsub;
-  }, [storePhone]);
+  const { orgId, phone, referralCode, hasCustomerRecord } = usePortalCustomer();
 
   const referralsQuery = useQuery({
-    queryKey: ["portal-referrals", orgId, customerPhone],
-    enabled: !!orgId && !!customerPhone,
-    queryFn: () => fetchMyReferrals(orgId, customerPhone!),
+    queryKey: ["portal-referrals", orgId, phone],
+    enabled: !!orgId && !!phone && hasCustomerRecord,
+    queryFn: () => fetchMyReferrals(orgId, phone!),
     retry: false,
   });
 
-  const code = referralsQuery.data?.referral_code ?? "";
+  const code = referralsQuery.data?.referral_code ?? referralCode ?? "";
   const referrals = referralsQuery.data?.referrals ?? [];
 
   function copyCode() {
@@ -46,7 +33,16 @@ export default function PortalReferralsPage() {
     toast.success("Referral code copied");
   }
 
-  const body = !customerPhone ? (
+  const body = !phone ? (
+    <Card className="glass">
+      <CardContent className="space-y-4 py-10 text-center text-sm text-muted-foreground">
+        <p>Book a visit to get your personal referral code.</p>
+        <Button asChild className="bg-gradient-gold text-primary-foreground">
+          <Link href="/portal/profile">Set up your profile</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  ) : !hasCustomerRecord ? (
     <Card className="glass">
       <CardContent className="space-y-4 py-10 text-center text-sm text-muted-foreground">
         <p>Book a visit to get your personal referral code.</p>
@@ -65,7 +61,9 @@ export default function PortalReferralsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-4">
-          <code className="rounded-lg bg-muted px-4 py-2 font-mono text-lg">{code || "—"}</code>
+          <code className="rounded-lg bg-muted px-4 py-2 font-mono text-lg" data-testid="referral-code-value">
+            {code || "—"}
+          </code>
           <Button variant="outline" size="sm" className="gap-2" onClick={copyCode} disabled={!code}>
             <Copy className="h-4 w-4" />
             Copy code

@@ -139,7 +139,11 @@ export async function submitPortalBooking(orgId: string, payload: PortalBookingP
 export interface BookingRow {
   id: string;
   customerId: string;
+  customerName?: string;
   staffId?: string;
+  staffName?: string;
+  serviceNames?: string;
+  totalPriceKes?: number;
   branchId?: string;
   bookingDate: string;
   startTime: string;
@@ -168,10 +172,18 @@ function mapBookingRow(row: Record<string, unknown>): BookingRow {
   const staffId = pickRowField(row, "staff_id") ?? pickRowField(row, "staffId");
   const branchId = pickRowField(row, "branch_id") ?? pickRowField(row, "branchId");
   const notes = pickRowField(row, "notes");
+  const customerName = pickRowField(row, "customer_name") ?? pickRowField(row, "customerName");
+  const staffName = pickRowField(row, "staff_name") ?? pickRowField(row, "staffName");
+  const serviceNames = pickRowField(row, "service_names") ?? pickRowField(row, "serviceNames");
+  const totalPrice = pickRowField(row, "total_price_kes") ?? pickRowField(row, "totalPriceKes");
   return {
     id: String(pickRowField(row, "id") ?? ""),
     customerId: String(pickRowField(row, "customer_id") ?? pickRowField(row, "customerId") ?? ""),
+    customerName: customerName ? String(customerName) : undefined,
     staffId: staffId ? String(staffId) : undefined,
+    staffName: staffName ? String(staffName) : undefined,
+    serviceNames: serviceNames ? String(serviceNames) : undefined,
+    totalPriceKes: totalPrice != null ? Number(totalPrice) : undefined,
     branchId: branchId ? String(branchId) : undefined,
     bookingDate: String(pickRowField(row, "booking_date") ?? pickRowField(row, "bookingDate") ?? ""),
     startTime: String(pickRowField(row, "start_time") ?? pickRowField(row, "startTime") ?? ""),
@@ -183,13 +195,14 @@ function mapBookingRow(row: Record<string, unknown>): BookingRow {
 
 export async function fetchBookings(
   orgId: string,
-  params?: { customerPhone?: string; status?: string; branchId?: string },
+  params?: { customerPhone?: string; status?: string; branchId?: string; enrich?: boolean },
 ) {
   const res = await api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/bookings`, {
     params: {
       customer_phone: params?.customerPhone,
       status: params?.status,
       branch_id: params?.branchId,
+      enrich: params?.enrich ? "true" : undefined,
     },
   });
   return (res.data ?? []).map(mapBookingRow);

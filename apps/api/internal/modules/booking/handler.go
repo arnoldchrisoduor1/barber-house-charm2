@@ -36,6 +36,13 @@ func (h *Handler) List(c *fiber.Ctx) error {
 		}
 		filter.StaffID = &id
 	}
+	if strings.EqualFold(c.Query("enrich"), "true") {
+		rows, err := h.svc.ListEnriched(c.UserContext(), orgID, filter)
+		if err != nil {
+			return httpx.From(c, err)
+		}
+		return c.JSON(fiber.Map{"data": rows})
+	}
 	rows, err := h.svc.List(c.UserContext(), orgID, filter)
 	if err != nil {
 		return httpx.From(c, err)

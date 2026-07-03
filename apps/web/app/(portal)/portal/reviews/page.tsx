@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star } from "lucide-react";
@@ -12,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAuth } from "@/hooks/useAuth";
-import { fetchLoyaltyWallet, fetchMyReviews, submitReview } from "@/lib/api/portal";
-import { readPortalCustomerPhone, usePortalCustomerStore } from "@/lib/store/portal-customer-store";
+import { usePortalCustomer } from "@/hooks/usePortalCustomer";
+import { fetchMyReviews, submitReview } from "@/lib/api/portal";
+import Link from "next/link";
 
 function StarRating({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
@@ -37,43 +36,27 @@ function StarRating({ value, onChange }: { value: number; onChange: (n: number) 
 }
 
 export default function PortalReviewsPage() {
-  const { activeOrg } = useAuth();
-  const orgId = activeOrg?.id ?? "";
-  const storePhone = usePortalCustomerStore((s) => s.phone);
-  const [customerPhone, setCustomerPhone] = useState<string | null>(null);
+  const { orgId, phone, customerId, hasCustomerRecord, walletQuery } = usePortalCustomer();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const qc = useQueryClient();
 
-  useEffect(() => {
-    setCustomerPhone(readPortalCustomerPhone());
-    const unsub = usePortalCustomerStore.persist.onFinishHydration(() => {
-      setCustomerPhone(readPortalCustomerPhone());
-    });
-    return unsub;
-  }, [storePhone]);
-
-  const walletQuery = useQuery({
-    queryKey: ["portal-wallet", orgId, customerPhone],
-    enabled: !!orgId && !!customerPhone,
-    queryFn: () => fetchLoyaltyWallet(orgId, customerPhone!),
-  });
-
   const reviewsQuery = useQuery({
-    queryKey: ["portal-reviews", orgId, customerPhone],
-    enabled: !!orgId && !!customerPhone,
-    queryFn: () => fetchMyReviews(orgId, customerPhone!),
+    queryKey: ["portal-reviews", orgId, phone],
+    enabled: !!orgId && !!phone,
+    queryFn: () => fetchMyReviews(orgId, phone!),
+    retry: false,
   });
 
   const submitMut = useMutation({
     mutationFn: () =>
       submitReview(orgId, {
-        customer_id: walletQuery.data!.customer_id,
+        customer_id: customerId!,
         rating,
         comment: comment.trim() || undefined,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["portal-reviews", orgId] });
+      void qc.invalidateQueries({ queryKey: ["portal-reviews", orgId, phone] });
       setComment("");
       setRating(5);
       toast.success("Review submitted");
@@ -83,19 +66,30 @@ export default function PortalReviewsPage() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!walletQuery.data?.customer_id) return;
+    if (!customerId) return;
     submitMut.mutate();
   }
 
-  const body = !customerPhone ? (
+  const body = !phone ? (
     <Card className="glass">
       <CardContent className="space-y-4 py-10 text-center text-sm text-muted-foreground">
-        <p>Book a visit first to leave a review.</p>
+        <p>Complete a service to leave a review.</p>
+        <Button asChild className="bg-gradient-gold text-primary-foreground">
+          <Link href="/portal/profile">Set up your profile</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  ) : !hasCustomerRecord ? (
+    <Card className="glass" data-testid="portal-reviews-empty">
+      <CardContent className="space-y-4 py-10 text-center text-sm text-muted-foreground">
+        <p>Complete a service to leave a review.</p>
         <Button asChild className="bg-gradient-gold text-primary-foreground">
           <Link href="/portal/book">Book now</Link>
         </Button>
       </CardContent>
     </Card>
+  ) : walletQuery.isLoading ? (
+    <p className="text-sm text-muted-foreground">Loading your account…</p>
   ) : (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card className="glass">
@@ -103,7 +97,7 @@ export default function PortalReviewsPage() {
           <CardTitle>Leave a review</CardTitle>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
+          <form className="space-y-4" onSubmit={onSubmit} data-testid="portal-review-form">
             <div className="space-y-2">
               <Label>Rating</Label>
               <StarRating value={rating} onChange={setRating} />
@@ -114,7 +108,7 @@ export default function PortalReviewsPage() {
                 id="review-comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your experience…"
+                placeholder="Share your experience after your completed visit…"
                 rows={4}
               />
             </div>
@@ -129,14 +123,18 @@ export default function PortalReviewsPage() {
         <CardHeader>
           <CardTitle>Your reviews</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3" data-testid="portal-reviews-list">
           {reviewsQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (reviewsQuery.data ?? []).length === 0 ? (
             <p className="text-sm text-muted-foreground">No reviews yet.</p>
           ) : (
             (reviewsQuery.data ?? []).map((review) => (
-              <div key={review.id} className="rounded-lg border border-border bg-muted/20 p-3">
+              <div
+                key={review.id}
+                className="rounded-lg border border-border bg-muted/20 p-3"
+                data-testid={`portal-review-${review.id}`}
+              >
                 <div className="mb-1 flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star

@@ -167,6 +167,43 @@
       ]
     },
     {
+      "icon": "ShoppingCart",
+      "label": "POS",
+      "path": "/pos",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Finance",
+      "path": "/finance",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
+      "icon": "History",
+      "label": "Audit Log",
+      "path": "/audit-log",
+      "section": "Branch",
+      "roles": [
+        "branch_manager"
+      ]
+    },
+    {
       "icon": "Calendar",
       "label": "Live Bookings",
       "path": "/bookings",

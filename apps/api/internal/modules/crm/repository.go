@@ -2,6 +2,8 @@ package crm
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 
 	"github.com/google/uuid"
@@ -42,10 +44,24 @@ func (r *Repository) Update(ctx context.Context, orgID uuid.UUID, customer *Cust
 	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Save(customer).Error
 }
 
+func generateReferralCode() string {
+	buf := make([]byte, 4)
+	_, _ = rand.Read(buf)
+	return "REF" + hex.EncodeToString(buf)
+}
+
+func (r *Repository) ensureReferralCode(ctx context.Context, orgID, customerID uuid.UUID) error {
+	return r.db.WithContext(ctx).Exec(
+		`UPDATE customers SET referral_code = ? WHERE id = ? AND organization_id = ? AND (referral_code IS NULL OR referral_code = '')`,
+		generateReferralCode(), customerID, orgID,
+	).Error
+}
+
 func (r *Repository) FindOrCreateByPhone(ctx context.Context, orgID uuid.UUID, fullName, phone string) (*Customer, error) {
 	var existing Customer
 	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Where("phone = ?", phone).First(&existing).Error
 	if err == nil {
+		_ = r.ensureReferralCode(ctx, orgID, existing.ID)
 		return &existing, nil
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -59,6 +75,7 @@ func (r *Repository) FindOrCreateByPhone(ctx context.Context, orgID uuid.UUID, f
 	if err := r.db.WithContext(ctx).Create(customer).Error; err != nil {
 		return nil, err
 	}
+	_ = r.ensureReferralCode(ctx, orgID, customer.ID)
 	return customer, nil
 }
 

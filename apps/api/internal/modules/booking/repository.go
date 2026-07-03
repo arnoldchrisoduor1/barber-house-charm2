@@ -26,6 +26,59 @@ func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }
 
+type BookingEnriched struct {
+	Booking
+	CustomerName  string `json:"customer_name"`
+	StaffName     string `json:"staff_name"`
+	ServiceNames  string `json:"service_names"`
+	TotalPriceKES int    `json:"total_price_kes"`
+}
+
+func (r *Repository) ListEnriched(ctx context.Context, orgID uuid.UUID, filter ListFilter) ([]BookingEnriched, error) {
+	var rows []BookingEnriched
+	q := r.db.WithContext(ctx).
+		Table("bookings b").
+		Select(`b.*, COALESCE(c.full_name, '') AS customer_name, COALESCE(s.display_name, '') AS staff_name,
+			COALESCE(svc.service_names, '') AS service_names, COALESCE(svc.total_price_kes, 0) AS total_price_kes`).
+		Joins("LEFT JOIN customers c ON c.id = b.customer_id AND c.organization_id = b.organization_id").
+		Joins("LEFT JOIN staff s ON s.id = b.staff_id AND s.organization_id = b.organization_id").
+		Joins(`LEFT JOIN (
+			SELECT booking_id, string_agg(service_name, ', ') AS service_names, SUM(price_kes) AS total_price_kes
+			FROM booking_services WHERE organization_id = ? GROUP BY booking_id
+		) svc ON svc.booking_id = b.id`, orgID).
+		Where("b.organization_id = ?", orgID)
+	if filter.BranchID != nil {
+		q = q.Where("b.branch_id IS NULL OR b.branch_id = ?", *filter.BranchID)
+	}
+	if filter.CustomerPhone != "" {
+		q = q.Where(
+			"b.customer_id IN (?)",
+			r.db.Table("customers").
+				Select("id").
+				Where("organization_id = ? AND phone = ?", orgID, filter.CustomerPhone),
+		)
+	}
+	if filter.Status != "" {
+		q = q.Where("b.status = ?", filter.Status)
+	}
+	if filter.Date != "" {
+		q = q.Where("b.booking_date = ?", filter.Date)
+	}
+	if filter.StaffID != nil {
+		q = q.Where("b.staff_id = ?", *filter.StaffID)
+	}
+	err := q.Order("b.booking_date DESC").Scan(&rows).Error
+	return rows, err
+}
+
+func (r *Repository) HasCompletedBooking(ctx context.Context, orgID, customerID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&Booking{}).Scopes(platformtenancy.OrgScope(orgID)).
+		Where("customer_id = ? AND status = ?", customerID, "completed").
+		Count(&count).Error
+	return count > 0, err
+}
+
 func (r *Repository) List(ctx context.Context, orgID uuid.UUID, filter ListFilter) ([]Booking, error) {
 	var rows []Booking
 	q := r.db.WithContext(ctx).

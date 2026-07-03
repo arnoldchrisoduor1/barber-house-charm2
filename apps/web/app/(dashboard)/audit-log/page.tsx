@@ -63,7 +63,6 @@ export default function AuditLogPage() {
   return (
     <ModulePage
       title="Audit Log"
-      feature="advanced_analytics"
       description="Append-only record of sensitive actions in your organization."
     >
       <Card className="glass">

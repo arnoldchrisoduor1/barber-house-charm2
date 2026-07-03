@@ -254,6 +254,10 @@ func ensureSampleData(ctx context.Context, db *gorm.DB, orgID uuid.UUID) error {
 			return err
 		}
 	}
+	_ = db.WithContext(ctx).Exec(
+		`UPDATE customers SET referral_code = COALESCE(NULLIF(referral_code, ''), 'REFJANE1') WHERE id = ? AND organization_id = ?`,
+		customer.ID, orgID,
+	)
 
 	var staffCount int64
 	db.WithContext(ctx).Model(&staffmod.Staff{}).Where("organization_id = ?", orgID).Count(&staffCount)
@@ -345,20 +349,65 @@ func ensureSampleData(ctx context.Context, db *gorm.DB, orgID uuid.UUID) error {
 
 	var count int64
 	db.WithContext(ctx).Model(&bookingmod.Booking{}).Where("organization_id = ?", orgID).Count(&count)
-	if count > 0 {
-		return nil
-	}
-
 	today := time.Now().Format("2006-01-02")
-	date, _ := time.Parse("2006-01-02", today)
+	if count == 0 {
+		date, _ := time.Parse("2006-01-02", today)
+	var staff staffmod.Staff
+	if err := db.WithContext(ctx).Where("organization_id = ?", orgID).First(&staff).Error; err != nil {
+		return err
+	}
+	staffID := staff.ID
+	branchID := branch.ID
 	booking := bookingmod.Booking{
 		OrganizationID: orgID,
 		CustomerID:     customer.ID,
+		StaffID:        &staffID,
+		BranchID:       &branchID,
 		BookingDate:    date,
 		StartTime:      "10:00",
 		EndTime:        "10:30",
 		Status:         "scheduled",
 		Notes:          "Seeded demo booking",
 	}
-	return db.WithContext(ctx).Create(&booking).Error
+	if err := db.WithContext(ctx).Create(&booking).Error; err != nil {
+		return err
+	}
+	_ = db.WithContext(ctx).Exec(
+		`INSERT INTO booking_services (organization_id, booking_id, service_name, duration_minutes, price_kes)
+		 VALUES (?, ?, 'Classic Haircut', 30, 1500)`,
+		orgID, booking.ID,
+	)
+
+	completedDate, _ := time.Parse("2006-01-02", today)
+	completedDate = completedDate.AddDate(0, 0, -2)
+	completedBooking := bookingmod.Booking{
+		OrganizationID: orgID,
+		CustomerID:     customer.ID,
+		StaffID:        &staffID,
+		BranchID:       &branchID,
+		BookingDate:    completedDate,
+		StartTime:      "14:00",
+		EndTime:        "14:30",
+		Status:         "completed",
+		Notes:          "Seeded completed visit for reviews",
+	}
+	if err := db.WithContext(ctx).Create(&completedBooking).Error; err != nil {
+		return err
+	}
+	_ = db.WithContext(ctx).Exec(
+		`INSERT INTO booking_services (organization_id, booking_id, service_name, duration_minutes, price_kes)
+		 VALUES (?, ?, 'Beard Trim', 20, 800)`,
+		orgID, completedBooking.ID,
+	)
+	}
+
+	_ = db.WithContext(ctx).Exec(`DELETE FROM audit_log WHERE organization_id = ?`, orgID)
+	_ = db.WithContext(ctx).Exec(
+		`INSERT INTO audit_log (organization_id, action, entity_type, metadata) VALUES
+		 (?, 'staff.clock_in', 'attendance', '{"staff":"Alex Barber","branch":"Main"}'),
+		 (?, 'booking.created', 'booking', '{"customer":"Jane Client","time":"10:00"}'),
+		 (?, 'payment.completed', 'transaction', '{"amount_kes":1500,"service":"Classic Haircut"}')`,
+		orgID, orgID, orgID,
+	)
+	return nil
 }

@@ -49,6 +49,15 @@ func (r *Repository) CustomerByPhone(ctx context.Context, orgID uuid.UUID, phone
 	}, nil
 }
 
+func (r *Repository) CustomerHasCompletedBooking(ctx context.Context, orgID, customerID uuid.UUID) (bool, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Table("bookings").
+		Scopes(platformtenancy.OrgScope(orgID)).
+		Where("customer_id = ? AND status = ?", customerID, "completed").
+		Count(&count).Error
+	return count > 0, err
+}
+
 func (r *Repository) ReferralsForCustomer(ctx context.Context, orgID, customerID uuid.UUID) ([]Referral, error) {
 	var rows []Referral
 	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).

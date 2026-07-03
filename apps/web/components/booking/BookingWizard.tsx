@@ -21,19 +21,32 @@ import {
   type BookingCatalog,
   type PortalBookingPayload,
 } from "@/lib/api/booking";
-import { usePortalCustomerStore } from "@/lib/store/portal-customer-store";
+import { useAuth } from "@/hooks/useAuth";
+import { readPortalCustomerPhone, usePortalCustomerStore } from "@/lib/store/portal-customer-store";
 
 const STEPS = ["branch", "services", "datetime", "staff", "confirm"] as const;
 type Step = (typeof STEPS)[number];
 
 interface BookingWizardProps {
-  mode: "public" | "portal";
+  mode: "public" | "portal" | "staff";
   orgSlug?: string;
   orgId?: string;
   title?: string;
+  customerName?: string;
+  customerPhone?: string;
+  onStaffBooked?: () => void;
 }
 
-export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointment" }: BookingWizardProps) {
+export function BookingWizard({
+  mode,
+  orgSlug,
+  orgId,
+  title = "Book an appointment",
+  customerName: presetCustomerName,
+  customerPhone: presetCustomerPhone,
+  onStaffBooked,
+}: BookingWizardProps) {
+  const { me } = useAuth();
   const [stepIndex, setStepIndex] = useState(0);
   const [booked, setBooked] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,13 +66,27 @@ export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointme
       if (mode === "public" && orgSlug) {
         return fetchPublicCatalog(orgSlug, branchId || undefined);
       }
-      if (mode === "portal" && orgId) {
+      if ((mode === "portal" || mode === "staff") && orgId) {
         return fetchOrgCatalog(orgId, branchId || undefined);
       }
       return { branches: [], services: [], staff: [] };
     },
-    enabled: (mode === "public" && !!orgSlug) || (mode === "portal" && !!orgId),
+    enabled: (mode === "public" && !!orgSlug) || ((mode === "portal" || mode === "staff") && !!orgId),
   });
+
+  useEffect(() => {
+    if (mode === "portal") {
+      const storePhone = usePortalCustomerStore.getState().phone ?? readPortalCustomerPhone();
+      const storeName = usePortalCustomerStore.getState().fullName;
+      const authName = me?.user?.fullName ?? "";
+      if (storePhone) setPhone(storePhone);
+      if (storeName || authName) setFullName(storeName || authName);
+    }
+    if (mode === "staff") {
+      if (presetCustomerPhone) setPhone(presetCustomerPhone);
+      if (presetCustomerName) setFullName(presetCustomerName);
+    }
+  }, [mode, me?.user?.fullName, presetCustomerName, presetCustomerPhone]);
 
   const catalog = catalogQuery.data ?? { branches: [], services: [], staff: [] };
 
@@ -116,12 +143,18 @@ export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointme
       if (mode === "portal" && orgId) {
         return submitPortalBooking(orgId, payload);
       }
+      if (mode === "staff" && orgId) {
+        return submitPortalBooking(orgId, payload);
+      }
       throw new Error("Missing organization context");
     },
     onSuccess: (_data, payload) => {
-      usePortalCustomerStore.getState().setContact(payload.phone, payload.fullName);
+      if (mode !== "staff") {
+        usePortalCustomerStore.getState().setContact(payload.phone, payload.fullName);
+      }
       setBooked(true);
       setError(null);
+      onStaffBooked?.();
     },
     onError: (err: Error) => setError(err.message),
   });
@@ -142,7 +175,7 @@ export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointme
       case "staff":
         return !!staffId && availabilityQuery.data?.[staffId] !== false;
       case "confirm":
-        return !!fullName && !!phone;
+        return mode === "staff" ? !!staffId : !!fullName && !!phone;
       default:
         return false;
     }
@@ -193,7 +226,7 @@ export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointme
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6" data-testid="booking-wizard" data-prefill-name={fullName} data-prefill-phone={phone}>
       <div>
         <h1 className="font-heading text-2xl font-semibold">{title}</h1>
         <p className="text-sm text-muted-foreground">
@@ -326,6 +359,7 @@ export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointme
                   <button
                     key={member.id}
                     type="button"
+                    data-testid={`booking-staff-${member.id}`}
                     onClick={() => setStaffId(member.id)}
                     className={cn(
                       "flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors",
@@ -363,21 +397,41 @@ export function BookingWizard({ mode, orgSlug, orgId, title = "Book an appointme
                 <p className="font-semibold text-primary">Total: {formatKes(totalPrice)}</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="full-name">Full name</Label>
-                  <Input id="full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+254…"
-                    required
-                  />
-                </div>
+                {mode === "staff" ? (
+                  <div className="sm:col-span-2 rounded-lg border border-border bg-muted/20 p-3 text-sm">
+                    <p>
+                      <span className="text-muted-foreground">Customer:</span> {fullName}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Phone:</span> {phone}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="full-name">Full name</Label>
+                      <Input
+                        id="full-name"
+                        data-testid="booking-full-name"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone</Label>
+                      <Input
+                        id="phone"
+                        data-testid="booking-phone"
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+254…"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="notes">Notes (optional)</Label>

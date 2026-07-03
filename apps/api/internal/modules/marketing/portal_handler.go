@@ -1,6 +1,8 @@
 package marketing
 
 import (
+	"errors"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -73,6 +75,25 @@ func (h *Handler) MyReviews(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": rows})
 }
 
+func (h *Handler) PortalCreateReview(c *fiber.Ctx) error {
+	var dto ReviewDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if dto.CustomerID == uuid.Nil || dto.Rating < 1 || dto.Rating > 5 {
+		return httpx.ValidationProblem(c, "customer_id and rating (1-5) required", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.PortalCreateReview(c.UserContext(), orgID, dto)
+	if err != nil {
+		if errors.Is(err, httpx.ErrConflict) {
+			return httpx.ProblemJSON(c, fiber.StatusConflict, "Conflict", "Complete a service before leaving a review")
+		}
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
 func registerPortalRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	loy := org.Group("/loyalty", authz.RequireFeature(features, "loyalty"))
 	loy.Get("/wallet", h.LoyaltyWallet)
@@ -84,4 +105,5 @@ func registerPortalRoutes(org fiber.Router, features *featuremod.Service, h *Han
 
 	rev := org.Group("/reviews", authz.RequireFeature(features, "customer_reviews"))
 	rev.Get("/my", h.MyReviews)
+	rev.Post("/submit", h.PortalCreateReview)
 }

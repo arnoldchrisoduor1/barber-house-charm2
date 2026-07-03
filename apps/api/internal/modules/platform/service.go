@@ -34,3 +34,14 @@ func (s *Service) Audit(ctx context.Context, actorID *uuid.UUID, action, resourc
 	}
 	return s.repo.AppendAudit(ctx, entry)
 }
+
+func (s *Service) RecordOrgAudit(ctx context.Context, orgID uuid.UUID, userID *uuid.UUID, action, entityType string, entityID *uuid.UUID, metadata []byte) error {
+	return s.repo.AppendOrgAudit(ctx, OrgAuditEntry{
+		OrganizationID: orgID,
+		UserID:         userID,
+		Action:         action,
+		EntityType:     entityType,
+		EntityID:       entityID,
+		Metadata:       metadata,
+	})
+}

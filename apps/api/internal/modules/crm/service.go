@@ -76,6 +76,7 @@ func (s *Service) Create(ctx context.Context, orgID uuid.UUID, dto CreateCustome
 	if err := s.repo.Create(ctx, c); err != nil {
 		return nil, err
 	}
+	_ = s.repo.ensureReferralCode(ctx, orgID, c.ID)
 	return c, nil
 }
 

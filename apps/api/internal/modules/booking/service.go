@@ -34,6 +34,10 @@ func (s *Service) List(ctx context.Context, orgID uuid.UUID, filter ListFilter) 
 	return s.repo.List(ctx, orgID, filter)
 }
 
+func (s *Service) ListEnriched(ctx context.Context, orgID uuid.UUID, filter ListFilter) ([]BookingEnriched, error) {
+	return s.repo.ListEnriched(ctx, orgID, filter)
+}
+
 func (s *Service) ListServices(ctx context.Context, orgID, bookingID uuid.UUID) ([]BookingService, error) {
 	if _, err := s.repo.Get(ctx, orgID, bookingID); err != nil {
 		return nil, httpx.ErrNotFound

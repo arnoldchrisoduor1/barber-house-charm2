@@ -33,7 +33,7 @@ function toDateStr(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+const HOURS = Array.from({ length: 24 }, (_, hour) => `${String(hour).padStart(2, "0")}:00`);
 
 export default function SchedulePage() {
   const { activeOrg } = useAuth();
@@ -105,7 +105,7 @@ export default function SchedulePage() {
               </thead>
               <tbody>
                 {HOURS.map((hour) => (
-                  <tr key={hour}>
+                  <tr key={hour} data-testid={`schedule-hour-${hour}`}>
                     <td className="border border-border/50 p-2 font-mono text-xs text-muted-foreground">{formatTime(hour)}</td>
                     {weekDays.map((d) => {
                       const key = `${toDateStr(d)}|${hour}`;

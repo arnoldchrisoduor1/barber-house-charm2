@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Scissors, UserCircle } from "lucide-react";
+import { Briefcase, Building2, Scissors, UserCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { usePortalView } from "@/hooks/usePortalView";
@@ -8,6 +8,7 @@ import { PORTAL_LABELS, type PortalView } from "@/lib/portal-view";
 
 const PORTAL_ICONS: Record<PortalView, typeof Briefcase> = {
   business: Briefcase,
+  manager: Building2,
   staff: Scissors,
   client: UserCircle,
 };

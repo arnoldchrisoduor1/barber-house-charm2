@@ -41,14 +41,14 @@ func (Enquiry) TableName() string { return "enquiries" }
 func (Enquiry) IsTenantScoped()   {}
 
 type StaffChatMessage struct {
-	ID             uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	OrganizationID uuid.UUID  `gorm:"type:uuid;not null;index"`
-	Channel        string     `gorm:"not null;default:general"`
-	SenderID       uuid.UUID  `gorm:"type:uuid;not null"`
-	Message        string     `gorm:"not null"`
-	ParentID       *uuid.UUID `gorm:"type:uuid"`
-	IsPinned       bool       `gorm:"not null;default:false"`
-	CreatedAt      time.Time
+	ID             uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	OrganizationID uuid.UUID  `gorm:"type:uuid;not null;index" json:"-"`
+	Channel        string     `gorm:"not null;default:general" json:"channel"`
+	SenderID       uuid.UUID  `gorm:"type:uuid;not null" json:"sender_id"`
+	Message        string     `gorm:"not null" json:"message"`
+	ParentID       *uuid.UUID `gorm:"type:uuid" json:"parent_id,omitempty"`
+	IsPinned       bool       `gorm:"not null;default:false" json:"is_pinned"`
+	CreatedAt      time.Time  `json:"created_at"`
 }
 
 func (StaffChatMessage) TableName() string { return "staff_chat_messages" }

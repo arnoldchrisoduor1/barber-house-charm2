@@ -4,9 +4,10 @@ import { ensureAuthenticated } from "../helpers/ensure-auth";
 import { waitForWorkspace } from "../helpers/crud";
 import { ensureShiftOpen } from "../helpers/pos";
 
-async function switchPortal(page: import("@playwright/test").Page, portal: "business" | "staff" | "client") {
+async function switchPortal(page: import("@playwright/test").Page, portal: "business" | "manager" | "staff" | "client") {
   const labels: Record<typeof portal, RegExp> = {
     business: /business owner/i,
+    manager: /branch manager/i,
     staff: /staff/i,
     client: /client/i,
   };

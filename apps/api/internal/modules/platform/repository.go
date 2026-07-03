@@ -34,3 +34,14 @@ func (r *Repository) IsPlatformAdmin(ctx context.Context, userID uuid.UUID) (boo
 func (r *Repository) AppendAudit(ctx context.Context, entry *AuditLog) error {
 	return r.db.WithContext(ctx).Create(entry).Error
 }
+
+func (r *Repository) AppendOrgAudit(ctx context.Context, entry OrgAuditEntry) error {
+	meta := entry.Metadata
+	if meta == nil {
+		meta = []byte("{}")
+	}
+	return r.db.WithContext(ctx).Exec(
+		`INSERT INTO audit_log (organization_id, user_id, action, entity_type, entity_id, metadata) VALUES (?, ?, ?, ?, ?, ?::jsonb)`,
+		entry.OrganizationID, entry.UserID, entry.Action, entry.EntityType, entry.EntityID, string(meta),
+	).Error
+}

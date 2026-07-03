@@ -133,7 +133,7 @@ export function PosWorkspace() {
   const scheduledBookingsQuery = useQuery({
     queryKey: ["pos-scheduled-bookings", orgId, apiParams],
     queryFn: () =>
-      fetchBookings(orgId, { status: "scheduled", branchId: apiParams.branch_id }),
+      fetchBookings(orgId, { status: "scheduled", branchId: apiParams.branch_id, enrich: true }),
     enabled: !!orgId && !!activeShift,
   });
 
@@ -450,8 +450,16 @@ export function PosWorkspace() {
                       className="flex flex-col gap-2 rounded-lg border border-border/60 p-3 sm:flex-row sm:items-center sm:justify-between"
                     >
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium" data-testid={`pos-booking-customer-${booking.id}`}>
+                          {booking.customerName || "Walk-in guest"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
                           {booking.bookingDate.slice(0, 10)} {booking.startTime}
+                          {booking.serviceNames ? ` · ${booking.serviceNames}` : ""}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {booking.staffName ? `With ${booking.staffName}` : "Staff TBD"}
+                          {booking.totalPriceKes ? ` · ${formatKes(booking.totalPriceKes)}` : ""}
                         </p>
                         <p className="text-xs capitalize text-muted-foreground">
                           Status: {booking.status}
