@@ -26,10 +26,12 @@ import (
 )
 
 const (
-	demoEmail       = "arnoldchris262@gmail.com"
-	demoPassword    = "Admin123!"
-	demoOrgSlug     = "demo-salon"
-	legacyDemoEmail = "demo@haus.local"
+	demoEmail         = "arnoldchris262@gmail.com"
+	demoPassword      = "Admin123!"
+	demoOrgSlug       = "demo-salon"
+	legacyDemoEmail   = "demo@haus.local"
+	staffDemoEmail    = "staff.demo@e2e.test"
+	staffDemoPassword = "StaffPass123!"
 )
 
 func main() {
@@ -67,8 +69,13 @@ func main() {
 		log.Fatalf("sample data: %v", err)
 	}
 
+	if err := ensureDemoStaffUser(ctx, db, org.ID); err != nil {
+		log.Fatalf("demo staff user: %v", err)
+	}
+
 	_ = userID
 	log.Printf("seed complete: %s / %s (org slug %s)", demoEmail, demoPassword, demoOrgSlug)
+	log.Printf("seed staff login: %s / %s", staffDemoEmail, staffDemoPassword)
 }
 
 func ensureDemoOrg(ctx context.Context, db *gorm.DB) (*tenancymod.Organization, uuid.UUID, error) {
@@ -92,7 +99,8 @@ func ensureDemoOrg(ctx context.Context, db *gorm.DB) (*tenancymod.Organization, 
 
 	var org tenancymod.Organization
 	if err == gorm.ErrRecordNotFound {
-		user = authmod.User{Email: email, PasswordHash: hash}
+		verifiedAt := time.Now()
+		user = authmod.User{Email: email, PasswordHash: hash, EmailVerifiedAt: &verifiedAt}
 		if err := db.WithContext(ctx).Create(&user).Error; err != nil {
 			return nil, uuid.Nil, err
 		}
@@ -117,12 +125,16 @@ func ensureDemoOrg(ctx context.Context, db *gorm.DB) (*tenancymod.Organization, 
 			ResourceID:   org.ID.String(),
 		})
 	} else {
+		verifiedAt := time.Now()
 		if err := db.WithContext(ctx).Model(&user).Updates(map[string]any{
-			"email":         email,
-			"password_hash": hash,
+			"email":              email,
+			"password_hash":      hash,
+			"email_verified_at":  verifiedAt,
 		}).Error; err != nil {
 			return nil, uuid.Nil, err
 		}
+		// Reset 2FA so E2E auth.setup can log in without MailHog race.
+		_ = db.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&authmod.UserTwoFactor{}).Error
 		if err := db.WithContext(ctx).Where("slug = ?", demoOrgSlug).First(&org).Error; err != nil {
 			return nil, uuid.Nil, err
 		}
@@ -409,5 +421,74 @@ func ensureSampleData(ctx context.Context, db *gorm.DB, orgID uuid.UUID) error {
 		 (?, 'payment.completed', 'transaction', '{"amount_kes":1500,"service":"Classic Haircut"}')`,
 		orgID, orgID, orgID,
 	)
+	return nil
+}
+
+func ensureDemoStaffUser(ctx context.Context, db *gorm.DB, orgID uuid.UUID) error {
+	email := strings.ToLower(strings.TrimSpace(staffDemoEmail))
+	hash, err := platformauth.HashPassword(staffDemoPassword)
+	if err != nil {
+		return err
+	}
+
+	var user authmod.User
+	err = db.WithContext(ctx).Where("email = ?", email).First(&user).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return err
+	}
+	if err == gorm.ErrRecordNotFound {
+		verifiedAt := time.Now()
+		user = authmod.User{Email: email, PasswordHash: hash, EmailVerifiedAt: &verifiedAt}
+		if err := db.WithContext(ctx).Create(&user).Error; err != nil {
+			return err
+		}
+		if err := db.WithContext(ctx).Create(&authmod.Profile{UserID: user.ID, FullName: "Alex Barber"}).Error; err != nil {
+			return err
+		}
+	} else {
+		verifiedAt := time.Now()
+		if err := db.WithContext(ctx).Model(&user).Updates(map[string]any{
+			"password_hash":     hash,
+			"email_verified_at": verifiedAt,
+		}).Error; err != nil {
+			return err
+		}
+		_ = db.WithContext(ctx).Where("user_id = ?", user.ID).Delete(&authmod.UserTwoFactor{}).Error
+	}
+
+	var memberCount int64
+	db.WithContext(ctx).Model(&tenancymod.OrganizationMember{}).
+		Where("organization_id = ? AND user_id = ?", orgID, user.ID).Count(&memberCount)
+	if memberCount == 0 {
+		if err := db.WithContext(ctx).Create(&tenancymod.OrganizationMember{
+			OrganizationID: orgID,
+			UserID:         user.ID,
+		}).Error; err != nil {
+			return err
+		}
+	}
+
+	var roleCount int64
+	db.WithContext(ctx).Model(&tenancymod.UserRole{}).
+		Where("organization_id = ? AND user_id = ? AND role = ?", orgID, user.ID, "senior_barber").Count(&roleCount)
+	if roleCount == 0 {
+		if err := db.WithContext(ctx).Create(&tenancymod.UserRole{
+			OrganizationID: orgID,
+			UserID:         user.ID,
+			Role:           "senior_barber",
+		}).Error; err != nil {
+			return err
+		}
+	}
+
+	var staff staffmod.Staff
+	if err := db.WithContext(ctx).Where("organization_id = ? AND display_name = ?", orgID, "Alex Barber").First(&staff).Error; err != nil {
+		return err
+	}
+	if staff.UserID == nil || *staff.UserID != user.ID {
+		if err := db.WithContext(ctx).Model(&staff).Update("user_id", user.ID).Error; err != nil {
+			return err
+		}
+	}
 	return nil
 }

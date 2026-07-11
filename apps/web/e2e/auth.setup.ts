@@ -1,14 +1,15 @@
-import { test as setup, expect } from "@playwright/test";
+import { test as setup, expect, type BrowserContext } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
+import { fetchLatestOtpFromMailhog } from "./helpers/auth";
 import { DEMO_EMAIL, DEMO_PASSWORD } from "./fixtures";
 
 const authFile = path.join(__dirname, ".auth", "user.json");
+const mailhogUrl = process.env.MAILHOG_URL ?? "http://localhost:8025";
 
-setup("authenticate demo user", async ({ page, context }) => {
-  fs.mkdirSync(path.dirname(authFile), { recursive: true });
-
+async function loginWithOptional2FA(context: BrowserContext) {
+  const loginStarted = Date.now();
   let loginResponse = await context.request.post("/api/v1/auth/login", {
     data: { email: DEMO_EMAIL, password: DEMO_PASSWORD },
   });
@@ -20,6 +21,31 @@ setup("authenticate demo user", async ({ page, context }) => {
       expect(loginResponse.ok()).toBeTruthy();
     }).toPass({ timeout: 120_000 });
   }
+
+  const loginBody = (await loginResponse.json()) as {
+    requires2FA?: boolean;
+    challengeToken?: string;
+  };
+
+  if (loginBody.requires2FA && loginBody.challengeToken) {
+    let otp: string | null = null;
+    await expect(async () => {
+      otp = await fetchLatestOtpFromMailhog(mailhogUrl, loginStarted);
+      expect(otp).toBeTruthy();
+    }).toPass({ timeout: 20_000 });
+
+    const challenge = await context.request.post("/api/v1/auth/2fa/challenge", {
+      data: { challengeToken: loginBody.challengeToken, otp },
+    });
+    expect(challenge.ok()).toBeTruthy();
+  }
+}
+
+setup("authenticate demo user", async ({ page, context }) => {
+  setup.setTimeout(120_000);
+  fs.mkdirSync(path.dirname(authFile), { recursive: true });
+
+  await loginWithOptional2FA(context);
 
   let meResponse = await context.request.get("/api/v1/me");
   expect(meResponse.ok()).toBeTruthy();

@@ -99,3 +99,11 @@ func (s *Service) GetOrg(ctx context.Context, orgID uuid.UUID) (*Organization, e
 func (s *Service) FindBySlug(ctx context.Context, slug string) (*Organization, error) {
 	return s.repo.FindOrgBySlug(ctx, slug)
 }
+
+func (s *Service) ListPublicOrgs(ctx context.Context, category string) ([]map[string]any, error) {
+	return s.repo.ListPublicOrgs(ctx, category)
+}
+
+func (s *Service) EnsureMember(ctx context.Context, userID, orgID uuid.UUID, role string) error {
+	return s.repo.EnsureMember(ctx, userID, orgID, role)
+}

@@ -84,6 +84,16 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: "1025"
       SMTP_FROM: noreply@hausofwellness.local
+      # Production SMTP (override via .env):
+      # SMTP_HOST: smtp.gmail.com
+      # SMTP_PORT: "587"
+      # SMTP_USER: ${SMTP_USER}
+      # SMTP_PASSWORD: ${SMTP_PASSWORD}
+      # SMTP_USE_STARTTLS: "true"
+      # EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+      # EMAIL_FROM_NAME: Haus of Wellness
+      # EMAIL_DRY_RUN: "false"
+      PUBLIC_WEB_URL: http://localhost:3001
     ports:
       - "18432:8080"
     depends_on:
@@ -138,7 +148,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 30s
+      start_period: 30s 
     restart: unless-stopped
 
   caddy:

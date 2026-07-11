@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -88,4 +89,70 @@ func (r *Repository) UpsertTwoFactor(ctx context.Context, row *UserTwoFactor) er
 func (r *Repository) DisableTwoFactor(ctx context.Context, userID uuid.UUID) error {
 	return r.db.WithContext(ctx).Model(&UserTwoFactor{}).Where("user_id = ?", userID).
 		Updates(map[string]any{"is_enabled": false, "enabled_at": nil}).Error
+}
+
+func (r *Repository) CreateEmailVerificationToken(ctx context.Context, row *EmailVerificationToken) error {
+	_ = r.db.WithContext(ctx).Where("user_id = ?", row.UserID).Delete(&EmailVerificationToken{}).Error
+	return r.db.WithContext(ctx).Create(row).Error
+}
+
+func (r *Repository) FindEmailVerificationToken(ctx context.Context, token string) (*EmailVerificationToken, error) {
+	var row EmailVerificationToken
+	err := r.db.WithContext(ctx).Where("token = ?", token).First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &row, err
+}
+
+func (r *Repository) MarkEmailVerified(ctx context.Context, userID uuid.UUID) error {
+	now := time.Now()
+	return r.db.WithContext(ctx).Model(&User{}).Where("id = ?", userID).
+		Update("email_verified_at", now).Error
+}
+
+func (r *Repository) DeleteEmailVerificationTokens(ctx context.Context, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Where("user_id = ?", userID).Delete(&EmailVerificationToken{}).Error
+}
+
+func (r *Repository) CreateStaffInvite(ctx context.Context, row *StaffInvite) error {
+	return r.db.WithContext(ctx).Create(row).Error
+}
+
+func (r *Repository) ListStaffInvites(ctx context.Context, orgID uuid.UUID) ([]StaffInvite, error) {
+	var rows []StaffInvite
+	err := r.db.WithContext(ctx).Where("organization_id = ?", orgID).Order("created_at DESC").Find(&rows).Error
+	return rows, err
+}
+
+func (r *Repository) FindStaffInviteByToken(ctx context.Context, token string) (*StaffInvite, error) {
+	var row StaffInvite
+	err := r.db.WithContext(ctx).Where("token = ?", token).First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &row, err
+}
+
+func (r *Repository) FindPendingStaffInviteByEmail(ctx context.Context, email string) (*StaffInvite, error) {
+	var row StaffInvite
+	err := r.db.WithContext(ctx).
+		Where("LOWER(email) = ? AND accepted_at IS NULL AND expires_at > NOW()", email).
+		Order("created_at DESC").
+		First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	return &row, err
+}
+
+func (r *Repository) MarkStaffInviteAccepted(ctx context.Context, id uuid.UUID) error {
+	now := time.Now()
+	return r.db.WithContext(ctx).Model(&StaffInvite{}).Where("id = ?", id).
+		Update("accepted_at", now).Error
+}
+
+func (r *Repository) LinkStaffUser(ctx context.Context, staffID, userID uuid.UUID) error {
+	return r.db.WithContext(ctx).Table("staff").Where("id = ?", staffID).
+		Update("user_id", userID).Error
 }

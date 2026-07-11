@@ -28,9 +28,11 @@ type Props<T extends Record<string, unknown>> = {
   rows: T[];
   emptyMessage?: string;
   rowKey?: (row: T, index: number) => string;
+  rowDataTestId?: (row: T) => string | undefined;
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   deleteLabel?: string;
+  tableTestId?: string;
 };
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -38,9 +40,11 @@ export function DataTable<T extends Record<string, unknown>>({
   rows,
   emptyMessage = "No data.",
   rowKey,
+  rowDataTestId,
   onEdit,
   onDelete,
   deleteLabel = "Delete",
+  tableTestId,
 }: Props<T>) {
   const hasActions = Boolean(onEdit || onDelete);
 
@@ -49,7 +53,10 @@ export function DataTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
+    <div
+      className="overflow-x-auto rounded-lg border border-border"
+      data-testid={tableTestId}
+    >
       <table className="w-full text-sm">
         <thead className="bg-muted/50">
           <tr>
@@ -65,7 +72,11 @@ export function DataTable<T extends Record<string, unknown>>({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={rowKey ? rowKey(row, i) : i} className="border-t border-border hover:bg-muted/30">
+            <tr
+              key={rowKey ? rowKey(row, i) : i}
+              className="border-t border-border hover:bg-muted/30"
+              data-testid={rowDataTestId?.(row)}
+            >
               {columns.map((c) => (
                 <td key={String(c.key)} className="px-4 py-2">
                   {c.render

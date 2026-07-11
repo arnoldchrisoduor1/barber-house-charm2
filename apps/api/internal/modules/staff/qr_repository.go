@@ -60,6 +60,28 @@ func (r *Repository) AttendanceSummary(ctx context.Context, orgID uuid.UUID, bra
 	return rows, err
 }
 
+func (r *Repository) StaffAttendanceDay(ctx context.Context, orgID, staffID uuid.UUID, date string) (*time.Time, *time.Time, error) {
+	d := date
+	if d == "" {
+		d = time.Now().Format("2006-01-02")
+	}
+	var row struct {
+		ClockIn  *time.Time
+		ClockOut *time.Time
+	}
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT
+			(SELECT scanned_at FROM qr_scans q WHERE q.staff_id = ? AND q.organization_id = ?
+			 AND q.scan_type = 'clock_in' AND q.scanned_at::date = ?::date ORDER BY scanned_at ASC LIMIT 1) AS clock_in,
+			(SELECT scanned_at FROM qr_scans q WHERE q.staff_id = ? AND q.organization_id = ?
+			 AND q.scan_type = 'clock_out' AND q.scanned_at::date = ?::date ORDER BY scanned_at DESC LIMIT 1) AS clock_out
+	`, staffID, orgID, d, staffID, orgID, d).Scan(&row).Error
+	if err != nil {
+		return nil, nil, err
+	}
+	return row.ClockIn, row.ClockOut, nil
+}
+
 func (r *Repository) FindStaffByUser(ctx context.Context, orgID, userID uuid.UUID) (*Staff, error) {
 	var row Staff
 	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).

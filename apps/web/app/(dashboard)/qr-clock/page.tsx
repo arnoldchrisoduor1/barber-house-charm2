@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import { Clock, LogIn, LogOut } from "lucide-react";
@@ -19,16 +19,21 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrentStaffId } from "@/hooks/useCurrentStaffId";
+import { useMyAttendance } from "@/hooks/useMyAttendance";
 import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { api, apiClient } from "@/lib/api-client";
+import { formatAttendanceTime } from "@/lib/format-attendance";
 import { pickRowField } from "@/lib/record-fields";
+import { useQuery } from "@tanstack/react-query";
 
 export default function QrClockPage() {
   const { activeOrg } = useAuth();
   const staffId = useCurrentStaffId();
   const orgId = activeOrg?.id ?? "";
+  const queryClient = useQueryClient();
   const { branches: filterBranches, activeBranchId, setActiveBranchId } = useBranchFilter();
   const [lastAction, setLastAction] = useState<string | null>(null);
+  const myAttendance = useMyAttendance();
 
   const branchesQuery = useQuery({
     queryKey: ["qr-branches", orgId],
@@ -60,7 +65,7 @@ export default function QrClockPage() {
   const clockMut = useMutation({
     mutationFn: (scanType: "clock_in" | "clock_out") =>
       api.post(`/organizations/${orgId}/qr/clock`, {
-        staff_id: staffId,
+        staff_id: staffId ?? undefined,
         branch_id: branchId,
         scan_type: scanType,
       }),
@@ -68,6 +73,9 @@ export default function QrClockPage() {
       const label = scanType === "clock_in" ? "Clocked in" : "Clocked out";
       setLastAction(`${label} at ${new Date().toLocaleTimeString()}`);
       toast.success(label);
+      void queryClient.invalidateQueries({ queryKey: ["qr-my-attendance", orgId] });
+      void queryClient.invalidateQueries({ queryKey: ["qr-attendance", orgId] });
+      void queryClient.invalidateQueries({ queryKey: ["qr-scans", orgId] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Clock action failed"),
   });
@@ -133,9 +141,23 @@ export default function QrClockPage() {
             </p>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground">
-                Staff ID: <span className="font-mono text-foreground">{staffId.slice(0, 8)}…</span>
-              </p>
+              <div
+                className="grid grid-cols-2 gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 text-sm"
+                data-testid="my-attendance-today"
+              >
+                <div>
+                  <p className="text-muted-foreground">Clock in</p>
+                  <p className="font-medium text-foreground" data-testid="my-clock-in">
+                    {formatAttendanceTime(myAttendance.data?.clock_in)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Clock out</p>
+                  <p className="font-medium text-foreground" data-testid="my-clock-out">
+                    {formatAttendanceTime(myAttendance.data?.clock_out)}
+                  </p>
+                </div>
+              </div>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   className="flex-1 gap-2"

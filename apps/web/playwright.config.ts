@@ -49,7 +49,7 @@ export default defineConfig({
     {
       name: "flows",
       dependencies: ["setup"],
-      testMatch: /flows\/(auth-flows|register-flows|theme-flows|core-flows|settings-flows|special-pages|pos-flows|booking-flows|cross-portal-flow|dashboard-flows|analytics-flows|operations-flows|finance-flows|staff-portal-flows|client-portal-flows|major-updates-flows)\.spec\.ts/,
+      testMatch: /flows\/(auth-flows|register-flows|theme-flows|core-flows|settings-flows|special-pages|pos-flows|booking-flows|cross-portal-flow|dashboard-flows|analytics-flows|operations-flows|finance-flows|staff-portal-flows|client-portal-flows|major-updates-flows|email-verification|staff-invite|client-home|attendance-flows)\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         channel: process.env.PLAYWRIGHT_CHANNEL ?? "chrome",

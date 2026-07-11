@@ -10,6 +10,36 @@ type RegisterRequest struct {
 	OrgSlug      string `json:"orgSlug"`
 	BusinessType string `json:"businessType"`
 	Role         string `json:"role"`
+	AccountType  string `json:"accountType"`
+}
+
+type VerifyEmailRequest struct {
+	Token string `json:"token"`
+}
+
+type AcceptInviteRequest struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+	FullName string `json:"fullName"`
+}
+
+type SelectOrgRequest struct {
+	OrgID string `json:"orgId"`
+}
+
+type CreateStaffInviteRequest struct {
+	Email       string `json:"email"`
+	Role        string `json:"role"`
+	DisplayName string `json:"displayName"`
+}
+
+type StaffMembershipLookupResponse struct {
+	Email        string `json:"email"`
+	Organization string `json:"organization"`
+	OrgSlug      string `json:"orgSlug"`
+	Role         string `json:"role"`
+	HasAccount   bool   `json:"hasAccount"`
+	InvitePending bool  `json:"invitePending"`
 }
 
 type LoginRequest struct {
@@ -37,11 +67,13 @@ type ChangePasswordRequest struct {
 
 
 type AuthResponse struct {
-	AccessToken    string `json:"accessToken,omitempty"`
-	RefreshToken   string `json:"refreshToken,omitempty"`
-	ExpiresIn      int64  `json:"expiresIn,omitempty"`
-	Requires2FA    bool   `json:"requires2FA,omitempty"`
-	ChallengeToken string `json:"challengeToken,omitempty"`
+	AccessToken           string `json:"accessToken,omitempty"`
+	RefreshToken          string `json:"refreshToken,omitempty"`
+	ExpiresIn             int64  `json:"expiresIn,omitempty"`
+	Requires2FA           bool   `json:"requires2FA,omitempty"`
+	ChallengeToken        string `json:"challengeToken,omitempty"`
+	RequiresVerification  bool   `json:"requiresVerification,omitempty"`
+	Email                 string `json:"email,omitempty"`
 }
 
 type MeResponse struct {

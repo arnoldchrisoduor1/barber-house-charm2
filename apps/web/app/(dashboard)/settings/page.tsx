@@ -280,7 +280,8 @@ export default function SettingsPage() {
                   <Button
                     type="button"
                     onClick={() => setup2FA.mutate()}
-                    disabled={setup2FA.isPending}
+                    disabled={setup2FA.isPending || setupSent}
+                    data-testid="enable-2fa-btn"
                   >
                     Enable 2FA
                   </Button>

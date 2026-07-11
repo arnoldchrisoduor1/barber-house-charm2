@@ -17,7 +17,7 @@ export default function LoginPage() {
   const { login, verify2FA, refreshMe } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"credentials" | "otp">("credentials");
+  const [step, setStep] = useState<"credentials" | "otp" | "verify">("credentials");
   const [challengeToken, setChallengeToken] = useState("");
   const [otp, setOtp] = useState("");
   const [mounted, setMounted] = useState(false);
@@ -39,6 +39,10 @@ export default function LoginPage() {
     const form = new FormData(event.currentTarget);
     try {
       const resp = await login(String(form.get("email")), String(form.get("password")));
+      if (resp.requiresVerification) {
+        setStep("verify");
+        return;
+      }
       if (resp.requires2FA && resp.challengeToken) {
         setChallengeToken(resp.challengeToken);
         setStep("otp");
@@ -71,11 +75,15 @@ export default function LoginPage() {
       <div className="mesh-ambient" aria-hidden />
       <Card className="relative z-10 w-full max-w-md glass">
         <CardHeader>
-          <CardTitle>{step === "otp" ? "Verify your email" : "Sign in"}</CardTitle>
+          <CardTitle>
+            {step === "otp" ? "Verify your email" : step === "verify" ? "Verify your account" : "Sign in"}
+          </CardTitle>
           <CardDescription>
             {step === "otp"
               ? "Enter the 6-digit code sent to your email"
-              : "Access your Haus of Wellness workspace"}
+              : step === "verify"
+                ? "Check your inbox for a verification link before signing in."
+                : "Access your Haus of Wellness workspace"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -106,6 +114,15 @@ export default function LoginPage() {
                 </Button>
               </fieldset>
             </form>
+          ) : step === "verify" ? (
+            <div className="space-y-4" data-testid="login-verify-prompt">
+              <p className="text-sm text-muted-foreground">
+                We sent a verification link to your email. Open it to activate your account, then sign in again.
+              </p>
+              <Button type="button" variant="outline" className="w-full" onClick={() => setStep("credentials")}>
+                Back to sign in
+              </Button>
+            </div>
           ) : (
             <form className="space-y-4" onSubmit={onOtpSubmit}>
               <div className="space-y-2">

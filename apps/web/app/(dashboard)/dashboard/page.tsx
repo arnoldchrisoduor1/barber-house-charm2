@@ -28,10 +28,12 @@ import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useStaffScope } from "@/hooks/useStaffScope";
 import { useCurrentStaffId } from "@/hooks/useCurrentStaffId";
+import { useMyAttendance } from "@/hooks/useMyAttendance";
 import { usePortalView } from "@/hooks/usePortalView";
 import { api } from "@/lib/api-client";
 import { useEntityList } from "@/lib/api/crud";
 import { formatDate, formatKES, formatTime } from "@/lib/format";
+import { formatAttendanceTime } from "@/lib/format-attendance";
 import { pickRowField } from "@/lib/record-fields";
 
 interface ReportsSummary {
@@ -205,6 +207,8 @@ export default function DashboardPage() {
       });
     },
   });
+
+  const myAttendanceQuery = useMyAttendance(today);
 
   const summary = reportsQuery.data;
   const extras = extrasQuery.data;
@@ -459,25 +463,25 @@ export default function DashboardPage() {
           <div className="space-y-4" data-testid="staff-dashboard">
             <div className="grid gap-4 sm:grid-cols-3">
               <StatTile
+                icon={Clock}
+                label="Clock in"
+                value={formatAttendanceTime(myAttendanceQuery.data?.clock_in)}
+                loading={myAttendanceQuery.isLoading}
+                testId="staff-stat-clock-in"
+              />
+              <StatTile
+                icon={Clock}
+                label="Clock out"
+                value={formatAttendanceTime(myAttendanceQuery.data?.clock_out)}
+                loading={myAttendanceQuery.isLoading}
+                testId="staff-stat-clock-out"
+              />
+              <StatTile
                 icon={CalendarCheck}
                 label="Today's appointments"
                 value={String(staffBookingsQuery.data?.length ?? 0)}
                 loading={staffBookingsQuery.isLoading}
                 testId="staff-stat-bookings"
-              />
-              <StatTile
-                icon={Wallet}
-                label="Status"
-                value={isStaffScoped ? "On floor" : "Active"}
-                loading={false}
-                testId="staff-stat-status"
-              />
-              <StatTile
-                icon={Clock}
-                label="Schedule"
-                value={formatDate(today)}
-                loading={false}
-                testId="staff-stat-date"
               />
             </div>
             <Card className="glass" data-testid="staff-schedule">

@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
     const isClient = roles.some((role) => role === "customer" || role === "client");
     if (pathname === "/dashboard" && isClient) {
-      router.replace("/portal");
+      router.replace("/home");
     }
   }, [isLoading, isAuthenticated, roles, pathname, router]);
 

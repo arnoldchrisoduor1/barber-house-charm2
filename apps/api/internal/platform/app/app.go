@@ -78,7 +78,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	authRepo := authmod.NewRepository(deps.DB)
 	emailSender := platformemail.NewSender(deps.Config, deps.Logger)
 	twoFactorSvc := authmod.NewTwoFactorService(authRepo, deps.Redis, emailSender)
-	authSvc := authmod.NewService(authRepo, jwtSvc, tenancySvc, featureSvc, platformSvc, twoFactorSvc)
+	authSvc := authmod.NewService(authRepo, jwtSvc, tenancySvc, featureSvc, platformSvc, twoFactorSvc, emailSender, deps.Config.PublicWebURL)
 	authHandler := authmod.NewHandler(authSvc)
 
 	tenancyHandler := tenancymod.NewHandler(tenancySvc)
@@ -119,7 +119,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	staffRepo := staffmod.NewRepository(deps.DB)
 	staffSvc := staffmod.NewService(staffRepo)
 	staffHandler := staffmod.NewHandler(staffSvc)
-	staffQR := staffmod.NewQRService(staffRepo, deps.Config.JWTAccessSecret)
+	staffQR := staffmod.NewQRService(staffRepo, platformSvc, deps.Config.JWTAccessSecret)
 	staffQRHandler := staffmod.NewQRHandler(staffQR)
 
 	payrollRepo := payrollmod.NewRepository(deps.DB)
@@ -237,6 +237,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	settingsmod.RegisterOrgRoutes(org, featureSvc, settingsHandler)
 	staffmod.RegisterOrgRoutes(org, staffHandler)
 	staffmod.RegisterQRRoutes(org, featureSvc, staffQRHandler)
+	authmod.RegisterOrgRoutes(org, authHandler)
 	payrollmod.RegisterOrgRoutes(org, featureSvc, payrollHandler)
 	platformmod.RegisterOrgAuditRoute(org, platformHandler)
 	notificationsmod.RegisterOrgRoutes(org, jwtSvc, notificationsHandler)

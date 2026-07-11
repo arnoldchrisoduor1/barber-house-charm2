@@ -12,17 +12,21 @@ function PortalRealtimeProvider({ children }: { children: ReactNode }) {
 }
 
 export default function PortalLayout({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, activeOrg } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
     if (!isAuthenticated) {
       router.replace("/login");
+      return;
     }
-  }, [isLoading, isAuthenticated, router]);
+    if (!activeOrg?.id) {
+      router.replace("/home");
+    }
+  }, [isLoading, isAuthenticated, activeOrg?.id, router]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated || !activeOrg?.id) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">Loading portal…</p>

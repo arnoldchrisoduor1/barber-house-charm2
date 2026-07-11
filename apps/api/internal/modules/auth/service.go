@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -12,18 +13,21 @@ import (
 
 	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
+	platformemail "github.com/haus-of-wellness/api/internal/platform/email"
 	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
 	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
 	platformmod "github.com/haus-of-wellness/api/internal/modules/platform"
 )
 
 type Service struct {
-	repo       *Repository
-	jwt        *platformauth.JWTService
-	tenancySvc *tenancymod.Service
-	features   *featuremod.Service
-	platform   *platformmod.Service
-	twoFactor  *TwoFactorService
+	repo          *Repository
+	jwt           *platformauth.JWTService
+	tenancySvc    *tenancymod.Service
+	features      *featuremod.Service
+	platform      *platformmod.Service
+	twoFactor     *TwoFactorService
+	email         platformemail.Sender
+	publicWebURL  string
 }
 
 func NewService(
@@ -33,8 +37,19 @@ func NewService(
 	features *featuremod.Service,
 	platform *platformmod.Service,
 	twoFactor *TwoFactorService,
+	email platformemail.Sender,
+	publicWebURL string,
 ) *Service {
-	return &Service{repo: repo, jwt: jwt, tenancySvc: tenancySvc, features: features, platform: platform, twoFactor: twoFactor}
+	return &Service{
+		repo:         repo,
+		jwt:          jwt,
+		tenancySvc:   tenancySvc,
+		features:     features,
+		platform:     platform,
+		twoFactor:    twoFactor,
+		email:        email,
+		publicWebURL: publicWebURL,
+	}
 }
 
 func slugifyOrgName(name string) string {
@@ -52,18 +67,61 @@ func slugifyOrgName(name string) string {
 
 func (s *Service) Register(ctx context.Context, req RegisterRequest) (*AuthResponse, error) {
 	req.Email = strings.TrimSpace(strings.ToLower(req.Email))
-	if req.OrgSlug == "" {
+	accountType := strings.TrimSpace(strings.ToLower(req.AccountType))
+	if accountType == "" {
+		accountType = "business"
+	}
+	if req.OrgSlug == "" && req.OrgName != "" {
 		req.OrgSlug = slugifyOrgName(req.OrgName)
 	}
-	if req.Email == "" || req.Password == "" || req.OrgName == "" || req.OrgSlug == "" {
+	if req.Email == "" || req.Password == "" {
 		return nil, httpx.ErrConflict
 	}
 
-	registerRole, err := resolveRegisterRole(req.Role)
+	registerRole, err := resolveRegisterRole(accountType, req.Role)
 	if err != nil {
 		return nil, err
 	}
 
+	if accountType == "client" {
+		return s.registerClient(ctx, req, registerRole)
+	}
+	if req.OrgName == "" || req.OrgSlug == "" {
+		return nil, httpx.ErrConflict
+	}
+	return s.registerBusiness(ctx, req, registerRole)
+}
+
+func (s *Service) registerClient(ctx context.Context, req RegisterRequest, registerRole string) (*AuthResponse, error) {
+	existing, err := s.repo.FindUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
+		return nil, httpx.ErrConflict
+	}
+	hash, err := platformauth.HashPassword(req.Password)
+	if err != nil {
+		return nil, err
+	}
+	var user User
+	err = s.repo.DB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		user = User{Email: req.Email, PasswordHash: hash}
+		if err := tx.Create(&user).Error; err != nil {
+			return err
+		}
+		return tx.Create(&Profile{UserID: user.ID, FullName: req.FullName}).Error
+	})
+	if err != nil {
+		return nil, fmt.Errorf("register client: %w", err)
+	}
+	if err := s.sendVerificationEmail(ctx, user.ID, user.Email); err != nil {
+		return nil, err
+	}
+	return &AuthResponse{RequiresVerification: true, Email: user.Email}, nil
+}
+
+func (s *Service) registerBusiness(ctx context.Context, req RegisterRequest, registerRole string) (*AuthResponse, error) {
 	existing, err := s.repo.FindUserByEmail(ctx, req.Email)
 	if err != nil {
 		return nil, err
@@ -128,7 +186,10 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*AuthRespo
 		return nil, fmt.Errorf("register bootstrap: %w", err)
 	}
 
-	return s.issueTokens(ctx, user.ID, org.ID, []string{registerRole})
+	if err := s.sendVerificationEmail(ctx, user.ID, user.Email); err != nil {
+		return nil, err
+	}
+	return &AuthResponse{RequiresVerification: true, Email: user.Email}, nil
 }
 
 func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, error) {
@@ -140,6 +201,9 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 	ok, err := platformauth.VerifyPassword(user.PasswordHash, req.Password)
 	if err != nil || !ok {
 		return nil, httpx.ErrUnauthorized
+	}
+	if user.EmailVerifiedAt == nil {
+		return &AuthResponse{RequiresVerification: true, Email: user.Email}, nil
 	}
 
 	if s.twoFactor != nil {
@@ -161,6 +225,9 @@ func (s *Service) Login(ctx context.Context, req LoginRequest) (*AuthResponse, e
 
 	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, user.ID)
 	if err != nil {
+		if errors.Is(err, httpx.ErrNotFound) {
+			return s.issueTokens(ctx, user.ID, uuid.Nil, []string{"customer"})
+		}
 		return nil, err
 	}
 	return s.issueTokens(ctx, user.ID, org.ID, roles)
@@ -177,6 +244,9 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (*AuthRespon
 	}
 	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, userID)
 	if err != nil {
+		if errors.Is(err, httpx.ErrNotFound) {
+			return s.issueTokens(ctx, userID, uuid.Nil, []string{"customer"})
+		}
 		return nil, err
 	}
 	return s.issueTokens(ctx, userID, org.ID, roles)
@@ -197,6 +267,17 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 	}
 	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, userID)
 	if err != nil {
+		if errors.Is(err, httpx.ErrNotFound) {
+			return &MeResponse{
+				User: UserDTO{
+					ID:       user.ID.String(),
+					Email:    user.Email,
+					FullName: profile.FullName,
+				},
+				Roles:    []string{"customer"},
+				Features: []string{},
+			}, nil
+		}
 		return nil, err
 	}
 	sub, err := s.tenancySvc.GetSubscription(ctx, org.ID)
@@ -257,6 +338,9 @@ func (s *Service) Complete2FAChallenge(ctx context.Context, challengeToken, otp 
 	}
 	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, userID)
 	if err != nil {
+		if errors.Is(err, httpx.ErrNotFound) {
+			return s.issueTokens(ctx, userID, uuid.Nil, []string{"customer"})
+		}
 		return nil, err
 	}
 	return s.issueTokens(ctx, userID, org.ID, roles)

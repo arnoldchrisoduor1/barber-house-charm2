@@ -157,3 +157,40 @@ func (r *Repository) FindOrgByID(ctx context.Context, orgID uuid.UUID) (*Organiz
 	}
 	return &org, err
 }
+
+func (r *Repository) ListPublicOrgs(ctx context.Context, category string) ([]map[string]any, error) {
+	q := r.db.WithContext(ctx).Table("organizations o").
+		Select(`o.id, o.name, o.slug, o.business_type::text as business_type,
+			(SELECT COUNT(*) FROM branches b WHERE b.organization_id = o.id AND b.is_active = true) as branch_count`)
+	if category != "" && category != "all" {
+		q = q.Where("o.business_type::text = ?", category)
+	}
+	var rows []map[string]any
+	err := q.Order("o.name ASC").Limit(100).Find(&rows).Error
+	return rows, err
+}
+
+func (r *Repository) EnsureMember(ctx context.Context, userID, orgID uuid.UUID, role string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var member OrganizationMember
+		err := tx.Where("user_id = ? AND organization_id = ?", userID, orgID).First(&member).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			member = OrganizationMember{OrganizationID: orgID, UserID: userID, IsActive: true}
+			if err := tx.Create(&member).Error; err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else if !member.IsActive {
+			if err := tx.Model(&member).Update("is_active", true).Error; err != nil {
+				return err
+			}
+		}
+		var roleRow UserRole
+		err = tx.Where("user_id = ? AND organization_id = ? AND role = ?", userID, orgID, role).First(&roleRow).Error
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return tx.Create(&UserRole{OrganizationID: orgID, UserID: userID, Role: role}).Error
+		}
+		return err
+	})
+}

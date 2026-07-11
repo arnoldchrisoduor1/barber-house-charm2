@@ -29,14 +29,66 @@ export async function logout(page: Page) {
   await page.context().clearCookies();
 }
 
-export async function fetchLatestOtpFromMailhog(mailhogUrl = "http://localhost:8025"): Promise<string | null> {
+export async function fetchLatestOtpFromMailhog(
+  mailhogUrl = "http://localhost:8025",
+  afterMs?: number,
+): Promise<string | null> {
   try {
-    const res = await fetch(`${mailhogUrl}/api/v2/messages?limit=1`);
+    const res = await fetch(`${mailhogUrl}/api/v2/messages?limit=10`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      items?: { Created?: string; Content?: { Body?: string } }[];
+    };
+    for (const item of data.items ?? []) {
+      if (afterMs && item.Created) {
+        const created = Date.parse(item.Created);
+        if (!Number.isNaN(created) && created < afterMs) continue;
+      }
+      const body = item.Content?.Body ?? "";
+      const match = body.match(/\b(\d{6})\b/);
+      if (match?.[1]) return match[1];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchLatestVerificationTokenFromMailhog(
+  mailhogUrl = "http://localhost:8025",
+  recipientEmail?: string,
+): Promise<string | null> {
+  try {
+    const url = recipientEmail
+      ? `${mailhogUrl}/api/v2/search?kind=to&query=${encodeURIComponent(recipientEmail)}`
+      : `${mailhogUrl}/api/v2/messages?limit=5`;
+    const res = await fetch(url);
     if (!res.ok) return null;
     const data = (await res.json()) as { items?: { Content?: { Body?: string } }[] };
-    const body = data.items?.[0]?.Content?.Body ?? "";
-    const match = body.match(/\b(\d{6})\b/);
-    return match?.[1] ?? null;
+    for (const item of data.items ?? []) {
+      const body = item.Content?.Body ?? "";
+      const match = body.match(/verify-email\?token=([a-f0-9]+)/i);
+      if (match?.[1]) return match[1];
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchLatestInviteTokenFromMailhog(
+  mailhogUrl = "http://localhost:8025",
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${mailhogUrl}/api/v2/messages?limit=5`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { items?: { Content?: { Body?: string } }[] };
+    for (const item of data.items ?? []) {
+      const body = item.Content?.Body ?? "";
+      const match = body.match(/accept-invite\?token=([a-f0-9]+)/i);
+      if (match?.[1]) return match[1];
+    }
+    return null;
   } catch {
     return null;
   }

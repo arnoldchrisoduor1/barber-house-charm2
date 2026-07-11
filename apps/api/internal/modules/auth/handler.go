@@ -4,9 +4,11 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 
 	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
+	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
 )
 
 type Handler struct {
@@ -54,12 +56,18 @@ func (h *Handler) Register(c *fiber.Ctx) error {
 	if err != nil {
 		if errors.Is(err, ErrInvalidRole) {
 			return httpx.ValidationProblem(c, "invalid role", map[string]any{
-				"role": "must be one of ceo, director, branch_manager, senior_barber, junior_barber, receptionist",
+				"role": "must be one of ceo, director for business accounts",
 			})
+		}
+		if errors.Is(err, ErrStaffSelfRegister) {
+			return httpx.ProblemJSON(c, fiber.StatusForbidden, "Forbidden", "Staff accounts must be created by a business owner invite")
 		}
 		return httpx.From(c, err)
 	}
-	setAuthCookies(c, resp)
+	if !resp.RequiresVerification {
+		setAuthCookies(c, resp)
+		return c.Status(fiber.StatusCreated).JSON(resp)
+	}
 	return c.Status(fiber.StatusCreated).JSON(resp)
 }
 
@@ -194,4 +202,102 @@ func (h *Handler) ChangePassword(c *fiber.Ctx) error {
 		return httpx.From(c, err)
 	}
 	return c.JSON(fiber.Map{"ok": true})
+}
+
+func (h *Handler) VerifyEmail(c *fiber.Ctx) error {
+	var req VerifyEmailRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	resp, err := h.svc.VerifyEmail(c.UserContext(), req.Token)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	setAuthCookies(c, resp)
+	return c.JSON(resp)
+}
+
+func (h *Handler) AcceptInvite(c *fiber.Ctx) error {
+	var req AcceptInviteRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	resp, err := h.svc.AcceptInvite(c.UserContext(), req)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	setAuthCookies(c, resp)
+	return c.Status(fiber.StatusCreated).JSON(resp)
+}
+
+func (h *Handler) PreviewInvite(c *fiber.Ctx) error {
+	data, err := h.svc.PreviewStaffInvite(c.UserContext(), c.Query("token"))
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(data)
+}
+
+func (h *Handler) LookupStaffMembership(c *fiber.Ctx) error {
+	email := c.Query("email")
+	data, err := h.svc.LookupStaffMembership(c.UserContext(), email)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(data)
+}
+
+func (h *Handler) SelectOrg(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	var req SelectOrgRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID, err := uuid.Parse(req.OrgID)
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid orgId", nil)
+	}
+	resp, err := h.svc.SelectOrg(c.UserContext(), user.ID, orgID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	setAuthCookies(c, resp)
+	return c.JSON(resp)
+}
+
+func (h *Handler) ListPublicOrgs(c *fiber.Ctx) error {
+	rows, err := h.svc.ListPublicOrgs(c.UserContext(), c.Query("category"))
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
+}
+
+func (h *Handler) CreateStaffInvite(c *fiber.Ctx) error {
+	user := platformauth.UserFrom(c)
+	if user == nil {
+		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
+	}
+	var req CreateStaffInviteRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.CreateStaffInvite(c.UserContext(), orgID, user.ID, req)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
+func (h *Handler) ListStaffInvites(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	rows, err := h.svc.ListStaffInvites(c.UserContext(), orgID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
 }

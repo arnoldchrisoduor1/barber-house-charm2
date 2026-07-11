@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Mail, Plus } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { CrudDialog } from "@/components/CrudDialog";
@@ -9,8 +10,18 @@ import { EntityForm } from "@/components/EntityForm";
 import { ModulePage } from "@/components/ModulePage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranchFilter } from "@/hooks/useBranchFilter";
+import { api } from "@/lib/api-client";
 import { useEntityCreate, useEntityList, useEntityUpdate } from "@/lib/api/crud";
 import { staffConfig } from "@/lib/crud-configs";
 import { pickRowField } from "@/lib/record-fields";
@@ -54,6 +65,10 @@ export default function StaffPage() {
   const updateMut = useEntityUpdate(orgId, "staff");
 
   const [open, setOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState("senior_barber");
   const [editing, setEditing] = useState<StaffRow | null>(null);
   const initialValues = useMemo(() => {
     const base: Record<string, string> = {};
@@ -83,6 +98,28 @@ export default function StaffPage() {
     setOpen(true);
   }
 
+  const inviteMut = useMutation({
+    mutationFn: () =>
+      api.post(`/organizations/${orgId}/staff-invites`, {
+        email: inviteEmail,
+        role: inviteRole,
+        displayName: inviteName || undefined,
+      }),
+    onSuccess: () => {
+      toast.success("Invite sent by email");
+      setInviteOpen(false);
+      setInviteEmail("");
+      setInviteName("");
+      setInviteRole("senior_barber");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Invite failed"),
+  });
+
+  async function saveInvite() {
+    if (!orgId || !inviteEmail.trim()) return;
+    await inviteMut.mutateAsync();
+  }
+
   async function save() {
     const body = staffConfig.mapFormToBody!(values);
     try {
@@ -101,7 +138,17 @@ export default function StaffPage() {
 
   return (
     <ModulePage title="Staff" description="Your team directory and commission settings.">
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex flex-wrap justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setInviteOpen(true)}
+          disabled={!orgId}
+          className="gap-2"
+          data-testid="invite-staff-btn"
+        >
+          <Mail className="h-4 w-4" />
+          Invite staff
+        </Button>
         <Button onClick={openCreate} disabled={!orgId} className="gap-2">
           <Plus className="h-4 w-4" />
           Add staff
@@ -186,6 +233,48 @@ export default function StaffPage() {
           values={values}
           onChange={(name, value) => setValues((prev) => ({ ...prev, [name]: value }))}
         />
+      </CrudDialog>
+
+      <CrudDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        title="Invite staff member"
+        onSubmit={saveInvite}
+        submitLabel="Send invite"
+        loading={inviteMut.isPending}
+      >
+        <div className="space-y-4" data-testid="staff-invite-form">
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-email">Email</Label>
+            <Input
+              id="invite-email"
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="invite-name">Display name</Label>
+            <Input id="invite-name" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Role</Label>
+            <Select value={inviteRole} onValueChange={setInviteRole}>
+              <SelectTrigger data-testid="staff-invite-role">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="senior_barber">Staff</SelectItem>
+                <SelectItem value="branch_manager">Branch manager</SelectItem>
+                <SelectItem value="receptionist">Receptionist</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            An email invite will be sent. Staff cannot self-register without this invite.
+          </p>
+        </div>
       </CrudDialog>
     </ModulePage>
   );

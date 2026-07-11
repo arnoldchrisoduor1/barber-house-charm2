@@ -208,6 +208,12 @@ export default function QrAttendancePage() {
                 ]}
                 rows={attendanceQuery.data ?? []}
                 emptyMessage="No attendance records for this date."
+                tableTestId="attendance-table"
+                rowDataTestId={(row) =>
+                  row.displayName
+                    ? `attendance-row-${String(row.displayName).replace(/\s+/g, "-")}`
+                    : undefined
+                }
               />
             )}
           </CardContent>

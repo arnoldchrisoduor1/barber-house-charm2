@@ -17,6 +17,8 @@ import { api } from "@/lib/api-client";
 export interface AuthLoginResponse {
   requires2FA?: boolean;
   challengeToken?: string;
+  requiresVerification?: boolean;
+  email?: string;
 }
 
 type ActiveOrg = NonNullable<MeResponse["activeOrg"]>;
@@ -34,10 +36,14 @@ interface AuthContextValue {
     email: string;
     password: string;
     fullName: string;
-    organizationName: string;
+    organizationName?: string;
     businessType?: string;
     role?: string;
-  }) => Promise<void>;
+    accountType?: "business" | "client";
+  }) => Promise<AuthLoginResponse>;
+  verifyEmail: (token: string) => Promise<void>;
+  acceptInvite: (payload: { token: string; password: string; fullName: string }) => Promise<void>;
+  selectOrg: (orgId: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
 }
@@ -79,19 +85,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: string;
       password: string;
       fullName: string;
-      organizationName: string;
+      organizationName?: string;
       businessType?: string;
       role?: string;
+      accountType?: "business" | "client";
     }) =>
-      api.post("/auth/register", {
+      api.post<AuthLoginResponse>("/auth/register", {
         email: payload.email,
         password: payload.password,
         fullName: payload.fullName,
-        orgName: payload.organizationName,
-        orgSlug: slugifyOrgName(payload.organizationName),
+        orgName: payload.organizationName ?? "",
+        orgSlug: payload.organizationName ? slugifyOrgName(payload.organizationName) : "",
         businessType: payload.businessType ?? "barber",
         role: payload.role ?? "ceo",
+        accountType: payload.accountType ?? "business",
       }),
+    onSuccess: (data) => {
+      if (!data?.requiresVerification) {
+        void queryClient.invalidateQueries({ queryKey: ["me"] });
+      }
+    },
+  });
+
+  const verifyEmailMutation = useMutation({
+    mutationFn: (token: string) => api.post("/auth/verify-email", { token }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
+  });
+
+  const acceptInviteMutation = useMutation({
+    mutationFn: (payload: { token: string; password: string; fullName: string }) =>
+      api.post("/auth/accept-invite", payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
+  });
+
+  const selectOrgMutation = useMutation({
+    mutationFn: (orgId: string) => api.post("/auth/select-org", { orgId }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
   });
 
@@ -119,15 +147,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       verify2FA: async (challengeToken, otp) => {
         await verify2FAMutation.mutateAsync({ challengeToken, otp });
       },
-      register: async (payload) => {
-        await registerMutation.mutateAsync(payload);
+      register: async (payload) => registerMutation.mutateAsync(payload),
+      verifyEmail: async (token) => {
+        await verifyEmailMutation.mutateAsync(token);
+      },
+      acceptInvite: async (payload) => {
+        await acceptInviteMutation.mutateAsync(payload);
+      },
+      selectOrg: async (orgId) => {
+        await selectOrgMutation.mutateAsync(orgId);
       },
       logout: async () => {
         await logoutMutation.mutateAsync();
       },
       refreshMe,
     }),
-    [meQuery.data, meQuery.isLoading, loginMutation, verify2FAMutation, registerMutation, logoutMutation, refreshMe],
+    [meQuery.data, meQuery.isLoading, loginMutation, verify2FAMutation, registerMutation, verifyEmailMutation, acceptInviteMutation, selectOrgMutation, logoutMutation, refreshMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

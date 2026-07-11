@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -21,9 +22,15 @@ type Config struct {
 
 	CORSOrigins []string
 
-	SMTPHost string
-	SMTPPort int
-	SMTPFrom string
+	SMTPHost        string
+	SMTPPort        int
+	SMTPFrom        string
+	SMTPUser        string
+	SMTPPassword    string
+	SMTPStartTLS    bool
+	EmailFromName   string
+	EmailDryRun     bool
+	PublicWebURL    string
 }
 
 func Load() (*Config, error) {
@@ -39,7 +46,13 @@ func Load() (*Config, error) {
 		CORSOrigins:      splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000")),
 		SMTPHost:         getEnv("SMTP_HOST", ""),
 		SMTPPort:         getIntEnv("SMTP_PORT", 1025),
-		SMTPFrom:         getEnv("SMTP_FROM", "noreply@hausofwellness.local"),
+		SMTPFrom:         getEnv("SMTP_FROM", getEnv("EMAIL_FROM_ADDRESS", "noreply@hausofwellness.local")),
+		SMTPUser:         getEnv("SMTP_USER", ""),
+		SMTPPassword:     getEnv("SMTP_PASSWORD", ""),
+		SMTPStartTLS:      getBoolEnv("SMTP_USE_STARTTLS", true),
+		EmailFromName:    getEnv("EMAIL_FROM_NAME", "Haus of Wellness"),
+		EmailDryRun:      getBoolEnv("EMAIL_DRY_RUN", false),
+		PublicWebURL:     getEnv("PUBLIC_WEB_URL", "http://localhost:3001"),
 	}
 
 	if cfg.JWTAccessSecret == "" || cfg.JWTRefreshSecret == "" {
@@ -65,6 +78,21 @@ func getDurationEnv(key string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	return d
+}
+
+func getBoolEnv(key string, fallback bool) bool {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	switch strings.ToLower(v) {
+	case "1", "true", "yes", "on":
+		return true
+	case "0", "false", "no", "off":
+		return false
+	default:
+		return fallback
+	}
 }
 
 func getIntEnv(key string, fallback int) int {
