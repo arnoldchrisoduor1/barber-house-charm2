@@ -146,9 +146,12 @@ export async function checkoutPos(
     customerId?: string;
     branchId?: string;
     bookingId?: string;
+    staffId?: string;
     paymentMethod: "cash" | "mpesa" | "card";
     reference?: string;
     cashTendered?: number;
+    discountPercent?: number;
+    managerPin?: string;
     lines: Array<{ itemType: PosCatalogType; itemId: string; quantity: number }>;
   },
 ) {

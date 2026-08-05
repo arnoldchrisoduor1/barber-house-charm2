@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -10,10 +11,11 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 
-	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
-	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	staffmod "github.com/haus-of-wellness/api/internal/modules/staff"
 	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
+	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
+	platformemail "github.com/haus-of-wellness/api/internal/platform/email"
+	"github.com/haus-of-wellness/api/internal/platform/httpx"
 )
 
 func (s *Service) VerifyEmail(ctx context.Context, token string) (*AuthResponse, error) {
@@ -101,22 +103,22 @@ func (s *Service) LookupStaffMembership(ctx context.Context, email string) (*Sta
 	}, nil
 }
 
-func (s *Service) CreateStaffInvite(ctx context.Context, orgID, invitedBy uuid.UUID, req CreateStaffInviteRequest) (*StaffInvite, error) {
+func (s *Service) CreateStaffInvite(ctx context.Context, orgID, invitedBy uuid.UUID, req CreateStaffInviteRequest) (*StaffInvite, bool, error) {
 	email := strings.TrimSpace(strings.ToLower(req.Email))
 	if email == "" {
-		return nil, httpx.ErrConflict
+		return nil, false, httpx.ErrConflict
 	}
 	role, err := resolveStaffInviteRole(req.Role)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	org, err := s.tenancySvc.GetOrg(ctx, orgID)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	token, err := generateSecureToken()
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	displayName := strings.TrimSpace(req.DisplayName)
 	if displayName == "" {
@@ -148,12 +150,22 @@ func (s *Service) CreateStaffInvite(ctx context.Context, orgID, invitedBy uuid.U
 		return tx.Create(&invite).Error
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	if err := s.sendStaffInviteEmail(ctx, email, org.Name, token); err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &invite, nil
+	delivered := platformemail.DeliversExternally(s.email)
+	if s.platform != nil {
+		meta, _ := json.Marshal(map[string]any{
+			"email":           email,
+			"role":            role,
+			"email_delivered": delivered,
+		})
+		uid := invitedBy
+		_ = s.platform.RecordOrgAudit(ctx, orgID, &uid, "staff.invite", "staff_invite", &invite.ID, meta)
+	}
+	return &invite, delivered, nil
 }
 
 func (s *Service) ListStaffInvites(ctx context.Context, orgID uuid.UUID) ([]StaffInvite, error) {

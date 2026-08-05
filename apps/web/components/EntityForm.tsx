@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-export type FieldType = "text" | "email" | "number" | "textarea" | "select";
+export type FieldType = "text" | "email" | "number" | "textarea" | "select" | "checkbox";
 
 export interface FormFieldDef {
   name: string;
@@ -37,7 +38,16 @@ export function EntityForm({ fields, values, onChange, children }: EntityFormPro
       {fields.map((field) => (
         <div key={field.name} className="space-y-1.5">
           <Label htmlFor={field.name}>{field.label}</Label>
-          {field.type === "textarea" ? (
+          {field.type === "checkbox" ? (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={field.name}
+                checked={values[field.name] === "true"}
+                onCheckedChange={(checked) => onChange(field.name, checked ? "true" : "false")}
+              />
+              <span className="text-sm text-muted-foreground">{field.placeholder}</span>
+            </div>
+          ) : field.type === "textarea" ? (
             <Textarea
               id={field.name}
               value={values[field.name] ?? ""}

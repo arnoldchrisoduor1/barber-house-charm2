@@ -92,6 +92,17 @@ func (h *Handler) RevenueChart(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": data})
 }
 
+func (h *Handler) PnL(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	branchID := platformtenancy.OptionalBranchID(c)
+	months := c.QueryInt("months", 6)
+	data, err := h.svc.PnL(c.UserContext(), orgID, branchID, months)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": data})
+}
+
 func (h *Handler) PaymentMethods(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
 	branchID := platformtenancy.OptionalBranchID(c)
@@ -191,6 +202,7 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g := org.Group("/analytics", authz.RequireFeature(features, "basic_reports"))
 	g.Get("/reports", h.Reports)
 	g.Get("/revenue-chart", h.RevenueChart)
+	g.Get("/pnl", h.PnL)
 	g.Get("/payment-methods", h.PaymentMethods)
 	g.Get("/top-services", h.TopServices)
 	g.Get("/staff-leaderboard", h.StaffLeaderboard)
@@ -200,7 +212,9 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	adv.Get("/scorecards", h.Scorecards)
 	adv.Get("/revenue-forecast", h.RevenueForecast)
 	adv.Get("/call-centre", h.CallCentre)
-	adv.Get("/my-earnings", h.MyEarnings)
+
+	earnings := org.Group("/analytics", authz.RequireFeature(features, "staff_commissions_payroll"))
+	earnings.Get("/my-earnings", h.MyEarnings)
 
 	clinical := org.Group("/analytics", authz.RequireFeature(features, "clinical"))
 	clinical.Get("/patient-intake", h.PatientIntake)

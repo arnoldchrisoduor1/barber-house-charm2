@@ -54,6 +54,8 @@ export const servicesConfig: CrudModuleConfig = {
     { name: "name", label: "Service name", required: true },
     { name: "category", label: "Category" },
     { name: "duration_minutes", label: "Duration (min)", type: "number" },
+    { name: "prep_minutes", label: "Prep buffer (min)", type: "number" },
+    { name: "buffer_minutes", label: "Cleanup buffer (min)", type: "number" },
     { name: "price_kes", label: "Price (KES)", type: "number" },
     { name: "description", label: "Description", type: "textarea" },
   ],
@@ -61,12 +63,15 @@ export const servicesConfig: CrudModuleConfig = {
     { key: "name", header: "Service" },
     { key: "category", header: "Category" },
     { key: "duration_minutes", header: "Duration" },
+    { key: "buffer_minutes", header: "Buffer" },
     { key: "price_kes", header: "Price (KES)" },
   ],
   mapFormToBody: (v) => ({
     name: v.name,
     category: v.category,
     duration_minutes: num(v.duration_minutes) || 30,
+    prep_minutes: num(v.prep_minutes) || 0,
+    buffer_minutes: num(v.buffer_minutes) || 0,
     price_kes: num(v.price_kes),
     description: v.description,
   }),
@@ -335,20 +340,37 @@ export const marketingCampaignsConfig: CrudModuleConfig = {
     { key: "channel", header: "Channel" },
     { key: "status", header: "Status" },
   ],
+  mapFormToBody: (v) => ({
+    name: v.name,
+    channel: v.channel || "sms",
+    body: v.message,
+    status: v.status || "draft",
+  }),
 };
 
 export const galleryConfig: CrudModuleConfig = {
   title: "Gallery",
+  feature: "marketing",
   resource: "gallery",
   fields: [
     { name: "title", label: "Title", required: true },
-    { name: "image_url", label: "Image URL" },
-    { name: "caption", label: "Caption", type: "textarea" },
+    { name: "description", label: "Description", type: "textarea" },
+    { name: "staff_id", label: "Staff ID" },
+    { name: "image_url", label: "Image URL (or upload after save)" },
+    { name: "category", label: "Category" },
   ],
   columns: [
     { key: "title", header: "Title" },
-    { key: "caption", header: "Caption" },
+    { key: "description", header: "Description" },
+    { key: "image_url", header: "Image" },
   ],
+  mapFormToBody: (v) => ({
+    title: v.title,
+    description: v.description,
+    staff_id: v.staff_id || undefined,
+    image_url: v.image_url || "https://placehold.co/600x400?text=Gallery",
+    category: v.category,
+  }),
 };
 
 export const consentFormsConfig: CrudModuleConfig = {
@@ -372,15 +394,18 @@ export const seatRentalConfig: CrudModuleConfig = {
   resource: "seat-rentals",
   fields: [
     { name: "seat_label", label: "Seat label", required: true },
+    { name: "staff_id", label: "Assigned barber" },
     { name: "monthly_rate_kes", label: "Monthly rent (KES)", type: "number" },
     { name: "notes", label: "Notes", type: "textarea" },
   ],
   columns: [
     { key: "seat_label", header: "Seat" },
+    { key: "staff_id", header: "Barber" },
     { key: "monthly_rate_kes", header: "Rent (KES)" },
   ],
   mapFormToBody: (v) => ({
     seat_label: v.seat_label,
+    staff_id: v.staff_id || null,
     monthly_rate_kes: num(v.monthly_rate_kes),
     notes: v.notes,
   }),

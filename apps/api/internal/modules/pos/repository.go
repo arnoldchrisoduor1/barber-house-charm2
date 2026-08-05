@@ -55,6 +55,15 @@ func (r *Repository) Get(ctx context.Context, orgID, id uuid.UUID) (*Transaction
 	return &row, err
 }
 
+func (r *Repository) GetCustomerPhone(ctx context.Context, orgID, customerID uuid.UUID) (string, error) {
+	var phone string
+	err := r.db.WithContext(ctx).Table("customers").
+		Scopes(platformtenancy.OrgScope(orgID)).
+		Where("id = ?", customerID).
+		Pluck("phone", &phone).Error
+	return phone, err
+}
+
 type resolvedLine struct {
 	ItemType     string
 	ItemID       uuid.UUID
@@ -65,13 +74,15 @@ type resolvedLine struct {
 }
 
 type CheckoutInput struct {
-	CustomerID    *uuid.UUID
-	BranchID      *uuid.UUID
-	BookingID     *uuid.UUID
-	PaymentMethod string
-	Reference     string
-	CashTendered  *int
-	Lines         []CheckoutLineInput
+	CustomerID      *uuid.UUID
+	BranchID        *uuid.UUID
+	BookingID       *uuid.UUID
+	StaffID         *uuid.UUID
+	PaymentMethod   string
+	Reference       string
+	CashTendered    *int
+	DiscountPercent int
+	Lines           []CheckoutLineInput
 }
 
 type CheckoutLineInput struct {
@@ -102,6 +113,14 @@ func (r *Repository) Checkout(ctx context.Context, orgID uuid.UUID, input Checko
 			return err
 		}
 
+		if input.DiscountPercent > 0 {
+			if input.DiscountPercent > 50 {
+				input.DiscountPercent = 50
+			}
+			discount := total * input.DiscountPercent / 100
+			total -= discount
+		}
+
 		if method == "cash" && input.CashTendered != nil && *input.CashTendered < total {
 			return ErrInsufficientCash
 		}
@@ -125,6 +144,9 @@ func (r *Repository) Checkout(ctx context.Context, orgID uuid.UUID, input Checko
 			if input.BranchID == nil {
 				input.BranchID = booking.BranchID
 			}
+			if input.StaffID == nil {
+				input.StaffID = booking.StaffID
+			}
 		}
 
 		if input.CustomerID != nil {
@@ -145,6 +167,7 @@ func (r *Repository) Checkout(ctx context.Context, orgID uuid.UUID, input Checko
 			BranchID:       input.BranchID,
 			CustomerID:     input.CustomerID,
 			BookingID:      input.BookingID,
+			StaffID:        input.StaffID,
 			AmountKES:      total,
 			PaymentMethod:  method,
 			PaymentStatus:  "completed",

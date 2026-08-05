@@ -4,6 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
+	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
+	"github.com/haus-of-wellness/api/internal/platform/authz"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
 )
@@ -29,15 +31,12 @@ func (h *Handler) CreateOrder(c *fiber.Ctx) error {
 		return httpx.ValidationProblem(c, "invalid request body", nil)
 	}
 
+	// Org comes only from authenticated membership (ResolveOrganization middleware), never
+	// from the request — see 01-security-tenancy.mdc. This also means the amount below is
+	// only ever what an authenticated staff member for THIS org submitted, not a random caller.
 	orgID := platformtenancy.OrgIDFrom(c)
 	if orgID == uuid.Nil {
-		if v := c.Query("org_id"); v != "" {
-			parsed, err := uuid.Parse(v)
-			if err != nil {
-				return httpx.ValidationProblem(c, "invalid org_id", nil)
-			}
-			orgID = parsed
-		}
+		return httpx.ValidationProblem(c, "org context required", nil)
 	}
 
 	resp, err := h.svc.CreateOrder(c.UserContext(), CreateOrderDTO{
@@ -53,22 +52,17 @@ func (h *Handler) CreateOrder(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(resp)
 }
 
+// IPN is a public, unauthenticated webhook by nature (Pesapal calls this, not our users).
+// It resolves org + amount solely from the stored PaymentIntent via merchant reference —
+// it never accepts an org_id from the caller, which would let anyone credit an arbitrary
+// tenant's wallet by guessing/spoofing a reference.
 func (h *Handler) IPN(c *fiber.Ctx) error {
 	var payload IPNPayload
 	if err := c.BodyParser(&payload); err != nil {
 		return httpx.ValidationProblem(c, "invalid ipn payload", nil)
 	}
 
-	orgID := uuid.Nil
-	if v := c.Query("org_id"); v != "" {
-		parsed, err := uuid.Parse(v)
-		if err != nil {
-			return httpx.ValidationProblem(c, "invalid org_id", nil)
-		}
-		orgID = parsed
-	}
-
-	dup, err := h.svc.HandleIPN(c.UserContext(), orgID, payload)
+	dup, err := h.svc.HandleIPN(c.UserContext(), payload)
 	if err != nil {
 		return httpx.From(c, err)
 	}
@@ -78,8 +72,13 @@ func (h *Handler) IPN(c *fiber.Ctx) error {
 	})
 }
 
-func RegisterRoutes(router fiber.Router, h *Handler) {
-	g := router.Group("/integrations/pesapal")
+// RegisterPublicRoutes mounts the Pesapal IPN webhook, which cannot be behind auth.
+func RegisterPublicRoutes(router fiber.Router, h *Handler) {
+	router.Group("/integrations/pesapal").Post("/ipn", h.IPN)
+}
+
+// RegisterOrgRoutes mounts order creation behind auth + org resolution + pos_payments entitlement.
+func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
+	g := org.Group("/integrations/pesapal", authz.RequireFeature(features, "pos_payments"))
 	g.Post("/orders", h.CreateOrder)
-	g.Post("/ipn", h.IPN)
 }

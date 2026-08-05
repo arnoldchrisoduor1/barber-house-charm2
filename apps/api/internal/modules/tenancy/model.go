@@ -11,11 +11,13 @@ import (
 
 type Organization struct {
 	database.Base
-	Name         string `gorm:"not null"`
-	Slug         string `gorm:"not null;uniqueIndex"`
-	BusinessType string `gorm:"type:business_type;not null;default:barber"`
-	Timezone     string `gorm:"not null;default:Africa/Nairobi"`
-	Currency     string `gorm:"not null;default:KES"`
+	Name                    string `gorm:"not null"`
+	Slug                    string `gorm:"not null;uniqueIndex"`
+	BusinessType            string `gorm:"type:business_type;not null;default:barber"`
+	Timezone                string `gorm:"not null;default:Africa/Nairobi"`
+	Currency                string `gorm:"not null;default:KES"`
+	MonthlyRevenueTargetKES int64  `gorm:"not null;default:500000"`
+	ChairCount              int    `gorm:"not null;default:0"`
 }
 
 func (Organization) TableName() string { return "organizations" }

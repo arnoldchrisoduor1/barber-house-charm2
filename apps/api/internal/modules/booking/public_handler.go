@@ -83,7 +83,25 @@ func (h *PublicHandler) Create(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(booking)
 }
 
+func (h *PublicHandler) OrgInfo(c *fiber.Ctx) error {
+	slug := strings.TrimSpace(c.Params("slug"))
+	if slug == "" {
+		return httpx.ValidationProblem(c, "slug required", nil)
+	}
+	org, err := h.tenancy.FindBySlug(c.UserContext(), slug)
+	if err != nil || org == nil {
+		return httpx.ProblemJSON(c, fiber.StatusNotFound, "Not Found", "organization not found")
+	}
+	return c.JSON(fiber.Map{
+		"id":           org.ID.String(),
+		"name":         org.Name,
+		"slug":         org.Slug,
+		"businessType": org.BusinessType,
+	})
+}
+
 func RegisterPublicRoutes(router fiber.Router, h *PublicHandler) {
+	router.Get("/organizations/public/:slug", h.OrgInfo)
 	router.Get("/organizations/public/:slug/catalog", h.Catalog)
 	router.Get("/organizations/public/:slug/staff-availability", h.StaffAvailability)
 	router.Post("/organizations/public/:slug/bookings", h.Create)

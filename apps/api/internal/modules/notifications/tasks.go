@@ -10,6 +10,7 @@ import (
 )
 
 const TypeSendBookingReminder = "notifications:send_booking_reminder"
+const TypeSendReviewRequest = "notifications:send_review_request"
 
 type BookingReminderPayload struct {
 	OrgID     uuid.UUID `json:"org_id"`
@@ -39,5 +40,23 @@ func HandleSendBookingReminder(svc *Service) asynq.HandlerFunc {
 			Message:   payload.Message,
 			BookingID: payload.BookingID,
 		})
+	}
+}
+
+func NewSendReviewRequestTask(payload ReviewRequestPayload) (*asynq.Task, error) {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return asynq.NewTask(TypeSendReviewRequest, data), nil
+}
+
+func HandleSendReviewRequest(svc *Service) asynq.HandlerFunc {
+	return func(ctx context.Context, t *asynq.Task) error {
+		var payload ReviewRequestPayload
+		if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+			return fmt.Errorf("unmarshal payload: %w", err)
+		}
+		return svc.SendReviewRequest(ctx, payload.OrgID, payload)
 	}
 }

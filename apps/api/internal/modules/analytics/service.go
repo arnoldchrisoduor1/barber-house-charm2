@@ -38,6 +38,10 @@ func (s *Service) RevenueChart(ctx context.Context, orgID uuid.UUID, branchID *u
 	return s.repo.RevenueChart(ctx, orgID, branchID, days)
 }
 
+func (s *Service) PnL(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID, months int) ([]PnLPoint, error) {
+	return s.repo.PnL(ctx, orgID, branchID, months)
+}
+
 func (s *Service) PaymentMethods(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) ([]PaymentMethodRow, error) {
 	return s.repo.PaymentMethods(ctx, orgID, branchID)
 }

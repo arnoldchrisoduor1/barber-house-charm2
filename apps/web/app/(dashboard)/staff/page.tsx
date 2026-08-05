@@ -1,8 +1,8 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent } from "react";
 import { Mail, Plus } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { CrudDialog } from "@/components/CrudDialog";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,10 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { api } from "@/lib/api-client";
 import { useEntityCreate, useEntityList, useEntityUpdate } from "@/lib/api/crud";
-import { staffConfig } from "@/lib/crud-configs";
+import { buildStaffConfig, BEAUTY_SERVICE_CATEGORIES } from "@/lib/mode-crud-configs";
 import { pickRowField } from "@/lib/record-fields";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +45,9 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-function roleLabel(role: string): string {
+function roleLabel(role: string, terms?: { seniorStaff: string; juniorStaff: string }): string {
+  if (terms && role === "senior_barber") return terms.seniorStaff;
+  if (terms && role === "junior_barber") return terms.juniorStaff;
   return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -58,7 +62,10 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default function StaffPage() {
   const { activeOrg } = useAuth();
+  const { terms, mode } = useBusinessCategory();
+  const staffConfig = useMemo(() => buildStaffConfig(terms), [terms]);
   const orgId = activeOrg?.id;
+  const qc = useQueryClient();
   const { apiParams } = useBranchFilter();
   const { data: staff = [], isLoading, error } = useEntityList<StaffRow>(orgId, "staff", apiParams);
   const createMut = useEntityCreate(orgId, "staff");
@@ -69,12 +76,16 @@ export default function StaffPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState("senior_barber");
+  const [offboardOpen, setOffboardOpen] = useState(false);
+  const [offboardTarget, setOffboardTarget] = useState<StaffRow | null>(null);
+  const [offboardReason, setOffboardReason] = useState("");
+  const [reassignStaffId, setReassignStaffId] = useState("");
   const [editing, setEditing] = useState<StaffRow | null>(null);
   const initialValues = useMemo(() => {
     const base: Record<string, string> = {};
     for (const f of staffConfig.fields) base[f.name] = "";
     return base;
-  }, []);
+  }, [staffConfig]);
   const [values, setValues] = useState<Record<string, string>>(initialValues);
 
   function openCreate() {
@@ -100,13 +111,17 @@ export default function StaffPage() {
 
   const inviteMut = useMutation({
     mutationFn: () =>
-      api.post(`/organizations/${orgId}/staff-invites`, {
+      api.post<{ email_delivered?: boolean }>(`/organizations/${orgId}/staff-invites`, {
         email: inviteEmail,
         role: inviteRole,
         displayName: inviteName || undefined,
       }),
-    onSuccess: () => {
-      toast.success("Invite sent by email");
+    onSuccess: (data) => {
+      if (data?.email_delivered) {
+        toast.success("Invite sent by email");
+      } else {
+        toast.success("Invite created — email not delivered (SMTP dry-run or not configured)");
+      }
       setInviteOpen(false);
       setInviteEmail("");
       setInviteName("");
@@ -118,6 +133,38 @@ export default function StaffPage() {
   async function saveInvite() {
     if (!orgId || !inviteEmail.trim()) return;
     await inviteMut.mutateAsync();
+  }
+
+  const offboardMut = useMutation({
+    mutationFn: async () => {
+      if (!orgId || !offboardTarget) return;
+      return api.post(`/organizations/${orgId}/staff/${rowId(offboardTarget)}/offboard`, {
+        reassign_to_staff_id: reassignStaffId || null,
+        reason: offboardReason,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Staff member offboarded");
+      qc.invalidateQueries({ queryKey: ["org", orgId, "staff"] });
+      setOffboardOpen(false);
+      setOffboardTarget(null);
+      setOffboardReason("");
+      setReassignStaffId("");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Offboard failed"),
+  });
+
+  async function saveOffboard() {
+    if (!offboardReason.trim()) return;
+    await offboardMut.mutateAsync();
+  }
+
+  function openOffboard(row: StaffRow, e: MouseEvent) {
+    e.stopPropagation();
+    setOffboardTarget(row);
+    setOffboardReason("");
+    setReassignStaffId("");
+    setOffboardOpen(true);
   }
 
   async function save() {
@@ -137,7 +184,7 @@ export default function StaffPage() {
   }
 
   return (
-    <ModulePage title="Staff" description="Your team directory and commission settings.">
+    <ModulePage title={terms.staffPageTitle} description="Your team directory and commission settings.">
       <div className="mb-6 flex flex-wrap justify-end gap-2">
         <Button
           variant="outline"
@@ -162,6 +209,7 @@ export default function StaffPage() {
         {staff.map((row) => {
           const name = String(pickRowField(row, "display_name") ?? "Staff");
           const role = String(pickRowField(row, "role") ?? "staff");
+          const isActive = pickRowField(row, "is_active") !== false;
           const commission = Number(pickRowField(row, "commission_rate") ?? 0);
           const rawSpecialties = pickRowField(row, "specialties");
           const specialties = Array.isArray(rawSpecialties)
@@ -190,7 +238,7 @@ export default function StaffPage() {
                         ROLE_COLORS[role] ?? "bg-muted text-muted-foreground border-border",
                       )}
                     >
-                      {roleLabel(role)}
+                      {roleLabel(role, terms)}
                     </span>
                   </div>
                 </div>
@@ -211,6 +259,18 @@ export default function StaffPage() {
                     ))}
                   </div>
                 )}
+                {isActive && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-destructive hover:text-destructive"
+                    data-testid="staff-offboard-btn"
+                    onClick={(e) => openOffboard(row, e)}
+                  >
+                    Offboard
+                  </Button>
+                )}
               </CardContent>
             </Card>
           );
@@ -229,10 +289,39 @@ export default function StaffPage() {
         loading={createMut.isPending || updateMut.isPending}
       >
         <EntityForm
-          fields={staffConfig.fields}
+          fields={staffConfig.fields.filter((f) => f.name !== "specialties" || mode !== "beauty")}
           values={values}
           onChange={(name, value) => setValues((prev) => ({ ...prev, [name]: value }))}
         />
+        {mode === "beauty" ? (
+          <div className="space-y-2 pt-2">
+            <Label>Specialties</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {BEAUTY_SERVICE_CATEGORIES.map((cat) => {
+                const selected = (values.specialties ?? "")
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const checked = selected.includes(cat);
+                return (
+                  <label key={cat} className="flex items-center gap-2 text-sm capitalize">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const next = checked
+                          ? selected.filter((s) => s !== cat)
+                          : [...selected, cat];
+                        setValues((prev) => ({ ...prev, specialties: next.join(", ") }));
+                      }}
+                    />
+                    {cat.replace(/_/g, " ")}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </CrudDialog>
 
       <CrudDialog
@@ -265,7 +354,8 @@ export default function StaffPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="senior_barber">Staff</SelectItem>
+                <SelectItem value="senior_barber">{terms.seniorStaff}</SelectItem>
+                <SelectItem value="junior_barber">{terms.juniorStaff}</SelectItem>
                 <SelectItem value="branch_manager">Branch manager</SelectItem>
                 <SelectItem value="receptionist">Receptionist</SelectItem>
               </SelectContent>
@@ -274,6 +364,53 @@ export default function StaffPage() {
           <p className="text-xs text-muted-foreground">
             An email invite will be sent. Staff cannot self-register without this invite.
           </p>
+        </div>
+      </CrudDialog>
+
+      <CrudDialog
+        open={offboardOpen}
+        onOpenChange={setOffboardOpen}
+        title="Offboard staff member"
+        description="Clients will be reassigned, seat rentals cleared, and future bookings cancelled."
+        onSubmit={saveOffboard}
+        submitLabel="Confirm offboard"
+        loading={offboardMut.isPending}
+      >
+        <div className="space-y-4" data-testid="staff-offboard-form">
+          <p className="text-sm text-muted-foreground">
+            Offboarding:{" "}
+            <span className="font-medium text-foreground">
+              {offboardTarget ? String(pickRowField(offboardTarget, "display_name") ?? "Staff") : "—"}
+            </span>
+          </p>
+          <div className="space-y-1.5">
+            <Label>Reassign clients to</Label>
+            <Select value={reassignStaffId || "__none"} onValueChange={(v) => setReassignStaffId(v === "__none" ? "" : v)}>
+              <SelectTrigger data-testid="offboard-reassign-select">
+                <SelectValue placeholder="Select barber" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Unassigned</SelectItem>
+                {staff
+                  .filter((row) => rowId(row) !== (offboardTarget ? rowId(offboardTarget) : ""))
+                  .map((row) => (
+                    <SelectItem key={rowId(row)} value={rowId(row)}>
+                      {String(pickRowField(row, "display_name") ?? "Staff")}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="offboard-reason">Reason (required)</Label>
+            <Textarea
+              id="offboard-reason"
+              value={offboardReason}
+              onChange={(e) => setOffboardReason(e.target.value)}
+              rows={3}
+              data-testid="offboard-reason"
+            />
+          </div>
         </div>
       </CrudDialog>
     </ModulePage>

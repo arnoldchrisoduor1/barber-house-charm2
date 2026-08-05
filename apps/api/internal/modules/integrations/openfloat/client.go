@@ -38,3 +38,19 @@ func (c *Client) Disburse(ctx context.Context, req DisburseRequest) (*DisburseRe
 		Status:    "submitted",
 	}, nil
 }
+
+type DisbursementStatusResponse struct {
+	Reference string `json:"reference"`
+	Status    string `json:"status"` // PROCESSING | COMPLETED | FAILED
+}
+
+// GetDisbursementStatus is a stub: no live OpenFloat credentials are wired, so a payout
+// never auto-confirms as paid. Real money only leaves the tenant wallet once this reports
+// COMPLETED from an actual provider — see payouts.Service.ConfirmPayout.
+func (c *Client) GetDisbursementStatus(ctx context.Context, reference string) (*DisbursementStatusResponse, error) {
+	c.logger.InfoContext(ctx, "openfloat_status_stub_no_provider",
+		"reference", reference,
+		"note", "stub provider not connected to live OpenFloat; payout never auto-completes",
+	)
+	return &DisbursementStatusResponse{Reference: reference, Status: "PROCESSING"}, nil
+}

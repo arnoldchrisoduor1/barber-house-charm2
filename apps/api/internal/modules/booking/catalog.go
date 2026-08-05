@@ -33,6 +33,7 @@ type StaffAvailabilityQuery struct {
 type PortalBookingDTO struct {
 	BranchID    *uuid.UUID  `json:"branchId"`
 	StaffID     uuid.UUID   `json:"staffId"`
+	ResourceID  *uuid.UUID  `json:"resourceId"`
 	ServiceIDs  []uuid.UUID `json:"serviceIds"`
 	BookingDate string      `json:"bookingDate"`
 	StartTime   string      `json:"startTime"`
@@ -84,6 +85,14 @@ func (s *Service) StaffAvailability(ctx context.Context, orgID uuid.UUID, q Staf
 			result[staffID.String()] = false
 			continue
 		}
+		off, err := s.repo.TimeOffBlocks(ctx, orgID, staffID, date)
+		if err != nil {
+			return nil, err
+		}
+		if off {
+			result[staffID.String()] = false
+			continue
+		}
 		conflicts, err := s.repo.StaffConflicts(ctx, orgID, staffID, date, startTime, endTime, nil)
 		if err != nil {
 			return nil, err
@@ -103,7 +112,7 @@ func (s *Service) CreatePortalBooking(ctx context.Context, orgID uuid.UUID, dto 
 		return nil, httpx.ErrConflict
 	}
 
-	services, totalDuration, _, err := s.repo.ResolveServices(ctx, orgID, dto.ServiceIDs)
+	services, totalDuration, totalPrice, err := s.repo.ResolveServices(ctx, orgID, dto.ServiceIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -125,12 +134,30 @@ func (s *Service) CreatePortalBooking(ctx context.Context, orgID uuid.UUID, dto 
 		return nil, httpx.ErrConflict
 	}
 
+	off, err := s.repo.TimeOffBlocks(ctx, orgID, dto.StaffID, date)
+	if err != nil {
+		return nil, err
+	}
+	if off {
+		return nil, httpx.ErrConflict
+	}
+
 	conflicts, err := s.repo.StaffConflicts(ctx, orgID, dto.StaffID, date, startTime, endTime, nil)
 	if err != nil {
 		return nil, err
 	}
 	if conflicts > 0 {
 		return nil, httpx.ErrConflict
+	}
+
+	if dto.ResourceID != nil {
+		resourceConflicts, err := s.repo.ResourceConflicts(ctx, orgID, *dto.ResourceID, date, startTime, endTime, nil)
+		if err != nil {
+			return nil, err
+		}
+		if resourceConflicts > 0 {
+			return nil, httpx.ErrConflict
+		}
 	}
 
 	var customerID uuid.UUID
@@ -149,6 +176,7 @@ func (s *Service) CreatePortalBooking(ctx context.Context, orgID uuid.UUID, dto 
 		OrganizationID: orgID,
 		CustomerID:     customerID,
 		StaffID:        &staffID,
+		ResourceID:     dto.ResourceID,
 		BranchID:       dto.BranchID,
 		BookingDate:    date,
 		StartTime:      startTime,
@@ -169,6 +197,7 @@ func (s *Service) CreatePortalBooking(ctx context.Context, orgID uuid.UUID, dto 
 	if err := s.repo.CreateWithServices(ctx, booking, lines); err != nil {
 		return nil, err
 	}
+	_ = s.createPendingDeposit(ctx, orgID, booking, totalPrice)
 
 	if s.publisher != nil {
 		_ = s.publisher.PublishQueue(ctx, orgID, "booking.created", map[string]any{
@@ -250,7 +279,7 @@ func (r *Repository) ResolveServices(ctx context.Context, orgID uuid.UUID, ids [
 			return nil, 0, 0, fmt.Errorf("invalid service selection")
 		}
 		ordered = append(ordered, svc)
-		totalDuration += svc.DurationMinutes
+		totalDuration += svc.DurationMinutes + svc.PrepMinutes + svc.BufferMinutes
 		totalPrice += svc.PriceKES
 	}
 	return ordered, totalDuration, totalPrice, nil

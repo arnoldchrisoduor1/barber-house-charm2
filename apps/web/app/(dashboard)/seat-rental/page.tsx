@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Armchair, DollarSign, Users } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,8 +14,10 @@ import { ModulePage } from "@/components/ModulePage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useEntityCreate, useEntityDelete, useEntityList, useEntityUpdate } from "@/lib/api/crud";
-import { seatRentalConfig } from "@/lib/crud-configs";
+import { chargeSeatRent } from "@/lib/api/finance";
+import { buildSeatRentalConfig } from "@/lib/mode-crud-configs";
 import { formatKES } from "@/lib/format";
 import { pickRowField } from "@/lib/record-fields";
 
@@ -26,11 +29,18 @@ function rowId(row: SeatRow): string {
 
 export default function SeatRentalPage() {
   const { activeOrg } = useAuth();
+  const { terms } = useBusinessCategory();
+  const seatRentalConfig = useMemo(() => buildSeatRentalConfig(terms), [terms]);
   const orgId = activeOrg?.id;
   const { data: seats = [], isLoading, error } = useEntityList<SeatRow>(orgId, "seat-rentals");
   const createMut = useEntityCreate(orgId, "seat-rentals");
   const updateMut = useEntityUpdate(orgId, "seat-rentals");
   const deleteMut = useEntityDelete(orgId, "seat-rentals");
+  const chargeMut = useMutation({
+    mutationFn: (seatId: string) => chargeSeatRent(orgId!, seatId),
+    onSuccess: () => toast.success("Rent charge posted"),
+    onError: (e: Error) => toast.error(e.message || "Charge failed"),
+  });
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SeatRow | null>(null);
@@ -143,6 +153,25 @@ export default function SeatRentalPage() {
                 key: "status",
                 header: "Status",
                 render: (row) => String(pickRowField(row, "status") ?? "active"),
+              },
+              {
+                key: "charge",
+                header: "Rent",
+                render: (row) => {
+                  const rate = Number(pickRowField(row, "monthly_rate_kes") ?? 0);
+                  if (rate <= 0) return "—";
+                  return (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!orgId || chargeMut.isPending}
+                      data-testid={`seat-charge-${rowId(row)}`}
+                      onClick={() => chargeMut.mutate(rowId(row))}
+                    >
+                      Post rent
+                    </Button>
+                  );
+                },
               },
             ]}
             rows={seats}

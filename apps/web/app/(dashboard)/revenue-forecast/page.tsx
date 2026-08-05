@@ -34,7 +34,7 @@ export default function RevenueForecastPage() {
   return (
     <ModulePage title="Revenue Forecast" feature="advanced_analytics" description="Historical and projected revenue.">
       {error ? <p className="text-destructive">Failed to load forecast.</p> : null}
-      <Card className="glass">
+      <Card className="glass" data-testid="revenue-forecast-chart">
         <CardHeader>
           <CardTitle>6-month revenue trend</CardTitle>
         </CardHeader>
@@ -44,7 +44,7 @@ export default function RevenueForecastPage() {
           ) : chartData.length === 0 ? (
             <p className="text-muted-foreground">No forecast data yet.</p>
           ) : (
-            <div className="h-[320px]" data-testid="revenue-forecast-chart">
+            <div className="h-[320px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
                   <defs>

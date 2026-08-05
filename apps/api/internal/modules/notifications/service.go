@@ -5,15 +5,18 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 )
 
 type Service struct {
 	repo     *Repository
 	notifier Notifier
+	webURL   string
+	asynq    *asynq.Client
 }
 
-func NewService(repo *Repository, notifier Notifier) *Service {
-	return &Service{repo: repo, notifier: notifier}
+func NewService(repo *Repository, notifier Notifier, webURL string, asynqClient *asynq.Client) *Service {
+	return &Service{repo: repo, notifier: notifier, webURL: webURL, asynq: asynqClient}
 }
 
 type SendReminderDTO struct {
@@ -66,6 +69,8 @@ func (s *Service) SendBookingReminder(ctx context.Context, orgID uuid.UUID, dto 
 	if sendErr != nil {
 		status = "failed"
 		errMsg = sendErr.Error()
+	} else if !DeliversExternally(s.notifier) {
+		status = "dry_run"
 	}
 	return s.repo.UpdateStatus(ctx, orgID, n.ID, status, externalRef, errMsg)
 }

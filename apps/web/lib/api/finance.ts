@@ -45,6 +45,7 @@ export interface PayslipRow {
   commissionKes: number;
   deductionsKes: number;
   netKes: number;
+  daysWorked?: number;
   status: string;
 }
 
@@ -112,6 +113,7 @@ function mapPayslip(row: Record<string, unknown>): PayslipRow {
     commissionKes: Number(pickRowField(row, "commission_kes") ?? 0),
     deductionsKes: Number(pickRowField(row, "deductions_kes") ?? 0),
     netKes: Number(pickRowField(row, "net_kes") ?? 0),
+    daysWorked: Number(pickRowField(row, "days_worked") ?? 0),
     status: String(pickRowField(row, "status") ?? "draft"),
   };
 }
@@ -190,6 +192,56 @@ export async function deleteExpense(orgId: string, id: string) {
   await api.delete(`/organizations/${orgId}/finance/expenses/${id}`);
 }
 
+export async function uploadExpenseReceipt(orgId: string, id: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  const response = await fetch(`/api/v1/organizations/${orgId}/finance/expenses/${id}/receipt`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+  if (!response.ok) {
+    let detail = "Receipt upload failed";
+    try {
+      const body = (await response.json()) as { detail?: string; title?: string };
+      detail = body.detail ?? body.title ?? detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+  return mapExpense(await response.json());
+}
+
+export interface PnLPoint {
+  month: string;
+  revenueKes: number;
+  expensesKes: number;
+  commissionKes: number;
+  netKes: number;
+}
+
+export async function fetchPnL(orgId: string, params?: Record<string, string>) {
+  const res = await api.get<{ data: Record<string, unknown>[] }>(
+    `/organizations/${orgId}/analytics/pnl`,
+    { params },
+  );
+  return (res.data ?? []).map(
+    (row): PnLPoint => ({
+      month: String(pickRowField(row, "month") ?? ""),
+      revenueKes: Number(pickRowField(row, "revenue_kes") ?? 0),
+      expensesKes: Number(pickRowField(row, "expenses_kes") ?? 0),
+      commissionKes: Number(pickRowField(row, "commission_kes") ?? 0),
+      netKes: Number(pickRowField(row, "net_kes") ?? 0),
+    }),
+  );
+}
+
+export function expensesExportCsvUrl(orgId: string, params?: Record<string, string>) {
+  const search = new URLSearchParams(params).toString();
+  return `/api/v1/organizations/${orgId}/finance/expenses/export.csv${search ? `?${search}` : ""}`;
+}
+
 export async function fetchRevenueChart(orgId: string, params?: Record<string, string>) {
   const res = await api.get<{ data: Record<string, unknown>[] }>(
     `/organizations/${orgId}/analytics/revenue-chart`,
@@ -219,9 +271,69 @@ export async function fetchCommissionSummary(orgId: string, period: "month" | "q
   return (res.data ?? []).map(mapCommissionSummary);
 }
 
+export interface CommissionLineRow {
+  id: string;
+  staffId: string;
+  transactionId?: string;
+  kind: string;
+  baseKes: number;
+  ratePct: number;
+  amountKes: number;
+  note?: string;
+  createdAt: string;
+}
+
+function mapCommissionLine(row: Record<string, unknown>): CommissionLineRow {
+  return {
+    id: String(pickRowField(row, "id") ?? ""),
+    staffId: String(pickRowField(row, "staff_id") ?? ""),
+    transactionId: pickRowField(row, "transaction_id")
+      ? String(pickRowField(row, "transaction_id"))
+      : undefined,
+    kind: String(pickRowField(row, "kind") ?? "service"),
+    baseKes: Number(pickRowField(row, "base_kes") ?? 0),
+    ratePct: Number(pickRowField(row, "rate_pct") ?? 0),
+    amountKes: Number(pickRowField(row, "amount_kes") ?? 0),
+    note: pickRowField(row, "note") ? String(pickRowField(row, "note")) : undefined,
+    createdAt: String(pickRowField(row, "created_at") ?? ""),
+  };
+}
+
+export async function fetchCommissionLines(orgId: string, period: "month" | "quarter" = "month") {
+  const res = await api.get<{ data: Record<string, unknown>[] }>(
+    `/organizations/${orgId}/commissions/lines`,
+    { params: { period } },
+  );
+  return (res.data ?? []).map(mapCommissionLine);
+}
+
+export async function reverseCommissionLine(orgId: string, lineId: string, reason: string) {
+  const row = await api.post<Record<string, unknown>>(
+    `/organizations/${orgId}/commissions/lines/${lineId}/reverse`,
+    { reason },
+  );
+  return mapCommissionLine(row);
+}
+
+export async function confirmPayout(orgId: string, payoutId: string) {
+  return api.post<Record<string, unknown>>(`/organizations/${orgId}/payouts/${payoutId}/confirm`);
+}
+
 export async function fetchPayslips(orgId: string) {
   const res = await api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/payroll/payslips`);
   return (res.data ?? []).map(mapPayslip);
+}
+
+export function payslipsExportCsvUrl(orgId: string) {
+  return `/api/v1/organizations/${orgId}/payroll/payslips/export.csv`;
+}
+
+export async function chargeSeatRent(orgId: string, seatId: string, periodMonth?: string) {
+  const body = periodMonth ? { period_month: periodMonth } : {};
+  return api.post<Record<string, unknown>>(
+    `/organizations/${orgId}/seat-rentals/${seatId}/charge`,
+    body,
+  );
 }
 
 export async function createPayslip(
@@ -253,6 +365,7 @@ export async function createTip(
     payment_method?: string;
     tip_date?: string;
     notes?: string;
+    transaction_id?: string;
   },
 ) {
   const row = await api.post<Record<string, unknown>>(`/organizations/${orgId}/tips`, body);
@@ -270,6 +383,72 @@ export async function updateTip(
 
 export async function deleteTip(orgId: string, id: string) {
   await api.delete(`/organizations/${orgId}/tips/${id}`);
+}
+
+export interface ReconciliationRunRow {
+  id: string;
+  branchId?: string;
+  runDate: string;
+  expectedCashKes: number;
+  expectedCardKes: number;
+  countedCashKes?: number;
+  countedCardKes?: number;
+  varianceKes?: number;
+  status: string;
+  notes?: string;
+  closedAt?: string;
+}
+
+function mapReconciliationRun(row: Record<string, unknown>): ReconciliationRunRow {
+  return {
+    id: String(pickRowField(row, "id") ?? ""),
+    branchId: pickRowField(row, "branch_id") ? String(pickRowField(row, "branch_id")) : undefined,
+    runDate: String(pickRowField(row, "run_date") ?? ""),
+    expectedCashKes: Number(pickRowField(row, "expected_cash_kes") ?? 0),
+    expectedCardKes: Number(pickRowField(row, "expected_card_kes") ?? 0),
+    countedCashKes:
+      pickRowField(row, "counted_cash_kes") !== undefined
+        ? Number(pickRowField(row, "counted_cash_kes"))
+        : undefined,
+    countedCardKes:
+      pickRowField(row, "counted_card_kes") !== undefined
+        ? Number(pickRowField(row, "counted_card_kes"))
+        : undefined,
+    varianceKes:
+      pickRowField(row, "variance_kes") !== undefined && pickRowField(row, "variance_kes") !== null
+        ? Number(pickRowField(row, "variance_kes"))
+        : undefined,
+    status: String(pickRowField(row, "status") ?? "open"),
+    notes: pickRowField(row, "notes") ? String(pickRowField(row, "notes")) : undefined,
+    closedAt: pickRowField(row, "closed_at") ? String(pickRowField(row, "closed_at")) : undefined,
+  };
+}
+
+export async function fetchReconciliationToday(orgId: string, params?: Record<string, string>) {
+  const row = await api.get<Record<string, unknown>>(`/organizations/${orgId}/reconciliation/today`, {
+    params,
+  });
+  return mapReconciliationRun(row);
+}
+
+export async function fetchReconciliationRuns(orgId: string, params?: Record<string, string>) {
+  const res = await api.get<{ data: Record<string, unknown>[] }>(
+    `/organizations/${orgId}/reconciliation`,
+    { params },
+  );
+  return (res.data ?? []).map(mapReconciliationRun);
+}
+
+export async function closeReconciliation(
+  orgId: string,
+  id: string,
+  body: { counted_cash_kes: number; counted_card_kes: number; notes?: string },
+) {
+  const row = await api.post<Record<string, unknown>>(
+    `/organizations/${orgId}/reconciliation/${id}/close`,
+    body,
+  );
+  return mapReconciliationRun(row);
 }
 
 export async function fetchActiveShift(orgId: string, staffId: string) {

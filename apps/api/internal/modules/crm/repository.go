@@ -26,7 +26,7 @@ func (r *Repository) List(ctx context.Context, orgID uuid.UUID, branchID *uuid.U
 	if branchID != nil {
 		q = q.Where("branch_id IS NULL OR branch_id = ?", *branchID)
 	}
-	err := q.Order("full_name ASC").Find(&rows).Error
+	err := q.Where("merged_into_id IS NULL").Order("full_name ASC").Find(&rows).Error
 	return rows, err
 }
 

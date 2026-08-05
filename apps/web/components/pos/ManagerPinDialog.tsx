@@ -29,21 +29,19 @@ export function setStoredManagerPin(pin: string) {
 interface ManagerPinDialogProps {
   open: boolean;
   onClose: () => void;
-  onApprove: () => void;
+  onApprove: (pin: string) => void | Promise<void>;
   reason: string;
 }
 
 export function ManagerPinDialog({ open, onClose, onApprove, reason }: ManagerPinDialogProps) {
   const [pin, setPin] = useState("");
 
-  function submit() {
-    if (pin === getStoredManagerPin()) {
-      toast.success("Manager approved");
+  async function submit() {
+    try {
+      await onApprove(pin);
       setPin("");
-      onApprove();
       onClose();
-    } else {
-      toast.error("Invalid manager PIN");
+    } catch {
       setPin("");
     }
   }

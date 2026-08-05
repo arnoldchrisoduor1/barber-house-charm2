@@ -27,8 +27,11 @@ interface PaymentDialogProps {
     reference?: string;
     cashTendered?: number;
     change?: number;
+    tipAmountKes?: number;
   }) => Promise<void>;
 }
+
+const TIP_PRESETS_PCT = [0, 5, 10, 15];
 
 const METHODS: { id: PayMethod; label: string; Icon: typeof Banknote }[] = [
   { id: "cash", label: "Cash", Icon: Banknote },
@@ -40,6 +43,8 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
   const [method, setMethod] = useState<PayMethod>("cash");
   const [reference, setReference] = useState("");
   const [cashTendered, setCashTendered] = useState("");
+  const [tipPct, setTipPct] = useState(0);
+  const [tipAmount, setTipAmount] = useState("0");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,14 +53,23 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
     setMethod("cash");
     setReference("");
     setCashTendered(String(total));
+    setTipPct(0);
+    setTipAmount("0");
     setError(null);
   }, [open, total]);
+
+  function applyTipPct(pct: number) {
+    setTipPct(pct);
+    setTipAmount(String(Math.round((total * pct) / 100)));
+  }
 
   const change =
     method === "cash" && cashTendered ? Math.max(0, Number.parseFloat(cashTendered) - total) : 0;
 
   async function handleConfirm() {
     setError(null);
+    const tipAmountKes = Math.max(0, Math.round(Number.parseFloat(tipAmount || "0")) || 0);
+
     if (method === "cash") {
       const tendered = Number.parseFloat(cashTendered || "0");
       if (tendered < total) {
@@ -64,7 +78,7 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
       }
       setSubmitting(true);
       try {
-        await onConfirm({ method, cashTendered: tendered, change });
+        await onConfirm({ method, cashTendered: tendered, change, tipAmountKes });
       } finally {
         setSubmitting(false);
       }
@@ -77,7 +91,7 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
 
     setSubmitting(true);
     try {
-      await onConfirm({ method, reference: reference.trim() || undefined });
+      await onConfirm({ method, reference: reference.trim() || undefined, tipAmountKes });
     } finally {
       setSubmitting(false);
     }
@@ -149,8 +163,42 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
               value={reference}
               onChange={(e) => setReference(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              Pesapal card checkout is not wired yet — record manual terminal payments for testing.
+            </p>
           </div>
         ) : null}
+
+        <div className="space-y-2">
+          <Label>Tip for barber (optional)</Label>
+          <div className="grid grid-cols-4 gap-2">
+            {TIP_PRESETS_PCT.map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                data-testid={`tip-preset-${pct}`}
+                onClick={() => applyTipPct(pct)}
+                className={`rounded-lg border p-2 text-xs transition-colors ${
+                  tipPct === pct
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/30"
+                }`}
+              >
+                {pct === 0 ? "No tip" : `${pct}%`}
+              </button>
+            ))}
+          </div>
+          <Input
+            type="number"
+            min={0}
+            value={tipAmount}
+            onChange={(e) => {
+              setTipPct(0);
+              setTipAmount(e.target.value);
+            }}
+            aria-label="Tip amount (KES)"
+          />
+        </div>
 
         {error ? <p className="text-sm text-destructive">{error}</p> : null}
 

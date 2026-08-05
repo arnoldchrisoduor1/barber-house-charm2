@@ -9,14 +9,16 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
+	platformmod "github.com/haus-of-wellness/api/internal/modules/platform"
 )
 
 type Service struct {
-	repo *Repository
+	repo  *Repository
+	audit *platformmod.Service
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, audit *platformmod.Service) *Service {
+	return &Service{repo: repo, audit: audit}
 }
 
 type CreateStaffDTO struct {

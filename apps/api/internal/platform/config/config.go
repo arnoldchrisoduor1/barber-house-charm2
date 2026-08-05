@@ -31,11 +31,26 @@ type Config struct {
 	EmailFromName   string
 	EmailDryRun     bool
 	PublicWebURL    string
+
+	S3Endpoint  string
+	S3AccessKey string
+	S3SecretKey string
+	S3Bucket    string
+	S3UseSSL    bool
+	S3PublicURL string
+
+	SMSDryRun              bool
+	WhatsAppDryRun         bool
+	AfricasTalkingUsername string
+	AfricasTalkingAPIKey   string
+	MetaWhatsAppToken      string
+	MetaWhatsAppPhoneID    string
 }
 
 func Load() (*Config, error) {
+	appEnv := getEnv("APP_ENV", "local")
 	cfg := &Config{
-		AppEnv:           getEnv("APP_ENV", "local"),
+		AppEnv:           appEnv,
 		HTTPPort:         getEnv("HTTP_PORT", "8080"),
 		DatabaseURL:      getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/haus?sslmode=disable"),
 		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379/0"),
@@ -53,6 +68,18 @@ func Load() (*Config, error) {
 		EmailFromName:    getEnv("EMAIL_FROM_NAME", "Haus of Wellness"),
 		EmailDryRun:      getBoolEnv("EMAIL_DRY_RUN", false),
 		PublicWebURL:     getEnv("PUBLIC_WEB_URL", "http://localhost:3001"),
+		S3Endpoint:       getEnv("S3_ENDPOINT", ""),
+		S3AccessKey:      getEnv("S3_ACCESS_KEY", ""),
+		S3SecretKey:      getEnv("S3_SECRET_KEY", ""),
+		S3Bucket:         getEnv("S3_BUCKET", "haus-media"),
+		S3UseSSL:         getBoolEnv("S3_USE_SSL", false),
+		S3PublicURL:      getEnv("S3_PUBLIC_URL", ""),
+		SMSDryRun:              getBoolEnv("SMS_DRY_RUN", appEnv == "local"),
+		WhatsAppDryRun:         getBoolEnv("WHATSAPP_DRY_RUN", appEnv == "local"),
+		AfricasTalkingUsername: getEnv("AFRICASTALKING_USERNAME", ""),
+		AfricasTalkingAPIKey:   getEnv("AFRICASTALKING_API_KEY", ""),
+		MetaWhatsAppToken:      getEnv("META_WHATSAPP_TOKEN", ""),
+		MetaWhatsAppPhoneID:    getEnv("META_WHATSAPP_PHONE_NUMBER_ID", ""),
 	}
 
 	if cfg.JWTAccessSecret == "" || cfg.JWTRefreshSecret == "" {

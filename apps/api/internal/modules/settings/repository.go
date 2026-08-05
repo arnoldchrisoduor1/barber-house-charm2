@@ -2,6 +2,8 @@ package settings
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -126,6 +128,24 @@ func (r *Repository) UpdateSeatRental(ctx context.Context, orgID uuid.UUID, row 
 
 func (r *Repository) DeleteSeatRental(ctx context.Context, orgID, id uuid.UUID) error {
 	return deleteRow[SeatRental](r, ctx, orgID, id)
+}
+
+func (r *Repository) GetSeatRentCharge(ctx context.Context, orgID, seatID uuid.UUID, period time.Time) (*SeatRentCharge, error) {
+	var row SeatRentCharge
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).
+		Where("seat_rental_id = ? AND period_month = ?", seatID, period.Format("2006-01-02")).
+		First(&row).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+func (r *Repository) CreateSeatRentCharge(ctx context.Context, row *SeatRentCharge) error {
+	return r.db.WithContext(ctx).Create(row).Error
 }
 
 func (r *Repository) ListGalleryItems(ctx context.Context, orgID uuid.UUID) ([]GalleryItem, error) {

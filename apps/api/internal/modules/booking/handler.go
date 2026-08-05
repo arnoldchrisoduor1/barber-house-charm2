@@ -201,11 +201,11 @@ func (h *Handler) PatchStatus(c *fiber.Ctx) error {
 	if err != nil {
 		return httpx.ValidationProblem(c, "invalid id", nil)
 	}
-	row, err := h.svc.PatchStatus(c.UserContext(), orgID, id, dto.Status)
+	result, err := h.svc.PatchStatus(c.UserContext(), orgID, id, dto.Status)
 	if err != nil {
 		return httpx.From(c, err)
 	}
-	return c.JSON(row)
+	return c.JSON(result)
 }
 
 func (h *Handler) Availability(c *fiber.Ctx) error {
@@ -235,5 +235,7 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g.Get("/:id", h.Get)
 	g.Put("/:id", h.Update)
 	g.Patch("/:id/status", h.PatchStatus)
+	g.Post("/:id/deposit/collect", authz.RequireFeature(features, "booking_deposits"), h.CollectBookingDeposit)
 	g.Delete("/:id", h.Delete)
+	RegisterDepositRoutes(org, features, h)
 }

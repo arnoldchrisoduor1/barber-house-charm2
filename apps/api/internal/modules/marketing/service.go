@@ -9,14 +9,16 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
+	notificationsmod "github.com/haus-of-wellness/api/internal/modules/notifications"
 )
 
 type Service struct {
-	repo *Repository
+	repo   *Repository
+	sender notificationsmod.OutboundSender
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, sender notificationsmod.OutboundSender) *Service {
+	return &Service{repo: repo, sender: sender}
 }
 
 func mapNotFound[T any](row *T, err error) (*T, error) {
@@ -670,6 +672,59 @@ func (s *Service) DeleteCampaign(ctx context.Context, orgID, id uuid.UUID) error
 		return err
 	}
 	return s.repo.DeleteCampaign(ctx, orgID, id)
+}
+
+type CampaignSendResult struct {
+	Sent         int    `json:"sent"`
+	Failed       int    `json:"failed"`
+	DeliveryMode string `json:"delivery_mode"`
+}
+
+func (s *Service) SendCampaign(ctx context.Context, orgID, id uuid.UUID) (*CampaignSendResult, error) {
+	row, err := s.GetCampaign(ctx, orgID, id)
+	if err != nil {
+		return nil, err
+	}
+	if row.Status == "sent" {
+		return nil, httpx.ErrConflict
+	}
+	channel := row.Channel
+	if channel != "sms" && channel != "whatsapp" {
+		return nil, httpx.ErrConflict
+	}
+	if s.sender == nil {
+		return nil, httpx.ErrConflict
+	}
+	phones, err := s.repo.ListCustomerPhones(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	body := row.Body
+	if body == "" {
+		body = row.Subject
+	}
+	if body == "" {
+		body = row.Name
+	}
+	mode := "dry_run"
+	if s.sender.DeliversExternally() {
+		mode = "live"
+	}
+	sent, failed := 0, 0
+	for _, phone := range phones {
+		if err := s.sender.SendOutbound(ctx, orgID, channel, phone, "marketing_campaign", body); err != nil {
+			failed++
+		} else {
+			sent++
+		}
+	}
+	now := time.Now()
+	row.Status = "sent"
+	row.SentAt = &now
+	if err := s.repo.UpdateCampaign(ctx, orgID, row); err != nil {
+		return nil, err
+	}
+	return &CampaignSendResult{Sent: sent, Failed: failed, DeliveryMode: mode}, nil
 }
 
 func (s *Service) LoyaltyWallet(ctx context.Context, orgID uuid.UUID, phone string) (map[string]any, error) {

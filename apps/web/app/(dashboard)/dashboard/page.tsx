@@ -49,6 +49,7 @@ interface DashboardExtras {
   completion_rate: number;
   monthly_target_kes: number;
   monthly_progress_kes: number;
+  chair_utilization_pct?: number;
 }
 
 const EXEC_ROLES = ["ceo", "director"];
@@ -226,7 +227,7 @@ export default function DashboardPage() {
       todayRevenue: Number(summary?.total_revenue_kes ?? 0),
       activeStaff: 0,
       noShowRate: Number(extras?.no_show_rate ?? 0),
-      chairUtil: 0,
+      chairUtil: Number(extras?.chair_utilization_pct ?? 0),
       avgTransaction:
         summary && summary.completed_bookings > 0
           ? Math.round(summary.total_revenue_kes / summary.completed_bookings)

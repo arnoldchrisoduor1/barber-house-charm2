@@ -37,6 +37,7 @@ import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { useEntityList } from "@/lib/api/crud";
 import {
   closeShift,
+  createTip,
   fetchActiveShift,
   openShift,
   type PosShiftRow,
@@ -54,6 +55,7 @@ import {
   type PosCustomer,
   type PosTransaction,
 } from "@/lib/api/pos";
+import { verifyManagerPin } from "@/lib/api/pos-tabs";
 import { fetchBookings, fetchBookingServices } from "@/lib/api/booking";
 import {
   createHeldSale,
@@ -101,6 +103,7 @@ export function PosWorkspace() {
   const [heldSalesOpen, setHeldSalesOpen] = useState(false);
   const [heldSales, setHeldSales] = useState<HeldSale[]>([]);
   const [discountPercent, setDiscountPercent] = useState(0);
+  const [managerPin, setManagerPin] = useState("");
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
 
   const shiftQuery = useQuery({
@@ -196,6 +199,7 @@ export function PosWorkspace() {
       ];
     });
     setDiscountPercent(0);
+    setManagerPin("");
   }, []);
 
   const updateQty = (line: PosCartLine, delta: number) => {
@@ -213,6 +217,7 @@ export function PosWorkspace() {
   const removeLine = (line: PosCartLine) => {
     setCart((prev) => prev.filter((item) => !(item.id === line.id && item.type === line.type)));
     setDiscountPercent(0);
+    setManagerPin("");
   };
 
   const handleCreateCustomer = async (payload: { fullName: string; phone: string }) => {
@@ -270,6 +275,7 @@ export function PosWorkspace() {
     setActiveBookingId(null);
     setCustomerId("walk-in");
     setDiscountPercent(0);
+    setManagerPin("");
     setHeldSales(listHeldSales(orgId));
     toast.success("Sale held");
   };
@@ -309,6 +315,7 @@ export function PosWorkspace() {
     reference?: string;
     cashTendered?: number;
     change?: number;
+    tipAmountKes?: number;
   }) => {
     setCheckoutError(null);
     if (cart.some((line) => line.type === "package")) {
@@ -320,20 +327,37 @@ export function PosWorkspace() {
         customerId: customerId === "walk-in" ? undefined : customerId,
         branchId: activeBranchId ?? undefined,
         bookingId: activeBookingId ?? undefined,
+        staffId: posStaffId || undefined,
         paymentMethod: payment.method,
         reference: payment.reference,
         cashTendered: payment.cashTendered,
+        discountPercent: discountPercent > 0 ? discountPercent : undefined,
+        managerPin: discountPercent > 0 ? managerPin : undefined,
         lines: cart.map((line) => ({
           itemType: line.type as "service" | "product",
           itemId: line.id,
           quantity: line.quantity,
         })),
       });
+      if (payment.tipAmountKes && payment.tipAmountKes > 0 && posStaffId) {
+        try {
+          await createTip(orgId, {
+            staff_id: posStaffId,
+            amount_kes: payment.tipAmountKes,
+            status: "collected",
+            payment_method: payment.method,
+            transaction_id: tx.id,
+          });
+        } catch {
+          toast.error("Sale completed, but tip could not be recorded — add it manually in Tips.");
+        }
+      }
       setReceiptCart([...cart]);
       setLastReceipt(tx);
       setLastPayment(payment);
       setCart([]);
       setDiscountPercent(0);
+    setManagerPin("");
       setPaymentOpen(false);
       setReceiptOpen(true);
       setActiveBookingId(null);
@@ -777,7 +801,13 @@ export function PosWorkspace() {
         open={pinDialogOpen}
         onClose={() => setPinDialogOpen(false)}
         reason="Apply a 10% manager discount to this sale"
-        onApprove={() => {
+        onApprove={async (pin) => {
+          const ok = await verifyManagerPin(orgId, pin);
+          if (!ok) {
+            toast.error("Invalid manager PIN");
+            throw new Error("invalid pin");
+          }
+          setManagerPin(pin);
           setDiscountPercent(10);
           toast.success("10% discount applied");
         }}

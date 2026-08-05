@@ -27,18 +27,22 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { apiClient } from "@/lib/api-client";
 import {
+  confirmPayout,
   createExpense,
   deleteExpense,
+  expensesExportCsvUrl,
   fetchExpenses,
+  fetchPnL,
   fetchRevenueChart,
   formatKes,
   updateExpense,
+  uploadExpenseReceipt,
   type ExpenseRow,
 } from "@/lib/api/finance";
 import { pickRowField } from "@/lib/record-fields";
 import { cn } from "@/lib/utils";
 
-type FinanceTab = "overview" | "expenses" | "transactions" | "payouts";
+type FinanceTab = "overview" | "expenses" | "pnl" | "transactions" | "payouts";
 type Payout = Record<string, unknown>;
 type LedgerEntry = Record<string, unknown>;
 
@@ -78,6 +82,7 @@ function FinanceTabs({
   const tabs: { id: FinanceTab; label: string }[] = [
     { id: "overview", label: "Overview" },
     { id: "expenses", label: "Expenses" },
+    { id: "pnl", label: "P&L" },
     { id: "transactions", label: "Transactions" },
     { id: "payouts", label: "Payouts" },
   ];
@@ -145,6 +150,12 @@ export default function FinancePage() {
     queryFn: () => fetchExpenses(orgId!, apiParams),
   });
 
+  const pnlQuery = useQuery({
+    queryKey: ["org", orgId, "finance-pnl", apiParams],
+    enabled: !!orgId && tab === "pnl",
+    queryFn: () => fetchPnL(orgId!, { ...apiParams, months: "6" }),
+  });
+
   const payoutsQuery = useQuery({
     queryKey: ["org", orgId, "payouts"],
     enabled: !!orgId,
@@ -188,6 +199,16 @@ export default function FinancePage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Save failed"),
   });
 
+  const uploadReceiptMut = useMutation({
+    mutationFn: (file: File) => uploadExpenseReceipt(orgId!, editingExpense!.id, file),
+    onSuccess: (row) => {
+      queryClient.invalidateQueries({ queryKey: ["org", orgId, "finance-expenses"] });
+      setExpenseValues((prev) => ({ ...prev, receipt_url: row.receiptUrl ?? "" }));
+      toast.success("Receipt uploaded");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Receipt upload failed"),
+  });
+
   const deleteExpenseMut = useMutation({
     mutationFn: (id: string) => deleteExpense(orgId!, id),
     onSuccess: () => {
@@ -195,6 +216,15 @@ export default function FinancePage() {
       toast.success("Expense deleted");
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : "Delete failed"),
+  });
+
+  const confirmPayoutMut = useMutation({
+    mutationFn: (payoutId: string) => confirmPayout(orgId!, payoutId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["org", orgId, "payouts"] });
+      toast.success("Payout status refreshed from provider");
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Confirm failed"),
   });
 
   const chartData = useMemo(
@@ -249,7 +279,11 @@ export default function FinancePage() {
   })) as Record<string, unknown>[];
 
   return (
-    <ModulePage title="Finance" description="Wallet balance, expenses, ledger, and payouts.">
+    <ModulePage
+      title="Finance"
+      feature="basic_reports"
+      description="Wallet balance, expenses, ledger, and payouts."
+    >
       <div className="space-y-6">
         <FinanceTabs active={tab} onChange={setTab} />
 
@@ -353,9 +387,16 @@ export default function FinancePage() {
           <Card className="glass">
             <CardHeader className="flex flex-row items-center justify-between gap-4">
               <CardTitle>Expenses</CardTitle>
-              <Button size="sm" className="gap-2" onClick={openCreateExpense}>
-                <Plus className="h-4 w-4" /> Record expense
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <a href={expensesExportCsvUrl(orgId ?? "", apiParams)} download>
+                    Export CSV
+                  </a>
+                </Button>
+                <Button size="sm" className="gap-2" onClick={openCreateExpense}>
+                  <Plus className="h-4 w-4" /> Record expense
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               {expensesQuery.isLoading ? <p className="text-muted-foreground">Loading…</p> : null}
@@ -389,6 +430,52 @@ export default function FinancePage() {
                 emptyMessage="No expenses recorded yet."
                 onEdit={(row) => openEditExpense(row as unknown as ExpenseRow)}
                 onDelete={(row) => deleteExpenseMut.mutate(String(pickRowField(row, "id")))}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {tab === "pnl" ? (
+          <Card className="glass">
+            <CardHeader>
+              <CardTitle>Profit &amp; loss (last 6 months)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {pnlQuery.isLoading ? <p className="text-muted-foreground">Loading…</p> : null}
+              {pnlQuery.error ? <p className="text-destructive">Failed to load P&amp;L.</p> : null}
+              <DataTable
+                columns={[
+                  { key: "month", header: "Month" },
+                  {
+                    key: "revenue_kes",
+                    header: "Revenue",
+                    render: (row) => formatKes(Number(pickRowField(row, "revenue_kes") ?? 0)),
+                  },
+                  {
+                    key: "expenses_kes",
+                    header: "Expenses",
+                    render: (row) => formatKes(Number(pickRowField(row, "expenses_kes") ?? 0)),
+                  },
+                  {
+                    key: "commission_kes",
+                    header: "Commissions",
+                    render: (row) => formatKes(Number(pickRowField(row, "commission_kes") ?? 0)),
+                  },
+                  {
+                    key: "net_kes",
+                    header: "Net",
+                    render: (row) => {
+                      const net = Number(pickRowField(row, "net_kes") ?? 0);
+                      return (
+                        <span className={net >= 0 ? "text-primary" : "text-destructive"}>
+                          {formatKes(net)}
+                        </span>
+                      );
+                    },
+                  },
+                ]}
+                rows={(pnlQuery.data ?? []) as unknown as Record<string, unknown>[]}
+                emptyMessage="No P&L data yet."
               />
             </CardContent>
           </Card>
@@ -488,6 +575,27 @@ export default function FinancePage() {
                     header: "Created",
                     render: (row) => String(pickRowField(row, "created_at") ?? "—"),
                   },
+                  {
+                    key: "actions",
+                    header: "",
+                    render: (row) => {
+                      const status = String(pickRowField(row, "status") ?? "");
+                      const id = String(pickRowField(row, "id") ?? "");
+                      if (status !== "processing") return null;
+                      return (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          data-testid="payout-confirm-btn"
+                          disabled={confirmPayoutMut.isPending}
+                          onClick={() => confirmPayoutMut.mutate(id)}
+                        >
+                          Check status
+                        </Button>
+                      );
+                    },
+                  },
                 ]}
                 rows={payoutsQuery.data?.data ?? []}
                 emptyMessage="No payouts yet."
@@ -510,6 +618,29 @@ export default function FinancePage() {
           values={expenseValues}
           onChange={(name, value) => setExpenseValues((prev) => ({ ...prev, [name]: value }))}
         />
+        {editingExpense ? (
+          <div className="space-y-2 pt-2">
+            <label className="text-sm font-medium">Upload receipt (image or PDF)</label>
+            <input
+              type="file"
+              accept="image/*,application/pdf"
+              disabled={uploadReceiptMut.isPending}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadReceiptMut.mutate(file);
+                e.target.value = "";
+              }}
+              className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:text-primary-foreground"
+            />
+            {uploadReceiptMut.isPending ? (
+              <p className="text-xs text-muted-foreground">Uploading…</p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="pt-2 text-xs text-muted-foreground">
+            Save the expense first, then reopen it to attach a receipt file.
+          </p>
+        )}
       </CrudDialog>
     </ModulePage>
   );

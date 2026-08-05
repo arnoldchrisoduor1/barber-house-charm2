@@ -8,15 +8,17 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	platformmod "github.com/haus-of-wellness/api/internal/modules/platform"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 )
 
 type Service struct {
-	repo *Repository
+	repo  *Repository
+	audit *platformmod.Service
 }
 
-func NewService(repo *Repository) *Service {
-	return &Service{repo: repo}
+func NewService(repo *Repository, audit *platformmod.Service) *Service {
+	return &Service{repo: repo, audit: audit}
 }
 
 type CreateCustomerDTO struct {
@@ -25,6 +27,8 @@ type CreateCustomerDTO struct {
 	Email            string     `json:"email"`
 	Notes            string     `json:"notes"`
 	StylePreferences string     `json:"style_preferences"`
+	AllergyNotes     string     `json:"allergy_notes"`
+	HasAllergies     bool       `json:"has_allergies"`
 	LoyaltyTier      string     `json:"loyalty_tier"`
 	AssignedStaffID  *uuid.UUID `json:"assigned_staff_id"`
 	BranchID         *uuid.UUID `json:"branch_id"`
@@ -36,6 +40,8 @@ type UpdateCustomerDTO struct {
 	Email            *string    `json:"email"`
 	Notes            *string    `json:"notes"`
 	StylePreferences *string    `json:"style_preferences"`
+	AllergyNotes     *string    `json:"allergy_notes"`
+	HasAllergies     *bool      `json:"has_allergies"`
 	LoyaltyTier      *string    `json:"loyalty_tier"`
 	LoyaltyPoints    *int       `json:"loyalty_points"`
 	TotalVisits      *int       `json:"total_visits"`
@@ -69,6 +75,8 @@ func (s *Service) Create(ctx context.Context, orgID uuid.UUID, dto CreateCustome
 		Email:            dto.Email,
 		Notes:            dto.Notes,
 		StylePreferences: dto.StylePreferences,
+		AllergyNotes:     dto.AllergyNotes,
+		HasAllergies:     dto.HasAllergies,
 		LoyaltyTier:      tier,
 		AssignedStaffID:  dto.AssignedStaffID,
 		BranchID:         dto.BranchID,
@@ -99,6 +107,12 @@ func (s *Service) Update(ctx context.Context, orgID, id uuid.UUID, dto UpdateCus
 	}
 	if dto.StylePreferences != nil {
 		c.StylePreferences = *dto.StylePreferences
+	}
+	if dto.AllergyNotes != nil {
+		c.AllergyNotes = *dto.AllergyNotes
+	}
+	if dto.HasAllergies != nil {
+		c.HasAllergies = *dto.HasAllergies
 	}
 	if dto.LoyaltyTier != nil {
 		c.LoyaltyTier = *dto.LoyaltyTier

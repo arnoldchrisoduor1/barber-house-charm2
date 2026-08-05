@@ -12,7 +12,7 @@ import { ModulePage } from "@/components/ModulePage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
-import { createPayslip, fetchPayslips, formatKes } from "@/lib/api/finance";
+import { createPayslip, fetchPayslips, formatKes, payslipsExportCsvUrl } from "@/lib/api/finance";
 import { useEntityList } from "@/lib/api/crud";
 import { pickRowField } from "@/lib/record-fields";
 
@@ -89,6 +89,7 @@ export default function PayrollPage() {
     commission_kes: p.commissionKes,
     deductions_kes: p.deductionsKes,
     net_kes: p.netKes,
+    days_worked: p.daysWorked ?? 0,
     status: p.status,
   })) as Record<string, unknown>[];
 
@@ -112,7 +113,11 @@ export default function PayrollPage() {
       <Card className="glass">
         <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>Payslips</CardTitle>
-          <Button
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <a href={payslipsExportCsvUrl(orgId ?? "")} download>Export CSV</a>
+            </Button>
+            <Button
             size="sm"
             className="gap-2"
             onClick={() => {
@@ -131,6 +136,7 @@ export default function PayrollPage() {
           >
             <Plus className="h-4 w-4" /> Generate payslip
           </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {payslipsQuery.isLoading ? <p className="text-muted-foreground">Loading payslips…</p> : null}
@@ -152,6 +158,11 @@ export default function PayrollPage() {
                 key: "gross_kes",
                 header: "Gross",
                 render: (row) => formatKes(Number(pickRowField(row, "gross_kes") ?? 0)),
+              },
+              {
+                key: "days_worked",
+                header: "Days",
+                render: (row) => String(pickRowField(row, "days_worked") ?? 0),
               },
               {
                 key: "net_kes",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { DollarSign, Percent, Wallet } from "lucide-react";
+import { DollarSign, HandCoins, Percent, Wallet } from "lucide-react";
 
 import { ModulePage } from "@/components/ModulePage";
 import { StatTile } from "@/components/dashboard/StatTile";
@@ -30,13 +30,14 @@ export default function MyEarningsPage() {
 
   const revenue = Number(pickRowField(data ?? {}, "revenue_kes") ?? 0);
   const commission = Number(pickRowField(data ?? {}, "commission_kes") ?? 0);
+  const tips = Number(pickRowField(data ?? {}, "tips_kes") ?? 0);
   const rate = Number(pickRowField(data ?? {}, "commission_rate") ?? 0);
   const displayName = String(pickRowField(data ?? {}, "display_name") ?? "You");
   const periodStart = pickRowField(data ?? {}, "period_start");
   const periodEnd = pickRowField(data ?? {}, "period_end");
 
   return (
-    <ModulePage title="My Earnings" feature="advanced_analytics" description="Your commission and revenue for the current period.">
+    <ModulePage title="My Earnings" feature="staff_commissions_payroll" description="Your commission and revenue for the current period.">
       {!staffId ? (
         <Card className="glass">
           <CardContent className="py-8">
@@ -46,9 +47,10 @@ export default function MyEarningsPage() {
       ) : (
         <>
           {error ? <p className="text-destructive">Failed to load earnings.</p> : null}
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3" data-testid="my-earnings-stats">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="my-earnings-stats">
             <StatTile icon={Wallet} label="Revenue" value={data ? formatKES(revenue) : "—"} loading={isLoading} />
             <StatTile icon={DollarSign} label="Commission" value={data ? formatKES(commission) : "—"} loading={isLoading} color="text-green-400" />
+            <StatTile icon={HandCoins} label="Tips" value={data ? formatKES(tips) : "—"} loading={isLoading} color="text-primary" />
             <StatTile icon={Percent} label="Rate" value={data ? `${rate}%` : "—"} loading={isLoading} />
           </div>
           <Card className="glass mt-6">

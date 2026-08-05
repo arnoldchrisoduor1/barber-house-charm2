@@ -32,6 +32,12 @@
     { "key": "platform_admin", "label": "Platform Admin", "description": "Internal platform console", "category": "platform", "minPlan": "enterprise", "default": false, "dependsOn": [], "status": "beta" },
     { "key": "tips_management", "label": "Tips Management", "description": "Tips ledger and pooling", "category": "operations", "minPlan": "starter", "default": false, "dependsOn": ["pos_payments"], "status": "ga" },
     { "key": "qr_clock", "label": "QR Clock In/Out", "description": "QR-based staff attendance and clock", "category": "operations", "minPlan": "starter", "default": false, "dependsOn": [], "status": "ga" },
-    { "key": "customer_reviews", "label": "Customer Reviews", "description": "Client and staff review submission", "category": "growth", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" }
+    { "key": "staff_time_off", "label": "Staff Time Off", "description": "Leave requests, manager approval, booking blocks", "category": "operations", "minPlan": "professional", "default": false, "dependsOn": ["bookings"], "status": "ga" },
+    { "key": "staff_onboarding", "label": "Staff Onboarding", "description": "New-hire checklist templates and progress tracking", "category": "operations", "minPlan": "professional", "default": false, "dependsOn": [], "status": "ga" },
+    { "key": "staff_shift_swap", "label": "Shift Swap", "description": "Staff shift trade requests with manager approval", "category": "operations", "minPlan": "professional", "default": false, "dependsOn": ["bookings"], "status": "ga" },
+    { "key": "booking_deposits", "label": "Booking Deposits", "description": "Online deposits and cancellation fees", "category": "sales", "minPlan": "professional", "default": false, "dependsOn": ["bookings", "pos_payments"], "status": "ga" },
+    { "key": "customer_reviews", "label": "Customer Reviews", "description": "Client and staff review submission", "category": "growth", "minPlan": "starter", "default": true, "dependsOn": [], "status": "ga" },
+    { "key": "consultation_history", "label": "Consultation History", "description": "Per-client treatment notes and consultation timeline", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": ["crm"], "status": "ga" },
+    { "key": "resource_booking", "label": "Resource Booking", "description": "Treatment rooms, beds, and facility allocation", "category": "modes", "minPlan": "professional", "default": false, "dependsOn": ["bookings"], "status": "ga" }
   ]
 }

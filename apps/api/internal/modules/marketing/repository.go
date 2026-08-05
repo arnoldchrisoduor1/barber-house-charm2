@@ -217,3 +217,13 @@ func (r *Repository) UpdateCampaign(ctx context.Context, orgID uuid.UUID, row *C
 func (r *Repository) DeleteCampaign(ctx context.Context, orgID, id uuid.UUID) error {
 	return deleteRow[Campaign](r, ctx, orgID, id)
 }
+
+func (r *Repository) ListCustomerPhones(ctx context.Context, orgID uuid.UUID) ([]string, error) {
+	var phones []string
+	err := r.db.WithContext(ctx).Table("customers").
+		Scopes(platformtenancy.OrgScope(orgID)).
+		Where("phone IS NOT NULL AND phone <> ''").
+		Limit(200).
+		Pluck("phone", &phones).Error
+	return phones, err
+}

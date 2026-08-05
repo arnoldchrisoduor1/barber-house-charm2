@@ -84,14 +84,10 @@ services:
       SMTP_HOST: mailhog
       SMTP_PORT: "1025"
       SMTP_FROM: noreply@hausofwellness.local
-      # Production SMTP (override via .env):
-      # SMTP_HOST: smtp.gmail.com
-      # SMTP_PORT: "587"
-      # SMTP_USER: ${SMTP_USER}
-      # SMTP_PASSWORD: ${SMTP_PASSWORD}
-      # SMTP_USE_STARTTLS: "true"
-      # EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
-      # EMAIL_FROM_NAME: Haus of Wellness
+      # Local MailHog receives mail. For production override via .env:
+      # SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_USE_STARTTLS=true
+      # EMAIL_FROM_ADDRESS / EMAIL_FROM_NAME, EMAIL_DRY_RUN=false, PUBLIC_WEB_URL
+      # See docs/ops-smtp-checklist.md
       # EMAIL_DRY_RUN: "false"
       PUBLIC_WEB_URL: http://localhost:3001
     ports:

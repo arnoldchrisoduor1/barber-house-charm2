@@ -13,15 +13,17 @@ type Service struct {
 	repo      *Repository
 	publisher QueuePublisher
 	crm       CRMRepository
+	audit     AuditRecorder
 }
 
-func NewService(repo *Repository, publisher QueuePublisher, crm CRMRepository) *Service {
-	return &Service{repo: repo, publisher: publisher, crm: crm}
+func NewService(repo *Repository, publisher QueuePublisher, crm CRMRepository, audit AuditRecorder) *Service {
+	return &Service{repo: repo, publisher: publisher, crm: crm, audit: audit}
 }
 
 type CreateBookingDTO struct {
 	CustomerID  uuid.UUID  `json:"customerId"`
 	StaffID     *uuid.UUID `json:"staffId"`
+	ResourceID  *uuid.UUID `json:"resourceId"`
 	BranchID    *uuid.UUID `json:"branchId"`
 	BookingDate string     `json:"bookingDate"`
 	StartTime   string     `json:"startTime"`
@@ -62,7 +64,23 @@ func (s *Service) Create(ctx context.Context, orgID uuid.UUID, dto CreateBooking
 		return nil, httpx.ErrConflict
 	}
 	if dto.StaffID != nil {
+		off, err := s.repo.TimeOffBlocks(ctx, orgID, *dto.StaffID, date)
+		if err != nil {
+			return nil, err
+		}
+		if off {
+			return nil, httpx.ErrConflict
+		}
 		conflicts, err := s.repo.StaffConflicts(ctx, orgID, *dto.StaffID, date, dto.StartTime, dto.EndTime, nil)
+		if err != nil {
+			return nil, err
+		}
+		if conflicts > 0 {
+			return nil, httpx.ErrConflict
+		}
+	}
+	if dto.ResourceID != nil {
+		conflicts, err := s.repo.ResourceConflicts(ctx, orgID, *dto.ResourceID, date, dto.StartTime, dto.EndTime, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -74,6 +92,7 @@ func (s *Service) Create(ctx context.Context, orgID uuid.UUID, dto CreateBooking
 		OrganizationID: orgID,
 		CustomerID:     dto.CustomerID,
 		StaffID:        dto.StaffID,
+		ResourceID:     dto.ResourceID,
 		BranchID:       dto.BranchID,
 		BookingDate:    date,
 		StartTime:      dto.StartTime,
@@ -97,6 +116,17 @@ func (s *Service) Create(ctx context.Context, orgID uuid.UUID, dto CreateBooking
 	return b, nil
 }
 
+func (s *Service) CreateFromEnquiry(ctx context.Context, orgID, customerID uuid.UUID, staffID *uuid.UUID, bookingDate, startTime, endTime, notes string) (*Booking, error) {
+	return s.Create(ctx, orgID, CreateBookingDTO{
+		CustomerID:  customerID,
+		StaffID:     staffID,
+		BookingDate: bookingDate,
+		StartTime:   startTime,
+		EndTime:     endTime,
+		Notes:       notes,
+	})
+}
+
 func (s *Service) Update(ctx context.Context, orgID uuid.UUID, id uuid.UUID, dto CreateBookingDTO) (*Booking, error) {
 	b, err := s.repo.Get(ctx, orgID, id)
 	if err != nil {
@@ -107,7 +137,23 @@ func (s *Service) Update(ctx context.Context, orgID uuid.UUID, id uuid.UUID, dto
 		return nil, httpx.ErrConflict
 	}
 	if dto.StaffID != nil {
+		off, err := s.repo.TimeOffBlocks(ctx, orgID, *dto.StaffID, date)
+		if err != nil {
+			return nil, err
+		}
+		if off {
+			return nil, httpx.ErrConflict
+		}
 		conflicts, err := s.repo.StaffConflicts(ctx, orgID, *dto.StaffID, date, dto.StartTime, dto.EndTime, &id)
+		if err != nil {
+			return nil, err
+		}
+		if conflicts > 0 {
+			return nil, httpx.ErrConflict
+		}
+	}
+	if dto.ResourceID != nil {
+		conflicts, err := s.repo.ResourceConflicts(ctx, orgID, *dto.ResourceID, date, dto.StartTime, dto.EndTime, &id)
 		if err != nil {
 			return nil, err
 		}
@@ -117,6 +163,7 @@ func (s *Service) Update(ctx context.Context, orgID uuid.UUID, id uuid.UUID, dto
 	}
 	b.CustomerID = dto.CustomerID
 	b.StaffID = dto.StaffID
+	b.ResourceID = dto.ResourceID
 	b.BranchID = dto.BranchID
 	b.BookingDate = date
 	b.StartTime = dto.StartTime
@@ -136,7 +183,7 @@ type PatchStatusDTO struct {
 	Status string `json:"status"`
 }
 
-func (s *Service) PatchStatus(ctx context.Context, orgID, id uuid.UUID, status string) (*Booking, error) {
+func (s *Service) PatchStatus(ctx context.Context, orgID, id uuid.UUID, status string) (*PatchStatusResult, error) {
 	b, err := s.repo.Get(ctx, orgID, id)
 	if err != nil {
 		return nil, httpx.ErrNotFound
@@ -145,13 +192,21 @@ func (s *Service) PatchStatus(ctx context.Context, orgID, id uuid.UUID, status s
 	if err := s.repo.Update(ctx, orgID, b); err != nil {
 		return nil, err
 	}
+	result := &PatchStatusResult{Booking: b}
+	if status == "cancelled" || status == "no_show" {
+		fee, err := s.applyCancellationPolicy(ctx, orgID, b)
+		if err != nil {
+			return nil, err
+		}
+		result.CancellationFeeKES = fee
+	}
 	if s.publisher != nil {
 		_ = s.publisher.PublishQueue(ctx, orgID, "queue.updated", map[string]any{
 			"booking_id": id,
 			"status":     status,
 		})
 	}
-	return b, nil
+	return result, nil
 }
 
 type AvailabilityQuery struct {

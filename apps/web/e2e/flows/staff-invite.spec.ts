@@ -25,7 +25,7 @@ test.describe("Staff invite flow", () => {
     await page.getByTestId("staff-invite-role").click();
     await page.getByRole("option", { name: /staff/i }).click();
     await page.getByRole("button", { name: /save|invite|send/i }).click();
-    await expect(page.getByText(/invite sent/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/invite (sent|created)/i)).toBeVisible({ timeout: 15_000 });
 
     let token: string | null = null;
     await expect(async () => {

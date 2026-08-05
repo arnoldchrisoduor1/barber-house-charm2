@@ -4,25 +4,40 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
+	"github.com/haus-of-wellness/api/internal/platform/storage"
 )
-
-type Service struct {
-	repo      *Repository
-	publisher QueuePublisher
-}
 
 type QueuePublisher interface {
 	PublishQueue(ctx context.Context, orgID uuid.UUID, eventType string, payload any) error
 }
 
-func NewService(repo *Repository, publisher QueuePublisher) *Service {
-	return &Service{repo: repo, publisher: publisher}
+type Service struct {
+	repo      *Repository
+	publisher QueuePublisher
+	ledger    LedgerRecorder
+	audit     AuditRecorder
+	storage   *storage.Client
+	customers CustomerFinder
+	bookings  BookingCreator
+}
+
+type LedgerRecorder interface {
+	RecordRentCharge(ctx context.Context, orgID uuid.UUID, amount int64, ref string) error
+}
+
+type AuditRecorder interface {
+	RecordOrgAudit(ctx context.Context, orgID uuid.UUID, userID *uuid.UUID, action, entityType string, entityID *uuid.UUID, metadata []byte) error
+}
+
+func NewService(repo *Repository, publisher QueuePublisher, ledger LedgerRecorder, audit AuditRecorder, storageClient *storage.Client) *Service {
+	return &Service{repo: repo, publisher: publisher, ledger: ledger, audit: audit, storage: storageClient}
 }
 
 func mapNotFound[T any](row *T, err error) (*T, error) {
@@ -93,6 +108,7 @@ type EnquiryDTO struct {
 	Subject  string     `json:"subject"`
 	Message  string     `json:"message"`
 	IsRead   *bool      `json:"is_read"`
+	Source   string     `json:"source"`
 }
 
 func (s *Service) ListEnquiries(ctx context.Context, orgID uuid.UUID) ([]Enquiry, error) {
@@ -104,6 +120,10 @@ func (s *Service) GetEnquiry(ctx context.Context, orgID, id uuid.UUID) (*Enquiry
 }
 
 func (s *Service) CreateEnquiry(ctx context.Context, orgID uuid.UUID, dto EnquiryDTO) (*Enquiry, error) {
+	source := dto.Source
+	if source == "" {
+		source = "web"
+	}
 	row := &Enquiry{
 		OrganizationID: orgID,
 		BranchID:       dto.BranchID,
@@ -112,6 +132,8 @@ func (s *Service) CreateEnquiry(ctx context.Context, orgID uuid.UUID, dto Enquir
 		Phone:          dto.Phone,
 		Subject:        dto.Subject,
 		Message:        dto.Message,
+		Source:         source,
+		Status:         "open",
 	}
 	if err := s.repo.CreateEnquiry(ctx, row); err != nil {
 		return nil, err
@@ -327,6 +349,55 @@ func (s *Service) DeleteSeatRental(ctx context.Context, orgID, id uuid.UUID) err
 	return s.repo.DeleteSeatRental(ctx, orgID, id)
 }
 
+type ChargeSeatRentDTO struct {
+	PeriodMonth string `json:"period_month"` // YYYY-MM-01
+}
+
+func (s *Service) ChargeSeatRent(ctx context.Context, orgID, seatID uuid.UUID, actorID *uuid.UUID, dto ChargeSeatRentDTO) (*SeatRentCharge, error) {
+	seat, err := s.GetSeatRental(ctx, orgID, seatID)
+	if err != nil {
+		return nil, err
+	}
+	if seat.MonthlyRateKES <= 0 {
+		return nil, httpx.ErrConflict
+	}
+	month, err := time.Parse("2006-01-02", dto.PeriodMonth)
+	if err != nil {
+		month, err = time.Parse("2006-01", dto.PeriodMonth)
+		if err != nil {
+			return nil, httpx.ErrConflict
+		}
+	}
+	period := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, time.UTC)
+	if existing, _ := s.repo.GetSeatRentCharge(ctx, orgID, seatID, period); existing != nil {
+		return nil, httpx.ErrConflict
+	}
+	ref := fmt.Sprintf("seat_rent:%s:%s", seatID.String(), period.Format("2006-01"))
+	if s.ledger != nil {
+		if err := s.ledger.RecordRentCharge(ctx, orgID, int64(seat.MonthlyRateKES), ref); err != nil {
+			return nil, err
+		}
+	}
+	row := &SeatRentCharge{
+		OrganizationID: orgID,
+		SeatRentalID:   seatID,
+		StaffID:        seat.StaffID,
+		PeriodMonth:    period,
+		AmountKES:      int64(seat.MonthlyRateKES),
+		LedgerRef:      ref,
+	}
+	if err := s.repo.CreateSeatRentCharge(ctx, row); err != nil {
+		return nil, err
+	}
+	if s.audit != nil {
+		meta, _ := json.Marshal(map[string]any{
+			"seat_rental_id": seatID, "amount_kes": seat.MonthlyRateKES, "period_month": period.Format("2006-01"),
+		})
+		_ = s.audit.RecordOrgAudit(ctx, orgID, actorID, "rent.post", "seat_rent_charge", &row.ID, meta)
+	}
+	return row, nil
+}
+
 type GalleryItemDTO struct {
 	StaffID     *uuid.UUID `json:"staff_id"`
 	Title       string     `json:"title"`
@@ -395,6 +466,30 @@ func (s *Service) DeleteGalleryItem(ctx context.Context, orgID, id uuid.UUID) er
 		return err
 	}
 	return s.repo.DeleteGalleryItem(ctx, orgID, id)
+}
+
+const maxGalleryImageBytes = 10 << 20
+
+func (s *Service) UploadGalleryImage(ctx context.Context, orgID, id uuid.UUID, filename string, data []byte, contentType string) (*GalleryItem, error) {
+	if s.storage == nil {
+		return nil, httpx.ErrConflict
+	}
+	row, err := s.GetGalleryItem(ctx, orgID, id)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 || len(data) > maxGalleryImageBytes {
+		return nil, httpx.ErrConflict
+	}
+	url, err := s.storage.UploadObject(ctx, fmt.Sprintf("gallery/%s", orgID), filename, data, contentType)
+	if err != nil {
+		return nil, err
+	}
+	row.ImageURL = url
+	if err := s.repo.UpdateGalleryItem(ctx, orgID, row); err != nil {
+		return nil, err
+	}
+	return row, nil
 }
 
 type ConsentFormDTO struct {

@@ -19,7 +19,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "multi_branch"
     },
     {
       "icon": "BarChart3",
@@ -81,7 +82,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "BarChart3",
@@ -91,7 +93,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "HeadphonesIcon",
@@ -101,7 +104,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "LayoutDashboard",
@@ -155,7 +159,8 @@
       "section": "Salon Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "Calendar",
@@ -191,7 +196,8 @@
       "section": "Reception",
       "roles": [
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "ShoppingCart",
@@ -202,15 +208,6 @@
         "receptionist"
       ],
       "requiredFeature": "pos_payments"
-    },
-    {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Reception",
-      "roles": [
-        "receptionist"
-      ]
     },
     {
       "icon": "LayoutDashboard",
@@ -250,7 +247,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "DollarSign",
@@ -260,7 +258,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Users",
@@ -324,16 +323,6 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Sales",
-      "roles": [
-        "ceo",
-        "director"
-      ]
-    },
-    {
       "icon": "DollarSign",
       "label": "Reconciliation",
       "path": "/reconciliation",
@@ -386,7 +375,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "loyalty"
     },
     {
       "icon": "Repeat",
@@ -397,7 +387,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Gift",
@@ -408,7 +399,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Tag",
@@ -443,7 +435,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "MessageSquare",
@@ -477,7 +470,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Coins",
@@ -489,7 +483,8 @@
         "director",
         "branch_manager",
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "tips_management"
     },
     {
       "icon": "ShoppingBag",
@@ -500,7 +495,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "inventory_tracking"
     },
     {
       "icon": "FileCheck",
@@ -511,7 +507,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "clinical"
     },
     {
       "icon": "TrendingUp",
@@ -521,18 +518,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
-    },
-    {
-      "icon": "Radio",
-      "label": "Field Operations",
-      "path": "/field-operations",
-      "section": "Operations",
-      "roles": [
-        "ceo",
-        "director",
-        "branch_manager"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "MessagesSquare",
@@ -560,7 +547,7 @@
         "ceo",
         "director"
       ],
-      "requiredFeature": "multi_branch"
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Bell",
@@ -579,6 +566,179 @@
       "label": "Support",
       "path": "/support",
       "section": "System"
+    },
+    {
+      "icon": "Wallet",
+      "label": "Booking Deposits",
+      "path": "/booking-deposits",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "booking_deposits"
+    },
+    {
+      "icon": "CalendarX",
+      "label": "Stylist Time Off",
+      "path": "/time-off",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_time_off"
+    },
+    {
+      "icon": "Rocket",
+      "label": "Onboarding Checklist",
+      "path": "/onboarding-checklist",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_onboarding"
+    },
+    {
+      "icon": "ArrowLeftRight",
+      "label": "Shift Swap",
+      "path": "/shift-swap",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_shift_swap"
+    },
+    {
+      "icon": "Merge",
+      "label": "Merge Clients",
+      "path": "/clients/merge",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "crm"
+    },
+    {
+      "icon": "Tag",
+      "label": "Client Tags",
+      "path": "/client-tags",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "crm"
+    },
+    {
+      "icon": "Camera",
+      "label": "Client Photos",
+      "path": "/client-photos",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "crm"
+    },
+    {
+      "icon": "Phone",
+      "label": "Walk-in Queue",
+      "path": "/queue",
+      "section": "Salon Floor",
+      "roles": [
+        "branch_manager"
+      ],
+      "requiredFeature": "queue"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Queue Manager",
+      "path": "/queue",
+      "section": "Reception",
+      "roles": [
+        "receptionist"
+      ],
+      "requiredFeature": "queue"
+    },
+    {
+      "icon": "Receipt",
+      "label": "Open Tabs",
+      "path": "/pos/tabs",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Stock Take",
+      "path": "/inventory/stock-take",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Truck",
+      "label": "Purchase Orders",
+      "path": "/inventory/purchase-orders",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Camera",
+      "label": "Before & After Gallery",
+      "path": "/gallery",
+      "section": "My Station",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ]
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Patch Tests",
+      "path": "/client-patch-tests",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "clinical"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Consultation Notes",
+      "path": "/client-consultations",
+      "section": "Services",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "senior_barber"
+      ],
+      "requiredFeature": "consultation_history"
     }
   ]
 }

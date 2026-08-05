@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Mail, Megaphone, MessageCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntityCreate, useEntityDelete, useEntityList, useEntityUpdate } from "@/lib/api/crud";
+import { api } from "@/lib/api-client";
 import { marketingCampaignsConfig } from "@/lib/crud-configs";
 import { pickRowField } from "@/lib/record-fields";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function MarketingPage() {
   const { activeOrg } = useAuth();
   const orgId = activeOrg?.id;
+  const qc = useQueryClient();
   const { data: campaigns = [], isLoading, error } = useEntityList<CampaignRow>(orgId, "marketing-campaigns");
   const createMut = useEntityCreate(orgId, "marketing-campaigns");
   const updateMut = useEntityUpdate(orgId, "marketing-campaigns");
@@ -71,7 +74,9 @@ export default function MarketingPage() {
   }
 
   async function save() {
-    const body = { ...values };
+    const body = marketingCampaignsConfig.mapFormToBody
+      ? marketingCampaignsConfig.mapFormToBody(values)
+      : { ...values };
     try {
       if (editing) {
         await updateMut.mutateAsync({ id: rowId(editing), body });
@@ -161,7 +166,40 @@ export default function MarketingPage() {
         </CardHeader>
         <CardContent>
           <DataTable
-            columns={marketingCampaignsConfig.columns}
+            columns={[
+              ...marketingCampaignsConfig.columns,
+              {
+                key: "send",
+                header: "Send",
+                render: (row) => {
+                  const status = String(pickRowField(row, "status") ?? "draft");
+                  const channel = String(pickRowField(row, "channel") ?? "");
+                  if (status === "sent" || !["sms", "whatsapp"].includes(channel)) return "—";
+                  return (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      data-testid={`campaign-send-${rowId(row)}`}
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          const res = await api.post<{ sent: number; delivery_mode: string }>(
+                            `/organizations/${orgId}/marketing-campaigns/${rowId(row)}/send`,
+                            {},
+                          );
+                          toast.success(`Sent ${res.sent} (${res.delivery_mode})`);
+                          await qc.invalidateQueries({ queryKey: ["org", orgId, "marketing-campaigns"] });
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Send failed");
+                        }
+                      }}
+                    >
+                      Send
+                    </Button>
+                  );
+                },
+              },
+            ]}
             rows={campaigns}
             emptyMessage="No campaigns yet."
             rowKey={(row) => rowId(row)}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/hibiken/asynq"
 
+	"github.com/haus-of-wellness/api/internal/platform/config"
 	"github.com/haus-of-wellness/api/internal/platform/database"
 	"github.com/haus-of-wellness/api/internal/platform/logging"
 	notificationsmod "github.com/haus-of-wellness/api/internal/modules/notifications"
@@ -15,9 +16,13 @@ import (
 
 func main() {
 	logger := logging.NewLogger()
-	redisAddr := envOr("REDIS_ADDR", "localhost:6379")
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("config: %v", err)
+	}
+	redisAddr := envOr("REDIS_ADDR", redisAddrFromURL(cfg.RedisURL))
 
-	dbURL := envOr("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/haus?sslmode=disable")
+	dbURL := envOr("DATABASE_URL", cfg.DatabaseURL)
 	db, err := database.Connect(dbURL, true)
 	if err != nil {
 		logger.Warn("database connect failed; notification persistence disabled", "error", err)
@@ -25,12 +30,9 @@ func main() {
 
 	var notificationsSvc *notificationsmod.Service
 	if db != nil {
-		notifier := &notificationsmod.MultiNotifier{
-			SMS:      notificationsmod.NewAfricasTalkingSMS(logger),
-			WhatsApp: notificationsmod.NewMetaWhatsApp(logger),
-		}
+		notifier := notificationsmod.NewConfiguredNotifier(cfg, logger)
 		repo := notificationsmod.NewRepository(db)
-		notificationsSvc = notificationsmod.NewService(repo, notifier)
+		notificationsSvc = notificationsmod.NewService(repo, notifier, cfg.PublicWebURL, nil)
 	}
 
 	srv := asynq.NewServer(
@@ -52,8 +54,10 @@ func main() {
 	})
 	if notificationsSvc != nil {
 		mux.Handle(notificationsmod.TypeSendBookingReminder, notificationsmod.HandleSendBookingReminder(notificationsSvc))
+		mux.Handle(notificationsmod.TypeSendReviewRequest, notificationsmod.HandleSendReviewRequest(notificationsSvc))
 	} else {
 		mux.Handle(notificationsmod.TypeSendBookingReminder, stubReminderHandler(logger))
+		mux.Handle(notificationsmod.TypeSendReviewRequest, stubReminderHandler(logger))
 	}
 
 	logger.Info("starting asynq worker", "redis", redisAddr)
@@ -64,7 +68,7 @@ func main() {
 
 func stubReminderHandler(logger *slog.Logger) asynq.HandlerFunc {
 	return func(ctx context.Context, t *asynq.Task) error {
-		logger.WarnContext(ctx, "notifications service unavailable; dropping reminder task", "type", notificationsmod.TypeSendBookingReminder)
+		logger.WarnContext(ctx, "notifications service unavailable; dropping task", "type", t.Type())
 		return nil
 	}
 }
@@ -74,4 +78,12 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func redisAddrFromURL(redisURL string) string {
+	if redisURL == "" {
+		return "localhost:6379"
+	}
+	// fallback for worker when REDIS_ADDR not set
+	return "localhost:6379"
 }

@@ -2,6 +2,8 @@ package pos
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,7 +27,7 @@ func (s *Service) ListTips(ctx context.Context, orgID uuid.UUID, branchID *uuid.
 	return s.repo.ListTips(ctx, orgID, branchID)
 }
 
-func (s *Service) CreateTip(ctx context.Context, orgID uuid.UUID, dto TipDTO) (*Tip, error) {
+func (s *Service) CreateTip(ctx context.Context, orgID uuid.UUID, actorID *uuid.UUID, dto TipDTO) (*Tip, error) {
 	date := time.Now()
 	if dto.TipDate != "" {
 		if d, err := time.Parse("2006-01-02", dto.TipDate); err == nil {
@@ -50,6 +52,18 @@ func (s *Service) CreateTip(ctx context.Context, orgID uuid.UUID, dto TipDTO) (*
 	}
 	if err := s.repo.CreateTip(ctx, row); err != nil {
 		return nil, err
+	}
+	if s.ledger != nil && row.AmountKES > 0 && (status == "collected" || status == "completed") {
+		ref := fmt.Sprintf("tip:%s", row.ID.String())
+		if err := s.ledger.RecordTip(ctx, orgID, int64(row.AmountKES), ref, &row.ID); err != nil {
+			return nil, err
+		}
+	}
+	if s.audit != nil {
+		meta, _ := json.Marshal(map[string]any{
+			"staff_id": row.StaffID, "amount_kes": row.AmountKES, "transaction_id": row.TransactionID,
+		})
+		_ = s.audit.RecordOrgAudit(ctx, orgID, actorID, "tip.create", "tip", &row.ID, meta)
 	}
 	return row, nil
 }

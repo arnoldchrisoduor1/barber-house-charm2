@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Calendar, CheckCircle2, Clock, MapPin, Scissors, User } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, MapPin, Scissors, User, AlertTriangle, Armchair } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,17 +23,25 @@ import {
 } from "@/lib/api/booking";
 import { useAuth } from "@/hooks/useAuth";
 import { readPortalCustomerPhone, usePortalCustomerStore } from "@/lib/store/portal-customer-store";
+import { fetchPatchTests } from "@/lib/api/beauty-crm";
+import { fetchResources } from "@/lib/api/spa";
+import { useFeature } from "@/hooks/useFeature";
 
-const STEPS = ["branch", "services", "datetime", "staff", "confirm"] as const;
-type Step = (typeof STEPS)[number];
+const BASE_STEPS = ["branch", "services", "datetime", "staff", "resource", "confirm"] as const;
+type Step = (typeof BASE_STEPS)[number];
 
 interface BookingWizardProps {
   mode: "public" | "portal" | "staff";
   orgSlug?: string;
   orgId?: string;
   title?: string;
+  bookingVerb?: string;
+  staffSingular?: string;
   customerName?: string;
   customerPhone?: string;
+  customerId?: string;
+  customerHasAllergies?: boolean;
+  customerAllergyNotes?: string;
   onStaffBooked?: () => void;
 }
 
@@ -41,9 +49,14 @@ export function BookingWizard({
   mode,
   orgSlug,
   orgId,
-  title = "Book an appointment",
+  title,
+  bookingVerb = "Book an appointment",
+  staffSingular = "professional",
   customerName: presetCustomerName,
   customerPhone: presetCustomerPhone,
+  customerId,
+  customerHasAllergies = false,
+  customerAllergyNotes = "",
   onStaffBooked,
 }: BookingWizardProps) {
   const { me } = useAuth();
@@ -56,6 +69,7 @@ export function BookingWizard({
   const [bookingDate, setBookingDate] = useState("");
   const [startTime, setStartTime] = useState("09:00");
   const [staffId, setStaffId] = useState("");
+  const [resourceId, setResourceId] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
@@ -105,12 +119,18 @@ export function BookingWizard({
     return catalog.staff.filter((s) => !s.branchId || s.branchId === branchId);
   }, [catalog.staff, branchId]);
 
+  const resourceBooking = useFeature("resource_booking") && mode !== "public";
+
   const steps = useMemo(() => {
+    let list: Step[] = [...BASE_STEPS];
     if (catalog.branches.length <= 1) {
-      return STEPS.filter((s) => s !== "branch");
+      list = list.filter((s) => s !== "branch");
     }
-    return [...STEPS];
-  }, [catalog.branches.length]);
+    if (!resourceBooking) {
+      list = list.filter((s) => s !== "resource");
+    }
+    return list;
+  }, [catalog.branches.length, resourceBooking]);
 
   const currentStep = steps[stepIndex] as Step;
   const staffStepIndex = steps.indexOf("staff");
@@ -134,6 +154,51 @@ export function BookingWizard({
   });
 
   const availableStaff = staffPool.filter((s) => availabilityQuery.data?.[s.id] !== false);
+
+  const sortedStaff = useMemo(() => {
+    const categories = selectedServices.map((s) => s.category.toLowerCase()).filter(Boolean);
+    if (categories.length === 0) return availableStaff;
+    return [...availableStaff].sort((a, b) => {
+      const score = (member: (typeof availableStaff)[number]) => {
+        const specs = (member.specialties ?? []).map((x) => x.toLowerCase());
+        return categories.some((c) => specs.includes(c)) ? 1 : 0;
+      };
+      return score(b) - score(a);
+    });
+  }, [availableStaff, selectedServices]);
+
+  const needsPatchTest = selectedServices.some((s) => s.requiresPatchTest);
+  const patchTestsQuery = useQuery({
+    queryKey: ["patch-tests-booking", orgId, customerId],
+    queryFn: () => fetchPatchTests(orgId!, customerId!),
+    enabled: !!orgId && !!customerId && needsPatchTest,
+  });
+  const hasValidPatchTest = useMemo(() => {
+    const rows = patchTestsQuery.data ?? [];
+    const now = Date.now();
+    return rows.some((t) => {
+      if (t.result !== "pass") return false;
+      if (!t.expires_at) return true;
+      return new Date(t.expires_at).getTime() >= now;
+    });
+  }, [patchTestsQuery.data]);
+  const patchTestWarning = needsPatchTest && customerId && !patchTestsQuery.isLoading && !hasValidPatchTest;
+
+  const needsCouplesCapacity = selectedServices.some((s) => s.category.toLowerCase() === "couples_package");
+  const minResourceCapacity = needsCouplesCapacity ? 2 : 1;
+
+  const resourceStepIndex = steps.indexOf("resource");
+  const resourcesQuery = useQuery({
+    queryKey: ["booking-resources", orgId, branchId],
+    queryFn: () => fetchResources(orgId!, branchId || undefined),
+    enabled: !!orgId && resourceBooking && resourceStepIndex >= 0 && stepIndex >= resourceStepIndex,
+  });
+
+  const availableResources = (resourcesQuery.data ?? []).filter(
+    (r) => r.status === "available" && r.capacity >= minResourceCapacity,
+  );
+
+  const displayTitle = title ?? bookingVerb;
 
   const submitMutation = useMutation({
     mutationFn: async (payload: PortalBookingPayload) => {
@@ -174,6 +239,8 @@ export function BookingWizard({
         return !!bookingDate && !!startTime;
       case "staff":
         return !!staffId && availabilityQuery.data?.[staffId] !== false;
+      case "resource":
+        return !!resourceId;
       case "confirm":
         return mode === "staff" ? !!staffId : !!fullName && !!phone;
       default:
@@ -201,6 +268,7 @@ export function BookingWizard({
     const payload: PortalBookingPayload = {
       branchId: branchId || catalog.branches[0]?.id,
       staffId,
+      resourceId: resourceId || undefined,
       serviceIds,
       bookingDate,
       startTime,
@@ -228,9 +296,9 @@ export function BookingWizard({
   return (
     <div className="mx-auto max-w-2xl space-y-6" data-testid="booking-wizard" data-prefill-name={fullName} data-prefill-phone={phone}>
       <div>
-        <h1 className="font-heading text-2xl font-semibold">{title}</h1>
+        <h1 className="font-heading text-2xl font-semibold">{displayTitle}</h1>
         <p className="text-sm text-muted-foreground">
-          Step {stepIndex + 1} of {steps.length}: {stepLabel(currentStep)}
+          Step {stepIndex + 1} of {steps.length}: {stepLabel(currentStep, staffSingular)}
         </p>
       </div>
 
@@ -250,9 +318,9 @@ export function BookingWizard({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             {stepIcon(currentStep)}
-            {stepLabel(currentStep)}
+            {stepLabel(currentStep, staffSingular)}
           </CardTitle>
-          <CardDescription>{stepDescription(currentStep)}</CardDescription>
+          <CardDescription>{stepDescription(currentStep, staffSingular)}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {currentStep === "branch" ? (
@@ -355,7 +423,12 @@ export function BookingWizard({
                   No professionals are available at this time. Try another slot.
                 </p>
               ) : (
-                availableStaff.map((member) => (
+                sortedStaff.map((member) => {
+                  const categories = selectedServices.map((s) => s.category.toLowerCase());
+                  const matched = (member.specialties ?? []).some((sp) =>
+                    categories.includes(sp.toLowerCase()),
+                  );
+                  return (
                   <button
                     key={member.id}
                     type="button"
@@ -370,9 +443,52 @@ export function BookingWizard({
                   >
                     <User className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{member.displayName}</p>
+                      <p className="font-medium">
+                        {member.displayName}
+                        {matched ? (
+                          <span className="ml-2 text-[10px] uppercase tracking-wide text-primary" data-testid="staff-specialty-match">
+                            Specialty match
+                          </span>
+                        ) : null}
+                      </p>
                       <p className="text-xs text-muted-foreground">{member.title ?? member.role}</p>
                       {member.bio ? <p className="mt-1 text-xs text-muted-foreground">{member.bio}</p> : null}
+                    </div>
+                  </button>
+                  );
+                })
+              )}
+            </div>
+          ) : null}
+
+          {currentStep === "resource" ? (
+            <div className="space-y-3">
+              {resourcesQuery.isLoading ? (
+                <p className="text-sm text-muted-foreground">Loading treatment rooms…</p>
+              ) : availableResources.length === 0 ? (
+                <p className="text-sm text-destructive">
+                  No available rooms meet capacity ({minResourceCapacity}+). Try another time or room.
+                </p>
+              ) : (
+                availableResources.map((room) => (
+                  <button
+                    key={room.id}
+                    type="button"
+                    data-testid={`booking-resource-${room.id}`}
+                    onClick={() => setResourceId(room.id)}
+                    className={cn(
+                      "flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors",
+                      resourceId === room.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40",
+                    )}
+                  >
+                    <Armchair className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{room.name}</p>
+                      <p className="text-xs text-muted-foreground capitalize">
+                        {room.resource_type.replace(/_/g, " ")} · capacity {room.capacity}
+                      </p>
                     </div>
                   </button>
                 ))
@@ -382,6 +498,27 @@ export function BookingWizard({
 
           {currentStep === "confirm" ? (
             <div className="space-y-4">
+              {customerHasAllergies ? (
+                <div
+                  className="flex gap-2 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200"
+                  data-testid="booking-allergy-warning"
+                >
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <div>
+                    <p className="font-medium">Allergy alert</p>
+                    <p className="text-red-200/90">{customerAllergyNotes || "Client has known allergies on file."}</p>
+                  </div>
+                </div>
+              ) : null}
+              {patchTestWarning ? (
+                <div
+                  className="flex gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200"
+                  data-testid="booking-patch-test-warning"
+                >
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <p>No valid patch test on file for selected chemical service. Proceed only after patch test recorded.</p>
+                </div>
+              ) : null}
               <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-2">
                 <p>
                   <span className="text-muted-foreground">Services:</span>{" "}
@@ -394,6 +531,13 @@ export function BookingWizard({
                   <span className="text-muted-foreground">Professional:</span>{" "}
                   {catalog.staff.find((s) => s.id === staffId)?.displayName}
                 </p>
+                {resourceId ? (
+                  <p>
+                    <span className="text-muted-foreground">Room:</span>{" "}
+                    {availableResources.find((r) => r.id === resourceId)?.name ??
+                      resourcesQuery.data?.find((r) => r.id === resourceId)?.name}
+                  </p>
+                ) : null}
                 <p className="font-semibold text-primary">Total: {formatKes(totalPrice)}</p>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -475,7 +619,7 @@ export function BookingWizard({
   );
 }
 
-function stepLabel(step: Step): string {
+function stepLabel(step: Step, staffSingular: string): string {
   switch (step) {
     case "branch":
       return "Choose branch";
@@ -484,13 +628,16 @@ function stepLabel(step: Step): string {
     case "datetime":
       return "Pick date & time";
     case "staff":
-      return "Choose your professional";
+      return `Choose your ${staffSingular.toLowerCase()}`;
+    case "resource":
+      return "Choose treatment room";
     case "confirm":
       return "Confirm details";
   }
+  return step;
 }
 
-function stepDescription(step: Step): string {
+function stepDescription(step: Step, staffSingular: string): string {
   switch (step) {
     case "branch":
       return "Where would you like to be seen?";
@@ -499,10 +646,13 @@ function stepDescription(step: Step): string {
     case "datetime":
       return "When works best for you?";
     case "staff":
-      return "Available professionals based on your date and services.";
+      return `Available ${staffSingular.toLowerCase()}s based on your date and services.`;
+    case "resource":
+      return "Select an available room or facility for your session.";
     case "confirm":
       return "Review pricing and enter your contact details.";
   }
+  return "";
 }
 
 function stepIcon(step: Step) {
@@ -515,7 +665,10 @@ function stepIcon(step: Step) {
       return <Calendar className="h-5 w-5" />;
     case "staff":
       return <User className="h-5 w-5" />;
+    case "resource":
+      return <Armchair className="h-5 w-5" />;
     case "confirm":
       return <Clock className="h-5 w-5" />;
   }
+  return <Clock className="h-5 w-5" />;
 }

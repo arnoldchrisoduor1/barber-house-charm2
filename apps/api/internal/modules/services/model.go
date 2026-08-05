@@ -15,7 +15,10 @@ type Service struct {
 	Category        string
 	PriceKES        int        `gorm:"not null;default:0"`
 	DurationMinutes int        `gorm:"not null;default:30"`
-	Description     string
+	PrepMinutes     int        `gorm:"not null;default:0"`
+	BufferMinutes      int        `gorm:"not null;default:0"`
+	RequiresPatchTest  bool       `gorm:"not null;default:false"`
+	Description        string
 	ImageURL        string
 	IsActive        bool       `gorm:"not null;default:true"`
 }

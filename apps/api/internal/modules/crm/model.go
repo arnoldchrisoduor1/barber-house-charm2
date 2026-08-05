@@ -19,11 +19,14 @@ type Customer struct {
 	Email             string
 	Notes             string
 	StylePreferences  string
+	AllergyNotes      string     `json:"allergy_notes"`
+	HasAllergies      bool       `gorm:"not null;default:false" json:"has_allergies"`
 	LoyaltyTier       string     `gorm:"type:loyalty_tier;not null;default:bronze"`
 	TotalVisits       int        `gorm:"not null;default:0"`
 	TotalSpent        int        `gorm:"not null;default:0"`
 	LoyaltyPoints     int        `gorm:"not null;default:0"`
 	LastVisitAt       *time.Time
+	MergedIntoID      *uuid.UUID `gorm:"type:uuid;index"`
 }
 
 func (Customer) TableName() string { return "customers" }

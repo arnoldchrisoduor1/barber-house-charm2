@@ -53,13 +53,20 @@ func (c *Client) SubmitOrderRequest(ctx context.Context, req SubmitOrderRequest)
 	}, nil
 }
 
+// GetTransactionStatus is a stub: no live Pesapal credentials are wired, so it never
+// fabricates a completed payment. Real IPNs can't be verified without a live provider
+// behind this client, and the platform must not show payment success it hasn't earned
+// (see docs/haus-of-barber-audit.md "biggest lie-to-user risks"). Swap this method's body
+// for a real Pesapal GetTransactionStatus call when credentials are available; the Service
+// contract (server-computed amount, idempotent IPN) does not need to change.
 func (c *Client) GetTransactionStatus(ctx context.Context, orderTrackingID string) (*TransactionStatusResponse, error) {
-	c.logger.InfoContext(ctx, "pesapal_get_status_stub", "order_tracking_id", orderTrackingID)
+	c.logger.InfoContext(ctx, "pesapal_get_status_stub_no_provider",
+		"order_tracking_id", orderTrackingID,
+		"note", "stub provider not connected to live Pesapal; payment never auto-completes",
+	)
 	return &TransactionStatusResponse{
-		PaymentStatus:          "COMPLETED",
-		PaymentMethod:          "mpesa",
+		PaymentStatus:          "PENDING",
 		OrderTrackingID:        orderTrackingID,
 		OrderMerchantReference: orderTrackingID,
-		Amount:                 1000,
 	}, nil
 }

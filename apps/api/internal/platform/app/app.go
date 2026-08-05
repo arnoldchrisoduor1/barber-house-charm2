@@ -19,6 +19,7 @@ import (
 	"github.com/haus-of-wellness/api/internal/platform/idempotency"
 	"github.com/haus-of-wellness/api/internal/platform/logging"
 	platformrealtime "github.com/haus-of-wellness/api/internal/platform/realtime"
+	"github.com/haus-of-wellness/api/internal/platform/storage"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
 	authmod "github.com/haus-of-wellness/api/internal/modules/auth"
 	analyticsmod "github.com/haus-of-wellness/api/internal/modules/analytics"
@@ -36,12 +37,15 @@ import (
 	payoutmod "github.com/haus-of-wellness/api/internal/modules/payouts"
 	payrollmod "github.com/haus-of-wellness/api/internal/modules/payroll"
 	posmod "github.com/haus-of-wellness/api/internal/modules/pos"
+	reconciliationmod "github.com/haus-of-wellness/api/internal/modules/reconciliation"
+	resourcesmod "github.com/haus-of-wellness/api/internal/modules/resources"
 	retailmod "github.com/haus-of-wellness/api/internal/modules/retail"
 	servicesmod "github.com/haus-of-wellness/api/internal/modules/services"
 	settingsmod "github.com/haus-of-wellness/api/internal/modules/settings"
 	staffmod "github.com/haus-of-wellness/api/internal/modules/staff"
 	suppliersmod "github.com/haus-of-wellness/api/internal/modules/suppliers"
 	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
+	therapymod "github.com/haus-of-wellness/api/internal/modules/therapy"
 )
 
 type Dependencies struct {
@@ -92,24 +96,56 @@ func New(deps Dependencies) (*fiber.App, error) {
 	crmRepo := crmmod.NewRepository(deps.DB)
 
 	bookingRepo := bookingmod.NewRepository(deps.DB)
-	bookingSvc := bookingmod.NewService(bookingRepo, realtimeHub, crmRepo)
+	bookingSvc := bookingmod.NewService(bookingRepo, realtimeHub, crmRepo, platformSvc)
 	bookingHandler := bookingmod.NewHandler(bookingSvc)
 	publicBookingHandler := bookingmod.NewPublicHandler(bookingSvc, tenancySvc)
 
+	storageCfg := storage.Config{
+		Endpoint:  deps.Config.S3Endpoint,
+		AccessKey: deps.Config.S3AccessKey,
+		SecretKey: deps.Config.S3SecretKey,
+		Bucket:    deps.Config.S3Bucket,
+		UseSSL:    deps.Config.S3UseSSL,
+		PublicURL: deps.Config.S3PublicURL,
+	}
+	var storageClient *storage.Client
+	if storageCfg.Enabled() {
+		sc, err := storage.New(storageCfg)
+		if err != nil {
+			deps.Logger.Warn("object storage client init failed", "error", err)
+		} else {
+			storageClient = sc
+		}
+	}
+
 	ledgerRepo := ledgermod.NewRepository(deps.DB)
-	ledgerSvc := ledgermod.NewService(ledgerRepo)
+	ledgerSvc := ledgermod.NewService(ledgerRepo, platformSvc, storageClient)
 	ledgerHandler := ledgermod.NewHandler(ledgerSvc)
 
+	payrollRepo := payrollmod.NewRepository(deps.DB)
+	payrollSvc := payrollmod.NewService(payrollRepo, platformSvc)
+	payrollHandler := payrollmod.NewHandler(payrollSvc)
+
+	notifier := notificationsmod.NewConfiguredNotifier(deps.Config, deps.Logger)
+	notificationsRepo := notificationsmod.NewRepository(deps.DB)
+	asynqClient := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr(deps.Config.RedisURL)})
+	notificationsSvc := notificationsmod.NewService(notificationsRepo, notifier, deps.Config.PublicWebURL, asynqClient)
+	notificationsHandler := notificationsmod.NewHandler(notificationsSvc, asynqClient)
+
 	posRepo := posmod.NewRepository(deps.DB)
-	posSvc := posmod.NewService(posRepo, ledgerSvc, realtimeHub)
+	posSvc := posmod.NewService(posRepo, ledgerSvc, realtimeHub, platformSvc, payrollSvc, notificationsSvc)
 	posHandler := posmod.NewHandler(posSvc)
 
 	openfloatClient := openfloatmod.NewClient(deps.Logger)
 	payoutRepo := payoutmod.NewRepository(deps.DB)
-	payoutSvc := payoutmod.NewService(payoutRepo, openfloatClient, idemStore, ledgerSvc)
+	payoutSvc := payoutmod.NewService(payoutRepo, openfloatClient, idemStore, ledgerSvc, platformSvc)
 	payoutHandler := payoutmod.NewHandler(payoutSvc)
 
-	crmSvc := crmmod.NewService(crmRepo)
+	reconciliationRepo := reconciliationmod.NewRepository(deps.DB)
+	reconciliationSvc := reconciliationmod.NewService(reconciliationRepo, platformSvc)
+	reconciliationHandler := reconciliationmod.NewHandler(reconciliationSvc)
+
+	crmSvc := crmmod.NewService(crmRepo, platformSvc)
 	crmHandler := crmmod.NewHandler(crmSvc)
 
 	inventoryRepo := inventorymod.NewRepository(deps.DB)
@@ -117,14 +153,10 @@ func New(deps Dependencies) (*fiber.App, error) {
 	inventoryHandler := inventorymod.NewHandler(inventorySvc)
 
 	staffRepo := staffmod.NewRepository(deps.DB)
-	staffSvc := staffmod.NewService(staffRepo)
+	staffSvc := staffmod.NewService(staffRepo, platformSvc)
 	staffHandler := staffmod.NewHandler(staffSvc)
 	staffQR := staffmod.NewQRService(staffRepo, platformSvc, deps.Config.JWTAccessSecret)
 	staffQRHandler := staffmod.NewQRHandler(staffQR)
-
-	payrollRepo := payrollmod.NewRepository(deps.DB)
-	payrollSvc := payrollmod.NewService(payrollRepo)
-	payrollHandler := payrollmod.NewHandler(payrollSvc)
 
 	servicesRepo := servicesmod.NewRepository(deps.DB)
 	servicesSvc := servicesmod.NewService(servicesRepo)
@@ -143,31 +175,32 @@ func New(deps Dependencies) (*fiber.App, error) {
 	consumptionHandler := consumptionmod.NewHandler(consumptionSvc)
 
 	marketingRepo := marketingmod.NewRepository(deps.DB)
-	marketingSvc := marketingmod.NewService(marketingRepo)
+	marketingSvc := marketingmod.NewService(marketingRepo, notificationsSvc)
 	marketingHandler := marketingmod.NewHandler(marketingSvc)
 
 	analyticsRepo := analyticsmod.NewRepository(deps.DB)
 	analyticsSvc := analyticsmod.NewService(analyticsRepo)
 	analyticsHandler := analyticsmod.NewHandler(analyticsSvc)
 
+	resourcesRepo := resourcesmod.NewRepository(deps.DB)
+	resourcesSvc := resourcesmod.NewService(resourcesRepo)
+	resourcesHandler := resourcesmod.NewHandler(resourcesSvc)
+
+	therapyRepo := therapymod.NewRepository(deps.DB)
+	therapySvc := therapymod.NewService(therapyRepo)
+	therapyHandler := therapymod.NewHandler(therapySvc)
+
 	settingsRepo := settingsmod.NewRepository(deps.DB)
-	settingsSvc := settingsmod.NewService(settingsRepo, realtimeHub)
+	settingsSvc := settingsmod.NewService(settingsRepo, realtimeHub, ledgerSvc, platformSvc, storageClient)
+	settingsSvc.SetEnquiryIntegrations(enquiryCRMBridge{repo: crmRepo}, enquiryBookingBridge{svc: bookingSvc})
 	settingsHandler := settingsmod.NewHandler(settingsSvc)
 
 	platformHandler := platformmod.NewHandler(platformSvc)
 	platformFeaturesHandler := platformmod.NewFeaturesHandler(featureSvc)
 
-	notifier := &notificationsmod.MultiNotifier{
-		SMS:      notificationsmod.NewAfricasTalkingSMS(deps.Logger),
-		WhatsApp: notificationsmod.NewMetaWhatsApp(deps.Logger),
-	}
-	notificationsRepo := notificationsmod.NewRepository(deps.DB)
-	notificationsSvc := notificationsmod.NewService(notificationsRepo, notifier)
-	asynqClient := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr(deps.Config.RedisURL)})
-	notificationsHandler := notificationsmod.NewHandler(notificationsSvc, asynqClient)
-
 	pesapalClient := pesapalmod.NewClient(deps.Logger)
-	pesapalSvc := pesapalmod.NewService(pesapalClient, idemStore, ledgerSvc, realtimeHub, deps.Logger)
+	pesapalRepo := pesapalmod.NewRepository(deps.DB)
+	pesapalSvc := pesapalmod.NewService(pesapalClient, pesapalRepo, idemStore, ledgerSvc, platformSvc, realtimeHub, deps.Logger)
 	pesapalHandler := pesapalmod.NewHandler(pesapalSvc)
 
 	app := fiber.New(fiber.Config{
@@ -213,7 +246,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	v1 := app.Group("/api/v1")
 	authmod.RegisterRoutes(v1, jwtSvc, authHandler)
 	platformmod.RegisterRoutes(v1, jwtSvc, platformSvc, platformHandler, platformFeaturesHandler)
-	pesapalmod.RegisterRoutes(v1, pesapalHandler)
+	pesapalmod.RegisterPublicRoutes(v1, pesapalHandler)
 	bookingmod.RegisterPublicRoutes(v1, publicBookingHandler)
 
 	org := v1.Group("/organizations/:org",
@@ -221,11 +254,13 @@ func New(deps Dependencies) (*fiber.App, error) {
 		platformtenancy.ResolveOrganization(tenancySvc),
 	)
 	platformrealtime.RegisterRoutes(v1, org, jwtSvc, realtimeHandler)
-	tenancymod.RegisterRoutes(v1, jwtSvc, tenancySvc, tenancyHandler)
+	tenancymod.RegisterRoutes(v1, jwtSvc, tenancySvc, featureSvc, tenancyHandler)
 	bookingmod.RegisterOrgRoutes(org, featureSvc, bookingHandler)
 	posmod.RegisterOrgRoutes(org, featureSvc, posHandler)
-	ledgermod.RegisterOrgRoutes(org, ledgerHandler)
-	payoutmod.RegisterOrgRoutes(org, payoutHandler)
+	pesapalmod.RegisterOrgRoutes(org, featureSvc, pesapalHandler)
+	ledgermod.RegisterOrgRoutes(org, featureSvc, ledgerHandler)
+	payoutmod.RegisterOrgRoutes(org, featureSvc, payoutHandler)
+	reconciliationmod.RegisterOrgRoutes(org, featureSvc, reconciliationHandler)
 	crmmod.RegisterOrgRoutes(org, featureSvc, crmHandler)
 	inventorymod.RegisterOrgRoutes(org, featureSvc, inventoryHandler)
 	servicesmod.RegisterOrgRoutes(org, featureSvc, servicesHandler)
@@ -234,8 +269,13 @@ func New(deps Dependencies) (*fiber.App, error) {
 	consumptionmod.RegisterOrgRoutes(org, featureSvc, consumptionHandler)
 	marketingmod.RegisterOrgRoutes(org, featureSvc, marketingHandler)
 	analyticsmod.RegisterOrgRoutes(org, featureSvc, analyticsHandler)
+	resourcesmod.RegisterOrgRoutes(org, featureSvc, resourcesHandler)
+	therapymod.RegisterOrgRoutes(org, featureSvc, therapyHandler)
 	settingsmod.RegisterOrgRoutes(org, featureSvc, settingsHandler)
 	staffmod.RegisterOrgRoutes(org, staffHandler)
+	staffmod.RegisterTimeOffRoutes(org, featureSvc, staffHandler)
+	staffmod.RegisterOnboardingRoutes(org, featureSvc, staffHandler)
+	staffmod.RegisterShiftSwapRoutes(org, featureSvc, staffHandler)
 	staffmod.RegisterQRRoutes(org, featureSvc, staffQRHandler)
 	authmod.RegisterOrgRoutes(org, authHandler)
 	payrollmod.RegisterOrgRoutes(org, featureSvc, payrollHandler)

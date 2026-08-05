@@ -14,6 +14,7 @@ type Booking struct {
 	OrganizationID uuid.UUID  `gorm:"type:uuid;not null;index:idx_bookings_org_date,priority:1"`
 	CustomerID     uuid.UUID  `gorm:"type:uuid;not null"`
 	StaffID        *uuid.UUID `gorm:"type:uuid"`
+	ResourceID     *uuid.UUID `gorm:"type:uuid"`
 	BranchID       *uuid.UUID `gorm:"type:uuid"`
 	BookingDate    time.Time  `gorm:"type:date;index:idx_bookings_org_date,priority:2"`
 	StartTime      string     `gorm:"type:time;not null"`

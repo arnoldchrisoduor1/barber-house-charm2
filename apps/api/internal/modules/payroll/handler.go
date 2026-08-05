@@ -4,10 +4,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
+	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
+	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/authz"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
-	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
 )
 
 type Handler struct {
@@ -78,6 +79,51 @@ func (h *Handler) CommissionSummary(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": rows})
 }
 
+func (h *Handler) ListCommissionLines(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	var staffID *uuid.UUID
+	if v := c.Query("staff_id"); v != "" {
+		id, err := uuid.Parse(v)
+		if err != nil {
+			return httpx.ValidationProblem(c, "invalid staff_id", nil)
+		}
+		staffID = &id
+	}
+	rows, err := h.svc.ListCommissionLines(c.UserContext(), orgID, staffID, c.Query("period", "month"))
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
+}
+
+type reverseCommissionLineBody struct {
+	Reason string `json:"reason"`
+}
+
+func (h *Handler) ReverseCommissionLine(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	var body reverseCommissionLineBody
+	if err := c.BodyParser(&body); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if body.Reason == "" {
+		return httpx.ValidationProblem(c, "reason is required", nil)
+	}
+	var userID *uuid.UUID
+	if u := platformauth.UserFrom(c); u != nil {
+		userID = &u.ID
+	}
+	row, err := h.svc.ReverseCommissionLine(c.UserContext(), orgID, id, body.Reason, userID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
 func (h *Handler) ListPayslips(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
 	rows, err := h.svc.ListPayslips(c.UserContext(), orgID)
@@ -113,6 +159,17 @@ func (h *Handler) GetPayslip(c *fiber.Ctx) error {
 	return c.JSON(row)
 }
 
+func (h *Handler) ExportPayslipsCSV(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	data, err := h.svc.ExportPayslipsCSV(c.UserContext(), orgID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", "attachment; filename=payslips.csv")
+	return c.Send(data)
+}
+
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	g := org.Group("/commissions", authz.RequireFeature(features, "staff_commissions_payroll"))
 	g.Get("/rules", h.ListRules)
@@ -120,9 +177,12 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g.Put("/rules/:id", h.UpdateRule)
 	g.Delete("/rules/:id", h.DeleteRule)
 	g.Get("/summary", h.CommissionSummary)
+	g.Get("/lines", h.ListCommissionLines)
+	g.Post("/lines/:id/reverse", h.ReverseCommissionLine)
 
 	p := org.Group("/payroll", authz.RequireFeature(features, "staff_commissions_payroll"))
 	p.Get("/payslips", h.ListPayslips)
 	p.Post("/payslips", h.CreatePayslip)
+	p.Get("/payslips/export.csv", h.ExportPayslipsCSV)
 	p.Get("/payslips/:id", h.GetPayslip)
 }

@@ -19,7 +19,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "multi_branch"
     },
     {
       "icon": "BarChart3",
@@ -40,6 +41,18 @@
         "ceo",
         "director"
       ]
+    },
+    {
+      "icon": "Wallet",
+      "label": "Booking Deposits",
+      "path": "/booking-deposits",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "booking_deposits"
     },
     {
       "icon": "Wallet",
@@ -64,6 +77,42 @@
       "requiredFeature": "staff_commissions_payroll"
     },
     {
+      "icon": "CalendarX",
+      "label": "Time Off",
+      "path": "/time-off",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_time_off"
+    },
+    {
+      "icon": "Rocket",
+      "label": "Onboarding",
+      "path": "/onboarding-checklist",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_onboarding"
+    },
+    {
+      "icon": "ArrowLeftRight",
+      "label": "Shift Swap",
+      "path": "/shift-swap",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_shift_swap"
+    },
+    {
       "icon": "History",
       "label": "Audit Log",
       "path": "/audit-log",
@@ -81,7 +130,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "BarChart3",
@@ -91,7 +141,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "HeadphonesIcon",
@@ -101,7 +152,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "LayoutDashboard",
@@ -164,7 +216,8 @@
       "section": "Branch",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "ShoppingCart",
@@ -192,7 +245,8 @@
       "section": "Branch",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "History",
@@ -246,7 +300,8 @@
       "section": "Reception",
       "roles": [
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "ShoppingCart",
@@ -259,13 +314,26 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Reception",
+      "icon": "CalendarX",
+      "label": "My Time Off",
+      "path": "/time-off",
+      "section": "My Chair",
       "roles": [
-        "receptionist"
-      ]
+        "senior_barber",
+        "junior_barber"
+      ],
+      "requiredFeature": "staff_time_off"
+    },
+    {
+      "icon": "ArrowLeftRight",
+      "label": "Shift Swap",
+      "path": "/shift-swap",
+      "section": "My Chair",
+      "roles": [
+        "senior_barber",
+        "junior_barber"
+      ],
+      "requiredFeature": "staff_shift_swap"
     },
     {
       "icon": "LayoutDashboard",
@@ -305,7 +373,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "Star",
@@ -315,7 +384,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "DollarSign",
@@ -325,7 +395,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Users",
@@ -390,23 +461,52 @@
     },
     {
       "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
+      "label": "Open Tabs",
+      "path": "/pos/tabs",
       "section": "Sales",
       "roles": [
         "ceo",
-        "director"
-      ]
+        "director",
+        "branch_manager",
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Megaphone",
-      "label": "Marketing",
-      "path": "/marketing",
-      "section": "Growth",
+      "icon": "Merge",
+      "label": "Client Merge",
+      "path": "/clients/merge",
+      "section": "Executive",
       "roles": [
         "ceo",
-        "director"
-      ]
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "crm"
+    },
+    {
+      "icon": "Tag",
+      "label": "Client Tags",
+      "path": "/client-tags",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "crm"
+    },
+    {
+      "icon": "Camera",
+      "label": "Client Photos",
+      "path": "/client-photos",
+      "section": "Executive",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "crm"
     },
     {
       "icon": "Coins",
@@ -418,7 +518,8 @@
         "director",
         "branch_manager",
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "tips_management"
     },
     {
       "icon": "ShoppingBag",
@@ -429,7 +530,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "inventory_tracking"
     },
     {
       "icon": "TrendingUp",
@@ -439,18 +541,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
-    },
-    {
-      "icon": "Radio",
-      "label": "Field Operations",
-      "path": "/field-operations",
-      "section": "Operations",
-      "roles": [
-        "ceo",
-        "director",
-        "branch_manager"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "MessagesSquare",
@@ -478,7 +570,7 @@
         "ceo",
         "director"
       ],
-      "requiredFeature": "multi_branch"
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Bell",
@@ -497,6 +589,178 @@
       "label": "Support",
       "path": "/support",
       "section": "System"
+    },
+    {
+      "icon": "Crown",
+      "label": "Loyalty",
+      "path": "/loyalty",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "loyalty"
+    },
+    {
+      "icon": "Repeat",
+      "label": "Packages",
+      "path": "/packages",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "marketing"
+    },
+    {
+      "icon": "Gift",
+      "label": "Gift Cards",
+      "path": "/gift-cards",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "marketing"
+    },
+    {
+      "icon": "Tag",
+      "label": "Promotions",
+      "path": "/promotions",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "CreditCard",
+      "label": "Referrals",
+      "path": "/referrals",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "promotions_referrals"
+    },
+    {
+      "icon": "Star",
+      "label": "Reviews",
+      "path": "/reviews",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "customer_reviews"
+    },
+    {
+      "icon": "Camera",
+      "label": "Before & After Gallery",
+      "path": "/gallery",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "senior_barber"
+      ]
+    },
+    {
+      "icon": "Package",
+      "label": "Inventory",
+      "path": "/inventory",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Package",
+      "label": "Consumption",
+      "path": "/consumption",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Truck",
+      "label": "Suppliers",
+      "path": "/suppliers",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Stock Take",
+      "path": "/inventory/stock-take",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Truck",
+      "label": "Purchase Orders",
+      "path": "/inventory/purchase-orders",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "DollarSign",
+      "label": "Reconciliation",
+      "path": "/reconciliation",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Megaphone",
+      "label": "Marketing",
+      "path": "/marketing",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "marketing"
+    },
+    {
+      "icon": "MessageCircle",
+      "label": "WhatsApp",
+      "path": "/whatsapp",
+      "section": "Growth",
+      "roles": [
+        "ceo",
+        "director"
+      ],
+      "requiredFeature": "sms_reminders"
     }
   ]
 }

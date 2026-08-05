@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -63,4 +64,131 @@ func (r *Repository) UpdatePriceLock(ctx context.Context, orgID uuid.UUID, lock 
 
 func (r *Repository) DeletePriceLock(ctx context.Context, orgID, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Delete(&PriceLock{}, "id = ?", id).Error
+}
+
+func (r *Repository) ListStockTakes(ctx context.Context, orgID uuid.UUID) ([]StockTake, error) {
+	var rows []StockTake
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Order("created_at DESC").Find(&rows).Error
+	return rows, err
+}
+
+func (r *Repository) GetStockTake(ctx context.Context, orgID, id uuid.UUID) (*StockTake, error) {
+	var row StockTake
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).
+		Preload("Lines", func(db *gorm.DB) *gorm.DB {
+			return db.Scopes(platformtenancy.OrgScope(orgID))
+		}).
+		First(&row, "id = ?", id).Error
+	return &row, err
+}
+
+func (r *Repository) CreateStockTake(ctx context.Context, take *StockTake, lines []StockTakeLine) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(take).Error; err != nil {
+			return err
+		}
+		for i := range lines {
+			lines[i].StockTakeID = take.ID
+			lines[i].OrganizationID = take.OrganizationID
+		}
+		if len(lines) > 0 {
+			if err := tx.Create(&lines).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (r *Repository) UpdateStockTakeLineCount(ctx context.Context, orgID, takeID, inventoryID uuid.UUID, counted int) error {
+	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).
+		Model(&StockTakeLine{}).
+		Where("stock_take_id = ? AND inventory_id = ?", takeID, inventoryID).
+		Update("counted_qty", counted).Error
+}
+
+func (r *Repository) FinalizeStockTake(ctx context.Context, orgID uuid.UUID, take *StockTake) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, line := range take.Lines {
+			if line.CountedQty == line.ExpectedQty {
+				continue
+			}
+			if err := tx.Scopes(platformtenancy.OrgScope(orgID)).
+				Model(&Item{}).
+				Where("id = ?", line.InventoryID).
+				Updates(map[string]any{
+					"quantity":          line.CountedQty,
+					"last_restocked_at": gorm.Expr("now()"),
+					"updated_at":        gorm.Expr("now()"),
+				}).Error; err != nil {
+				return err
+			}
+		}
+		now := time.Now()
+		take.Status = "finalized"
+		take.FinalizedAt = &now
+		return tx.Scopes(platformtenancy.OrgScope(orgID)).Save(take).Error
+	})
+}
+
+func (r *Repository) ListPurchaseOrders(ctx context.Context, orgID uuid.UUID) ([]PurchaseOrder, error) {
+	var rows []PurchaseOrder
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Order("created_at DESC").Find(&rows).Error
+	return rows, err
+}
+
+func (r *Repository) GetPurchaseOrder(ctx context.Context, orgID, id uuid.UUID) (*PurchaseOrder, error) {
+	var row PurchaseOrder
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).
+		Preload("Lines", func(db *gorm.DB) *gorm.DB {
+			return db.Scopes(platformtenancy.OrgScope(orgID))
+		}).
+		First(&row, "id = ?", id).Error
+	return &row, err
+}
+
+func (r *Repository) CreatePurchaseOrder(ctx context.Context, po *PurchaseOrder, lines []PurchaseOrderLine) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(po).Error; err != nil {
+			return err
+		}
+		for i := range lines {
+			lines[i].PurchaseOrderID = po.ID
+			lines[i].OrganizationID = po.OrganizationID
+		}
+		if len(lines) > 0 {
+			if err := tx.Create(&lines).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (r *Repository) UpdatePurchaseOrder(ctx context.Context, orgID uuid.UUID, po *PurchaseOrder) error {
+	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Save(po).Error
+}
+
+func (r *Repository) ReceivePurchaseOrder(ctx context.Context, orgID uuid.UUID, po *PurchaseOrder) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, line := range po.Lines {
+			if line.InventoryID == nil {
+				continue
+			}
+			if err := tx.Scopes(platformtenancy.OrgScope(orgID)).
+				Model(&Item{}).
+				Where("id = ?", *line.InventoryID).
+				Updates(map[string]any{
+					"quantity":          gorm.Expr("quantity + ?", line.Quantity),
+					"last_restocked_at": gorm.Expr("now()"),
+					"updated_at":        gorm.Expr("now()"),
+				}).Error; err != nil {
+				return err
+			}
+		}
+		now := time.Now()
+		po.Status = "received"
+		po.ReceivedAt = &now
+		return tx.Scopes(platformtenancy.OrgScope(orgID)).Save(po).Error
+	})
 }

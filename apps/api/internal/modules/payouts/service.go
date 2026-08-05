@@ -2,16 +2,21 @@ package payouts
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
 
-	"github.com/haus-of-wellness/api/internal/platform/idempotency"
 	openfloatmod "github.com/haus-of-wellness/api/internal/modules/integrations/openfloat"
+	"github.com/haus-of-wellness/api/internal/platform/idempotency"
 )
 
 type LedgerRecorder interface {
 	RecordPayout(ctx context.Context, orgID uuid.UUID, amount int64, ref string, payoutID *uuid.UUID) error
+}
+
+type AuditRecorder interface {
+	RecordOrgAudit(ctx context.Context, orgID uuid.UUID, userID *uuid.UUID, action, entityType string, entityID *uuid.UUID, metadata []byte) error
 }
 
 type Service struct {
@@ -19,15 +24,25 @@ type Service struct {
 	openfloat   *openfloatmod.Client
 	idempotency *idempotency.Store
 	ledger      LedgerRecorder
+	audit       AuditRecorder
 }
 
-func NewService(repo *Repository, openfloat *openfloatmod.Client, idempotency *idempotency.Store, ledger LedgerRecorder) *Service {
+func NewService(repo *Repository, openfloat *openfloatmod.Client, idempotency *idempotency.Store, ledger LedgerRecorder, audit AuditRecorder) *Service {
 	return &Service{
 		repo:        repo,
 		openfloat:   openfloat,
 		idempotency: idempotency,
 		ledger:      ledger,
+		audit:       audit,
 	}
+}
+
+func (s *Service) recordAudit(ctx context.Context, orgID uuid.UUID, userID *uuid.UUID, action string, entityID uuid.UUID, meta map[string]any) {
+	if s.audit == nil {
+		return
+	}
+	raw, _ := json.Marshal(meta)
+	_ = s.audit.RecordOrgAudit(ctx, orgID, userID, action, "payout", &entityID, raw)
 }
 
 type CreatePayoutDTO struct {
@@ -89,19 +104,12 @@ func (s *Service) Request(ctx context.Context, orgID uuid.UUID, dto CreatePayout
 		return p, err
 	}
 
+	// Submitting to the provider is NOT the same as money having left — stay "processing"
+	// until ConfirmPayout observes a real completed status. The tenant wallet is only
+	// debited on confirmed completion, never on submission (see 01-security-tenancy.mdc:
+	// no success theatre for money that hasn't moved).
 	p.Status = "processing"
 	p.OpenfloatRef = resp.Reference
-	if err := s.repo.Update(ctx, orgID, p); err != nil {
-		return nil, err
-	}
-
-	if s.ledger != nil {
-		if err := s.ledger.RecordPayout(ctx, orgID, dto.AmountKES, merchantRef, &p.ID); err != nil {
-			return nil, err
-		}
-	}
-
-	p.Status = "completed"
 	if err := s.repo.Update(ctx, orgID, p); err != nil {
 		return nil, err
 	}
@@ -109,5 +117,55 @@ func (s *Service) Request(ctx context.Context, orgID uuid.UUID, dto CreatePayout
 		return nil, err
 	}
 	fulfilled = true
+	s.recordAudit(ctx, orgID, nil, "payout.requested", p.ID, map[string]any{
+		"amount_kes": dto.AmountKES, "merchant_reference": merchantRef,
+	})
+	return p, nil
+}
+
+// ConfirmPayout re-queries the provider for authoritative status — never trusts a cached
+// "submitted" response as final. Only on a confirmed COMPLETED status does money leave the
+// tenant wallet in the ledger; a stub provider with no live credentials will report
+// PROCESSING forever, which is the honest state (see B2-07).
+func (s *Service) ConfirmPayout(ctx context.Context, orgID, id uuid.UUID, actorID *uuid.UUID) (*Payout, error) {
+	p, err := s.repo.Get(ctx, orgID, id)
+	if err != nil {
+		return nil, err
+	}
+	if p.Status == "completed" || p.Status == "failed" {
+		return p, nil
+	}
+
+	status, err := s.openfloat.GetDisbursementStatus(ctx, p.OpenfloatRef)
+	if err != nil {
+		return nil, err
+	}
+
+	switch status.Status {
+	case "COMPLETED":
+		if s.ledger != nil {
+			if err := s.ledger.RecordPayout(ctx, orgID, p.AmountKES, p.MerchantReference, &p.ID); err != nil {
+				return nil, err
+			}
+		}
+		p.Status = "completed"
+		if err := s.repo.Update(ctx, orgID, p); err != nil {
+			return nil, err
+		}
+		s.recordAudit(ctx, orgID, actorID, "payout.completed", p.ID, map[string]any{
+			"amount_kes": p.AmountKES, "merchant_reference": p.MerchantReference,
+		})
+	case "FAILED":
+		p.Status = "failed"
+		p.FailureReason = "provider reported failed disbursement"
+		if err := s.repo.Update(ctx, orgID, p); err != nil {
+			return nil, err
+		}
+		s.recordAudit(ctx, orgID, actorID, "payout.failed", p.ID, map[string]any{
+			"merchant_reference": p.MerchantReference,
+		})
+	default:
+		// still processing — no state change, no ledger movement
+	}
 	return p, nil
 }

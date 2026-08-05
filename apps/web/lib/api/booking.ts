@@ -14,6 +14,7 @@ export interface BookingServiceItem {
   priceKes: number;
   durationMinutes: number;
   description?: string;
+  requiresPatchTest?: boolean;
 }
 
 export interface BookingStaffMember {
@@ -23,6 +24,7 @@ export interface BookingStaffMember {
   role: string;
   bio?: string;
   branchId?: string;
+  specialties?: string[];
 }
 
 export interface BookingCatalog {
@@ -34,6 +36,7 @@ export interface BookingCatalog {
 export interface PortalBookingPayload {
   branchId?: string;
   staffId: string;
+  resourceId?: string;
   serviceIds: string[];
   bookingDate: string;
   startTime: string;
@@ -58,6 +61,29 @@ function mapService(row: Record<string, unknown>): BookingServiceItem {
     priceKes: Number(pickRowField(row, "price_kes") ?? 0),
     durationMinutes: Number(pickRowField(row, "duration_minutes") ?? 30),
     description: pickRowField(row, "description") ? String(pickRowField(row, "description")) : undefined,
+    requiresPatchTest: Boolean(pickRowField(row, "requires_patch_test")),
+  };
+}
+
+export interface PublicOrgInfo {
+  id: string;
+  name: string;
+  slug: string;
+  businessType: string;
+}
+
+export async function fetchPublicOrg(orgSlug: string): Promise<PublicOrgInfo> {
+  const res = await apiClient<{
+    id: string;
+    name: string;
+    slug: string;
+    businessType: string;
+  }>(`/organizations/public/${orgSlug}`);
+  return {
+    id: res.id,
+    name: res.name,
+    slug: res.slug,
+    businessType: res.businessType ?? "barber",
   };
 }
 
@@ -70,6 +96,11 @@ function mapStaff(row: Record<string, unknown>): BookingStaffMember {
     role: String(pickRowField(row, "role") ?? ""),
     bio: pickRowField(row, "bio") ? String(pickRowField(row, "bio")) : undefined,
     branchId: branchId ? String(branchId) : undefined,
+    specialties: Array.isArray(row.specialties)
+      ? (row.specialties as string[])
+      : pickRowField(row, "specialties")
+        ? String(pickRowField(row, "specialties")).split(",").map((s) => s.trim()).filter(Boolean)
+        : [],
   };
 }
 

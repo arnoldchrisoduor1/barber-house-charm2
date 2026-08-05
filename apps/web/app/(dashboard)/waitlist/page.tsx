@@ -4,10 +4,10 @@ import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserPlus } from "lucide-react";
 
+import { CustomerPicker, type SelectedCustomer } from "@/components/CustomerPicker";
 import { ModulePage } from "@/components/ModulePage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +23,7 @@ export default function WaitlistPage() {
   const orgId = activeOrg?.id ?? "";
   const connected = useRealtimeStore((s) => s.connected);
   const qc = useQueryClient();
-  const [customerId, setCustomerId] = useState("");
+  const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
   const [notes, setNotes] = useState("");
 
   const { data, isLoading, error } = useQuery({
@@ -41,15 +41,15 @@ export default function WaitlistPage() {
       api.post(`/organizations/${orgId}/bookings/waitlist`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["org", orgId, "waitlist"] });
-      setCustomerId("");
+      setCustomer(null);
       setNotes("");
     },
   });
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!customerId.trim()) return;
-    addEntry.mutate({ customerId: customerId.trim(), notes: notes.trim() });
+    if (!customer?.id) return;
+    addEntry.mutate({ customerId: customer.id, notes: notes.trim() });
   }
 
   return (
@@ -73,13 +73,17 @@ export default function WaitlistPage() {
               <div className="space-y-3">
                 {(data ?? []).map((row) => {
                   const id = String(pickRowField(row, "id") ?? "");
-                  const cust = String(pickRowField(row, "customer_id") ?? pickRowField(row, "customerId") ?? "—");
-                  const note = String(pickRowField(row, "notes") ?? "—");
+                  const name = String(
+                    pickRowField(row, "customerName") ?? pickRowField(row, "customer_name") ?? "Client",
+                  );
+                  const phone = String(pickRowField(row, "customerPhone") ?? pickRowField(row, "customer_phone") ?? "");
+                  const note = String(pickRowField(row, "notes") ?? "");
                   const created = pickRowField(row, "created_at") ?? pickRowField(row, "createdAt");
                   return (
-                    <div key={id} className="stat-tile rounded-lg p-4">
-                      <p className="text-sm font-medium">Customer {cust.slice(0, 8)}…</p>
-                      {note !== "—" ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
+                    <div key={id} className="stat-tile rounded-lg p-4" data-testid="waitlist-entry">
+                      <p className="text-sm font-medium">{name}</p>
+                      {phone ? <p className="text-xs text-muted-foreground">{phone}</p> : null}
+                      {note ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
                       {created ? (
                         <p className="mt-1 text-[10px] text-muted-foreground">Added {formatDate(String(created))}</p>
                       ) : null}
@@ -100,16 +104,12 @@ export default function WaitlistPage() {
           </CardHeader>
           <CardContent>
             <form className="space-y-3" onSubmit={onSubmit} data-testid="waitlist-form">
-              <div className="space-y-1">
-                <Label htmlFor="waitlist-customer">Customer ID</Label>
-                <Input
-                  id="waitlist-customer"
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  placeholder="UUID"
-                  required
-                />
-              </div>
+              <CustomerPicker
+                orgId={orgId}
+                value={customer}
+                onChange={setCustomer}
+                testId="waitlist-customer-picker"
+              />
               <div className="space-y-1">
                 <Label htmlFor="waitlist-notes">Notes</Label>
                 <Textarea
@@ -119,7 +119,7 @@ export default function WaitlistPage() {
                   rows={3}
                 />
               </div>
-              <Button type="submit" disabled={!orgId || addEntry.isPending} className="w-full">
+              <Button type="submit" disabled={!orgId || !customer || addEntry.isPending} className="w-full">
                 {addEntry.isPending ? "Adding…" : "Add entry"}
               </Button>
             </form>

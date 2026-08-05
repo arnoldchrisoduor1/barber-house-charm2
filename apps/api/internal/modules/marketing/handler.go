@@ -573,6 +573,19 @@ func (h *Handler) DeleteCampaign(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func (h *Handler) SendCampaign(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := parseID(c)
+	if err != nil {
+		return err
+	}
+	result, err := h.svc.SendCampaign(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(result)
+}
+
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	// Portal /my and /submit routes must register before admin /:id catch-alls on the same paths.
 	registerPortalRoutes(org, features, h)
@@ -598,7 +611,7 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	loyalty.Put("/:id", h.UpdateLoyaltyReward)
 	loyalty.Delete("/:id", h.DeleteLoyaltyReward)
 
-	reviews := org.Group("/reviews", authz.RequireFeature(features, "marketing"))
+	reviews := org.Group("/reviews", authz.RequireFeature(features, "customer_reviews"))
 	reviews.Get("/", h.ListReviews)
 	reviews.Post("/", h.CreateReview)
 	reviews.Get("/:id", h.GetReview)
@@ -636,5 +649,6 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	campaigns.Post("/", h.CreateCampaign)
 	campaigns.Get("/:id", h.GetCampaign)
 	campaigns.Put("/:id", h.UpdateCampaign)
+	campaigns.Post("/:id/send", h.SendCampaign)
 	campaigns.Delete("/:id", h.DeleteCampaign)
 }

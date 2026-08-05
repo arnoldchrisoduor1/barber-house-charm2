@@ -4,10 +4,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
+	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
+	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/authz"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
-	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
 )
 
 func (h *Handler) ListTips(c *fiber.Ctx) error {
@@ -26,7 +27,11 @@ func (h *Handler) CreateTip(c *fiber.Ctx) error {
 		return httpx.ValidationProblem(c, "invalid request body", nil)
 	}
 	orgID := platformtenancy.OrgIDFrom(c)
-	row, err := h.svc.CreateTip(c.UserContext(), orgID, dto)
+	var userID *uuid.UUID
+	if u := platformauth.UserFrom(c); u != nil {
+		userID = &u.ID
+	}
+	row, err := h.svc.CreateTip(c.UserContext(), orgID, userID, dto)
 	if err != nil {
 		return httpx.From(c, err)
 	}

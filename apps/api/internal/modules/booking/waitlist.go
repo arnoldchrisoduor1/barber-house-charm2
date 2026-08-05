@@ -14,6 +14,8 @@ type WaitlistEntry struct {
 	ID               uuid.UUID  `json:"id"`
 	OrganizationID   uuid.UUID  `json:"organizationId"`
 	CustomerID       uuid.UUID  `json:"customerId"`
+	CustomerName     string     `json:"customerName,omitempty"`
+	CustomerPhone    string     `json:"customerPhone,omitempty"`
 	ServiceID        *uuid.UUID `json:"serviceId,omitempty"`
 	PreferredStaffID *uuid.UUID `json:"preferredStaffId,omitempty"`
 	Notes            string     `json:"notes,omitempty"`
@@ -23,10 +25,13 @@ type WaitlistEntry struct {
 func (r *Repository) ListWaitlist(ctx context.Context, orgID uuid.UUID) ([]WaitlistEntry, error) {
 	var rows []WaitlistEntry
 	err := r.db.WithContext(ctx).
-		Table("waitlist").
-		Where("organization_id = ?", orgID).
-		Order("created_at ASC").
-		Find(&rows).Error
+		Table("waitlist w").
+		Select(`w.id, w.organization_id, w.customer_id, w.service_id, w.preferred_staff_id, w.notes, w.created_at,
+			c.full_name AS customer_name, c.phone AS customer_phone`).
+		Joins("LEFT JOIN customers c ON c.id = w.customer_id AND c.organization_id = w.organization_id").
+		Where("w.organization_id = ?", orgID).
+		Order("w.created_at ASC").
+		Scan(&rows).Error
 	return rows, err
 }
 

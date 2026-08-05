@@ -6,10 +6,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
+	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
+	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
 	"github.com/haus-of-wellness/api/internal/platform/authz"
 	"github.com/haus-of-wellness/api/internal/platform/httpx"
 	platformtenancy "github.com/haus-of-wellness/api/internal/platform/tenancy"
-	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
 )
 
 type Handler struct {
@@ -65,7 +66,11 @@ func (h *Handler) Checkout(c *fiber.Ctx) error {
 		return httpx.ValidationProblem(c, "cart is empty", nil)
 	}
 	orgID := platformtenancy.OrgIDFrom(c)
-	row, err := h.svc.Checkout(c.UserContext(), orgID, dto)
+	var actorID *uuid.UUID
+	if u := platformauth.UserFrom(c); u != nil {
+		actorID = &u.ID
+	}
+	row, err := h.svc.Checkout(c.UserContext(), orgID, actorID, dto)
 	if err != nil {
 		return posCheckoutError(c, err)
 	}
@@ -84,6 +89,8 @@ func posCheckoutError(c *fiber.Ctx, err error) error {
 		return httpx.ValidationProblem(c, "cash tendered is less than total", nil)
 	case errors.Is(err, ErrInvalidPayment):
 		return httpx.ValidationProblem(c, "invalid payment method", nil)
+	case errors.Is(err, ErrInvalidManagerPIN):
+		return httpx.ProblemJSON(c, fiber.StatusForbidden, "Forbidden", "invalid manager PIN")
 	default:
 		return httpx.From(c, err)
 	}
@@ -96,4 +103,5 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g.Get("/:id", h.Get)
 	g.Post("/", h.Create)
 	registerExtrasRoutes(org, features, h)
+	registerTabsRoutes(org, features, h)
 }

@@ -73,8 +73,18 @@ func main() {
 		log.Fatalf("demo staff user: %v", err)
 	}
 
+	if err := ensureBeautyDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("beauty demo org: %v", err)
+	}
+
+	if err := ensureSpaDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("spa demo org: %v", err)
+	}
+
 	_ = userID
 	log.Printf("seed complete: %s / %s (org slug %s)", demoEmail, demoPassword, demoOrgSlug)
+	log.Printf("beauty seed: same login, org slug %s (businessType beauty)", beautyOrgSlug)
+	log.Printf("spa seed: same login, org slug %s (businessType spa)", spaOrgSlug)
 	log.Printf("seed staff login: %s / %s", staffDemoEmail, staffDemoPassword)
 }
 

@@ -1,12 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 import { DataTable } from "@/components/DataTable";
 import { Feature } from "@/components/Feature";
 import { ModulePage } from "@/components/ModulePage";
 import { SearchFilter } from "@/components/SearchFilter";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -14,8 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useEntityList } from "@/lib/api/crud";
+import { api } from "@/lib/api-client";
 import { pickRowField } from "@/lib/record-fields";
 import { cn } from "@/lib/utils";
 
@@ -31,9 +44,15 @@ const TIER_COLORS: Record<string, string> = {
 
 export default function ClientOwnershipPage() {
   const { activeOrg } = useAuth();
+  const { terms } = useBusinessCategory();
   const orgId = activeOrg?.id;
+  const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState("all");
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferRow, setTransferRow] = useState<OwnershipRow | null>(null);
+  const [targetStaffId, setTargetStaffId] = useState("");
+  const [reason, setReason] = useState("");
 
   const { data: ownership = [], isLoading, error } = useEntityList<OwnershipRow>(
     orgId,
@@ -71,6 +90,33 @@ export default function ClientOwnershipPage() {
       return name.includes(q) || phone.includes(q) || staffName.includes(q);
     });
   }, [ownership, search, tierFilter, staffNameById]);
+
+  const transferMut = useMutation({
+    mutationFn: async () => {
+      if (!orgId || !transferRow) return;
+      const customerId = String(transferRow.id ?? transferRow.ID ?? "");
+      return api.patch(`/organizations/${orgId}/customers/${customerId}/ownership`, {
+        assigned_staff_id: targetStaffId || null,
+        reason,
+      });
+    },
+    onSuccess: () => {
+      toast.success("Ownership updated");
+      qc.invalidateQueries({ queryKey: ["org", orgId, "customers/ownership"] });
+      setTransferOpen(false);
+      setTransferRow(null);
+      setReason("");
+      setTargetStaffId("");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Transfer failed"),
+  });
+
+  function openTransfer(row: OwnershipRow) {
+    setTransferRow(row);
+    setTargetStaffId(String(pickRowField(row, "assigned_staff_id") ?? ""));
+    setReason("");
+    setTransferOpen(true);
+  }
 
   const body = (
     <Card className="glass">
@@ -139,6 +185,21 @@ export default function ClientOwnershipPage() {
                 );
               },
             },
+            {
+              key: "actions",
+              header: "",
+              render: (row) => (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  data-testid="ownership-transfer-btn"
+                  onClick={() => openTransfer(row)}
+                >
+                  Transfer
+                </Button>
+              ),
+            },
           ]}
           rows={filtered}
           emptyMessage="No client ownership records yet."
@@ -150,7 +211,54 @@ export default function ClientOwnershipPage() {
 
   return (
     <ModulePage title="Client Ownership" feature="crm">
-      <Feature flag="crm">{body}</Feature>
+      <Feature flag="crm">
+        {body}
+        <Dialog open={transferOpen} onOpenChange={setTransferOpen}>
+          <DialogContent data-testid="ownership-transfer-dialog">
+            <DialogHeader>
+              <DialogTitle>Transfer client ownership</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label>Assign to {terms.staffSingular.toLowerCase()}</Label>
+                <Select value={targetStaffId || "__none"} onValueChange={(v) => setTargetStaffId(v === "__none" ? "" : v)}>
+                  <SelectTrigger data-testid="ownership-staff-select">
+                    <SelectValue placeholder={`Select ${terms.staffSingular.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">Unassigned</SelectItem>
+                    {staff.map((row) => {
+                      const id = String(row.id ?? row.ID ?? "");
+                      return (
+                        <SelectItem key={id} value={id}>
+                          {String(pickRowField(row, "display_name") ?? "Staff")}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="ownership-reason">Reason (required)</Label>
+                <Textarea
+                  id="ownership-reason"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  rows={3}
+                  data-testid="ownership-reason"
+                />
+              </div>
+              <Button
+                className="w-full"
+                disabled={!reason.trim() || transferMut.isPending}
+                onClick={() => transferMut.mutate()}
+              >
+                {transferMut.isPending ? "Saving…" : "Confirm transfer"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </Feature>
     </ModulePage>
   );
 }

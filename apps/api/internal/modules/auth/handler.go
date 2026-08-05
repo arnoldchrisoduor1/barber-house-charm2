@@ -286,11 +286,20 @@ func (h *Handler) CreateStaffInvite(c *fiber.Ctx) error {
 		return httpx.ValidationProblem(c, "invalid request body", nil)
 	}
 	orgID := platformtenancy.OrgIDFrom(c)
-	row, err := h.svc.CreateStaffInvite(c.UserContext(), orgID, user.ID, req)
+	row, delivered, err := h.svc.CreateStaffInvite(c.UserContext(), orgID, user.ID, req)
 	if err != nil {
 		return httpx.From(c, err)
 	}
-	return c.Status(fiber.StatusCreated).JSON(row)
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"id":              row.ID,
+		"organization_id": row.OrganizationID,
+		"email":           row.Email,
+		"role":            row.Role,
+		"staff_id":        row.StaffID,
+		"expires_at":      row.ExpiresAt,
+		"created_at":      row.CreatedAt,
+		"email_delivered": delivered,
+	})
 }
 
 func (h *Handler) ListStaffInvites(c *fiber.Ctx) error {

@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
@@ -111,6 +113,49 @@ func (h *Handler) DeleteEnquiry(c *fiber.Ctx) error {
 		return httpx.From(c, err)
 	}
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *Handler) MarkEnquiryRead(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := parseID(c)
+	if err != nil {
+		return err
+	}
+	row, err := h.svc.MarkEnquiryRead(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) CreateDeskEnquiry(c *fiber.Ctx) error {
+	var dto EnquiryDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.CreateDeskEnquiry(c.UserContext(), orgID, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
+func (h *Handler) ConvertEnquiryToBooking(c *fiber.Ctx) error {
+	var dto ConvertEnquiryDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := parseID(c)
+	if err != nil {
+		return err
+	}
+	row, err := h.svc.ConvertEnquiryToBooking(c.UserContext(), orgID, id, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
 }
 
 func (h *Handler) ListStaffChat(c *fiber.Ctx) error {
@@ -237,6 +282,30 @@ func (h *Handler) DeleteSeatRental(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func (h *Handler) ChargeSeatRental(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	var dto ChargeSeatRentDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if dto.PeriodMonth == "" {
+		dto.PeriodMonth = time.Now().Format("2006-01-01")
+	}
+	var userID *uuid.UUID
+	if u := platformauth.UserFrom(c); u != nil {
+		userID = &u.ID
+	}
+	row, err := h.svc.ChargeSeatRent(c.UserContext(), orgID, id, userID, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
 func (h *Handler) ListGalleryItems(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
 	rows, err := h.svc.ListGalleryItems(c.UserContext(), orgID)
@@ -299,6 +368,35 @@ func (h *Handler) DeleteGalleryItem(c *fiber.Ctx) error {
 		return httpx.From(c, err)
 	}
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+func (h *Handler) UploadGalleryImage(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := parseID(c)
+	if err != nil {
+		return err
+	}
+	file, err := c.FormFile("file")
+	if err != nil {
+		return httpx.ValidationProblem(c, "file required", nil)
+	}
+	if file.Size > maxGalleryImageBytes {
+		return httpx.ValidationProblem(c, "file too large", nil)
+	}
+	f, err := file.Open()
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	defer f.Close()
+	data := make([]byte, file.Size)
+	if _, err := f.Read(data); err != nil {
+		return httpx.From(c, err)
+	}
+	row, err := h.svc.UploadGalleryImage(c.UserContext(), orgID, id, file.Filename, data, file.Header.Get("Content-Type"))
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
 }
 
 func (h *Handler) ListConsentForms(c *fiber.Ctx) error {
@@ -449,6 +547,11 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	enq.Put("/:id", h.UpdateEnquiry)
 	enq.Delete("/:id", h.DeleteEnquiry)
 
+	desk := org.Group("/enquiry-desk", authz.RequireFeature(features, "advanced_analytics"))
+	desk.Post("/", h.CreateDeskEnquiry)
+	desk.Post("/:id/read", h.MarkEnquiryRead)
+	desk.Post("/:id/convert-to-booking", h.ConvertEnquiryToBooking)
+
 	chat := org.Group("/staff-chat")
 	chat.Get("/", h.ListStaffChat)
 	chat.Post("/", h.CreateStaffChat)
@@ -464,12 +567,14 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	seats.Get("/:id", h.GetSeatRental)
 	seats.Put("/:id", h.UpdateSeatRental)
 	seats.Delete("/:id", h.DeleteSeatRental)
+	seats.Post("/:id/charge", h.ChargeSeatRental)
 
 	gallery := org.Group("/gallery")
 	gallery.Get("/", h.ListGalleryItems)
 	gallery.Post("/", h.CreateGalleryItem)
 	gallery.Get("/:id", h.GetGalleryItem)
 	gallery.Put("/:id", h.UpdateGalleryItem)
+	gallery.Post("/:id/image", h.UploadGalleryImage)
 	gallery.Delete("/:id", h.DeleteGalleryItem)
 
 	consent := org.Group("/consent-forms", authz.RequireFeature(features, "clinical"))

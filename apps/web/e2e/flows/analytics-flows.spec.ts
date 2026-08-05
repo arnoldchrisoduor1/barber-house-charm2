@@ -24,14 +24,12 @@ test("revenue forecast page loads", async ({ page }) => {
   await expect(page.locator("body")).not.toContainText("Application error");
 });
 
-test("call centre page loads dial pad", async ({ page }) => {
+test("call centre page loads enquiry desk (no softphone)", async ({ page }) => {
   await page.goto("/call-centre");
   await waitForWorkspace(page);
   await expect(page.locator("body")).not.toContainText("Application error");
-  const dialPad = page.getByTestId("dial-pad");
-  if (await dialPad.isVisible({ timeout: 15_000 }).catch(() => false)) {
-    await expect(dialPad).toBeVisible();
-  }
+  await expect(page.getByTestId("enquiry-desk")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("dial-pad")).toHaveCount(0);
 });
 
 test("field operations tabs render", async ({ page }) => {

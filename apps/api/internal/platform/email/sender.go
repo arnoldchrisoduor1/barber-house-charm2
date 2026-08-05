@@ -23,6 +23,23 @@ type Sender interface {
 	Send(ctx context.Context, msg Message) error
 }
 
+// DeliveryAware reports whether Send delivers to an external mailbox (SMTP)
+// rather than only logging (dry-run / missing SMTP).
+type DeliveryAware interface {
+	DeliversExternally() bool
+}
+
+// DeliversExternally returns false for log/dry-run senders; true otherwise.
+func DeliversExternally(s Sender) bool {
+	if s == nil {
+		return false
+	}
+	if d, ok := s.(DeliveryAware); ok {
+		return d.DeliversExternally()
+	}
+	return true
+}
+
 type LogSender struct {
 	Logger *slog.Logger
 }
@@ -34,11 +51,14 @@ func NewLogSender(logger *slog.Logger) *LogSender {
 	return &LogSender{Logger: logger}
 }
 
+func (s *LogSender) DeliversExternally() bool { return false }
+
 func (s *LogSender) Send(ctx context.Context, msg Message) error {
 	s.Logger.InfoContext(ctx, "email_send",
 		"to", redactEmail(msg.To),
 		"subject", msg.Subject,
 		"body_len", len(msg.Body),
+		"delivered_externally", false,
 	)
 	return nil
 }
@@ -73,6 +93,8 @@ func NewSMTPSender(cfg *config.Config, logger *slog.Logger) *SMTPSender {
 		logger:   logger,
 	}
 }
+
+func (s *SMTPSender) DeliversExternally() bool { return true }
 
 func (s *SMTPSender) Send(ctx context.Context, msg Message) error {
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)

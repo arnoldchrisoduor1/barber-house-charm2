@@ -11,9 +11,10 @@ import { ModulePage } from "@/components/ModulePage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { useEntityCreate, useEntityList, useEntityUpdate } from "@/lib/api/crud";
-import { servicesConfig } from "@/lib/crud-configs";
+import { buildServicesConfig } from "@/lib/mode-crud-configs";
 import { formatKES } from "@/lib/format";
 import { pickRowField } from "@/lib/record-fields";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,8 @@ function rowId(row: ServiceRow): string {
 
 export default function ServicesPage() {
   const { activeOrg } = useAuth();
+  const { mode, terms } = useBusinessCategory();
+  const servicesConfig = useMemo(() => buildServicesConfig(mode, terms), [mode, terms]);
   const orgId = activeOrg?.id;
   const { apiParams } = useBranchFilter();
   const { data: services = [], isLoading, error } = useEntityList<ServiceRow>(orgId, "services", apiParams);
@@ -39,6 +42,9 @@ export default function ServicesPage() {
     name: "",
     category: "",
     duration_minutes: "30",
+    prep_minutes: "0",
+    buffer_minutes: "0",
+    requires_patch_test: "false",
     price_kes: "",
     description: "",
   });
@@ -59,7 +65,16 @@ export default function ServicesPage() {
 
   function openCreate() {
     setEditing(null);
-    setValues({ name: "", category: "", duration_minutes: "30", price_kes: "", description: "" });
+    setValues({
+      name: "",
+      category: "",
+      duration_minutes: "30",
+      prep_minutes: "0",
+      buffer_minutes: "0",
+      requires_patch_test: "false",
+      price_kes: "",
+      description: "",
+    });
     setOpen(true);
   }
 
@@ -69,6 +84,9 @@ export default function ServicesPage() {
       name: String(pickRowField(row, "name") ?? ""),
       category: String(pickRowField(row, "category") ?? ""),
       duration_minutes: String(pickRowField(row, "duration_minutes") ?? "30"),
+      prep_minutes: String(pickRowField(row, "prep_minutes") ?? "0"),
+      buffer_minutes: String(pickRowField(row, "buffer_minutes") ?? "0"),
+      requires_patch_test: pickRowField(row, "requires_patch_test") ? "true" : "false",
       price_kes: String(pickRowField(row, "price_kes") ?? ""),
       description: String(pickRowField(row, "description") ?? ""),
     });
@@ -138,6 +156,7 @@ export default function ServicesPage() {
           const category = String(pickRowField(row, "category") ?? "General");
           const duration = Number(pickRowField(row, "duration_minutes") ?? 30);
           const price = Number(pickRowField(row, "price_kes") ?? 0);
+          const patchTest = Boolean(pickRowField(row, "requires_patch_test"));
           return (
             <Card
               key={rowId(row)}
@@ -149,9 +168,14 @@ export default function ServicesPage() {
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                     <Scissors className="h-5 w-5 text-primary" />
                   </div>
-                  <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                    {category}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                      {category}
+                    </span>
+                    {patchTest ? (
+                      <span className="text-[10px] font-medium text-amber-500">Patch test req.</span>
+                    ) : null}
+                  </div>
                 </div>
                 <CardTitle className="text-lg">{name}</CardTitle>
               </CardHeader>
@@ -188,7 +212,7 @@ export default function ServicesPage() {
   );
 
   return (
-    <ModulePage title="Services" feature="bookings" description="Manage your service menu and pricing.">
+    <ModulePage title={terms.servicesPageTitle} feature="bookings" description="Manage your service menu and pricing.">
       <Feature flag="bookings">{body}</Feature>
     </ModulePage>
   );

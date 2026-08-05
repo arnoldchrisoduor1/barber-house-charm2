@@ -12,10 +12,11 @@ import { SearchFilter } from "@/components/SearchFilter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useBranchFilter } from "@/hooks/useBranchFilter";
 import { useStaffScope } from "@/hooks/useStaffScope";
 import { useEntityCreate, useEntityList, useEntityUpdate } from "@/lib/api/crud";
-import { customersConfig } from "@/lib/crud-configs";
+import { buildCustomersConfig } from "@/lib/mode-crud-configs";
 import { formatKES, formatPhone } from "@/lib/format";
 import { pickRowField } from "@/lib/record-fields";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,8 @@ function TierBadge({ tier }: { tier: string }) {
 
 export default function ClientsPage() {
   const { activeOrg } = useAuth();
+  const { terms } = useBusinessCategory();
+  const customersConfig = useMemo(() => buildCustomersConfig(terms), [terms]);
   const orgId = activeOrg?.id;
   const { apiParams } = useBranchFilter();
   const { staffId, isStaffScoped } = useStaffScope();
@@ -64,6 +67,8 @@ export default function ClientsPage() {
     phone: "",
     email: "",
     style_preferences: "",
+    has_allergies: "false",
+    allergy_notes: "",
     notes: "",
     loyalty_tier: "",
   });
@@ -85,7 +90,16 @@ export default function ClientsPage() {
 
   function openCreate() {
     setEditing(null);
-    setValues({ full_name: "", phone: "", email: "", style_preferences: "", notes: "", loyalty_tier: "" });
+    setValues({
+      full_name: "",
+      phone: "",
+      email: "",
+      style_preferences: "",
+      has_allergies: "false",
+      allergy_notes: "",
+      notes: "",
+      loyalty_tier: "",
+    });
     setOpen(true);
   }
 
@@ -96,6 +110,8 @@ export default function ClientsPage() {
       phone: String(pickRowField(row, "phone") ?? ""),
       email: String(pickRowField(row, "email") ?? ""),
       style_preferences: String(pickRowField(row, "style_preferences") ?? ""),
+      has_allergies: pickRowField(row, "has_allergies") ? "true" : "false",
+      allergy_notes: String(pickRowField(row, "allergy_notes") ?? ""),
       notes: String(pickRowField(row, "notes") ?? ""),
       loyalty_tier: String(pickRowField(row, "loyalty_tier") ?? ""),
     });
@@ -103,7 +119,7 @@ export default function ClientsPage() {
   }
 
   async function save() {
-    const body = { ...values };
+    const body = customersConfig.mapFormToBody ? customersConfig.mapFormToBody(values) : values;
     try {
       if (editing) {
         await updateMut.mutateAsync({ id: rowId(editing), body });
@@ -143,17 +159,24 @@ export default function ClientsPage() {
           const tier = String(pickRowField(row, "loyalty_tier") ?? "bronze");
           const visits = Number(pickRowField(row, "total_visits") ?? 0);
           const spent = Number(pickRowField(row, "total_spent") ?? 0);
+          const hasAllergies = Boolean(pickRowField(row, "has_allergies"));
 
           return (
             <Card
               key={rowId(row)}
               className="glass cursor-pointer transition hover:bg-card/80"
               onClick={() => openEdit(row)}
+              data-testid={hasAllergies ? "client-allergy-row" : undefined}
             >
               <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium">{name}</p>
+                    {hasAllergies ? (
+                      <span className="text-xs text-red-400" data-testid="client-allergy-badge" title="Known allergies">
+                        Allergy
+                      </span>
+                    ) : null}
                     <TierBadge tier={tier} />
                   </div>
                   {phone && (

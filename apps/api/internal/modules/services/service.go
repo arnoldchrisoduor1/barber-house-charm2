@@ -19,25 +19,31 @@ func NewService(repo *Repository) *ServiceLayer {
 }
 
 type CreateServiceDTO struct {
-	Name            string     `json:"name"`
-	Category        string     `json:"category"`
-	PriceKES        int        `json:"price_kes"`
-	DurationMinutes int        `json:"duration_minutes"`
-	Description     string     `json:"description"`
-	ImageURL        string     `json:"image_url"`
-	IsActive        *bool      `json:"is_active"`
-	BranchID        *uuid.UUID `json:"branch_id"`
+	Name              string     `json:"name"`
+	Category          string     `json:"category"`
+	PriceKES          int        `json:"price_kes"`
+	DurationMinutes   int        `json:"duration_minutes"`
+	PrepMinutes       int        `json:"prep_minutes"`
+	BufferMinutes     int        `json:"buffer_minutes"`
+	RequiresPatchTest *bool      `json:"requires_patch_test"`
+	Description       string     `json:"description"`
+	ImageURL          string     `json:"image_url"`
+	IsActive          *bool      `json:"is_active"`
+	BranchID          *uuid.UUID `json:"branch_id"`
 }
 
 type UpdateServiceDTO struct {
-	Name            *string    `json:"name"`
-	Category        *string    `json:"category"`
-	PriceKES        *int       `json:"price_kes"`
-	DurationMinutes *int       `json:"duration_minutes"`
-	Description     *string    `json:"description"`
-	ImageURL        *string    `json:"image_url"`
-	IsActive        *bool      `json:"is_active"`
-	BranchID        *uuid.UUID `json:"branch_id"`
+	Name              *string    `json:"name"`
+	Category          *string    `json:"category"`
+	PriceKES          *int       `json:"price_kes"`
+	DurationMinutes   *int       `json:"duration_minutes"`
+	PrepMinutes       *int       `json:"prep_minutes"`
+	BufferMinutes     *int       `json:"buffer_minutes"`
+	RequiresPatchTest *bool      `json:"requires_patch_test"`
+	Description       *string    `json:"description"`
+	ImageURL          *string    `json:"image_url"`
+	IsActive          *bool      `json:"is_active"`
+	BranchID          *uuid.UUID `json:"branch_id"`
 }
 
 func (s *ServiceLayer) List(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) ([]Service, error) {
@@ -68,9 +74,14 @@ func (s *ServiceLayer) Create(ctx context.Context, orgID uuid.UUID, dto CreateSe
 		Category:        dto.Category,
 		PriceKES:        dto.PriceKES,
 		DurationMinutes: duration,
+		PrepMinutes:     dto.PrepMinutes,
+		BufferMinutes:   dto.BufferMinutes,
 		Description:     dto.Description,
 		ImageURL:        dto.ImageURL,
 		IsActive:        active,
+	}
+	if dto.RequiresPatchTest != nil {
+		row.RequiresPatchTest = *dto.RequiresPatchTest
 	}
 	if err := s.repo.Create(ctx, row); err != nil {
 		return nil, err
@@ -94,6 +105,15 @@ func (s *ServiceLayer) Update(ctx context.Context, orgID, id uuid.UUID, dto Upda
 	}
 	if dto.DurationMinutes != nil {
 		row.DurationMinutes = *dto.DurationMinutes
+	}
+	if dto.PrepMinutes != nil {
+		row.PrepMinutes = *dto.PrepMinutes
+	}
+	if dto.BufferMinutes != nil {
+		row.BufferMinutes = *dto.BufferMinutes
+	}
+	if dto.RequiresPatchTest != nil {
+		row.RequiresPatchTest = *dto.RequiresPatchTest
 	}
 	if dto.Description != nil {
 		row.Description = *dto.Description

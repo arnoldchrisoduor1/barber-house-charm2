@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, Plus, Search } from "lucide-react";
+import { CalendarDays, Plus, Search, AlertTriangle } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { BookingWizard } from "@/components/booking/BookingWizard";
@@ -25,10 +25,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
 import { useCurrentStaffId } from "@/hooks/useCurrentStaffId";
 import { useStaffScope } from "@/hooks/useStaffScope";
 import { api } from "@/lib/api-client";
 import { formatDate, formatTime } from "@/lib/format";
+import { Textarea } from "@/components/ui/textarea";
+import { createConsultation } from "@/lib/api/beauty-crm";
+import { useFeature } from "@/hooks/useFeature";
 import { pickRowField } from "@/lib/record-fields";
 
 type BookingRow = Record<string, unknown>;
@@ -43,6 +47,7 @@ const NEXT_STATUS: Record<string, string> = {
 
 export default function BookingsPage() {
   const { activeOrg } = useAuth();
+  const { terms } = useBusinessCategory();
   const staffId = useCurrentStaffId();
   const { isStaffScoped } = useStaffScope();
   const qc = useQueryClient();
@@ -55,7 +60,31 @@ export default function BookingsPage() {
     id: string;
     name: string;
     phone: string;
+    hasAllergies?: boolean;
+    allergyNotes?: string;
   } | null>(null);
+  const [consultationOpen, setConsultationOpen] = useState(false);
+  const [consultationCustomerId, setConsultationCustomerId] = useState("");
+  const [consultationBookingId, setConsultationBookingId] = useState("");
+  const [consultationSummary, setConsultationSummary] = useState("");
+  const hasConsultationFeature = useFeature("consultation_history");
+
+  const { data: allCustomers = [] } = useQuery({
+    queryKey: ["org", orgId, "customers", "bookings-lookup"],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const resp = await api.get<{ data: Record<string, unknown>[] }>(`/organizations/${orgId}/customers`);
+      return resp.data ?? [];
+    },
+  });
+
+  const customerById = useMemo(() => {
+    const map = new Map<string, Record<string, unknown>>();
+    for (const row of allCustomers) {
+      map.set(String(pickRowField(row, "id") ?? ""), row);
+    }
+    return map;
+  }, [allCustomers]);
 
   const { data: customers = [], isLoading: customersLoading } = useQuery({
     queryKey: ["org", orgId, "customers", "booking-dialog"],
@@ -110,7 +139,31 @@ export default function BookingsPage() {
         status,
       });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId, "bookings"] }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["org", orgId, "bookings"] });
+      if (vars.status === "completed" && hasConsultationFeature) {
+        const row = (data ?? []).find((r) => String(pickRowField(r, "id")) === vars.id);
+        const cid = String(pickRowField(row ?? {}, "customer_id") ?? pickRowField(row ?? {}, "customerId") ?? "");
+        if (cid) {
+          setConsultationCustomerId(cid);
+          setConsultationBookingId(vars.id);
+          setConsultationSummary("");
+          setConsultationOpen(true);
+        }
+      }
+    },
+  });
+
+  const saveConsultation = useMutation({
+    mutationFn: () =>
+      createConsultation(orgId, consultationCustomerId, {
+        treatment_summary: consultationSummary,
+        service_name: "Completed appointment",
+      }),
+    onSuccess: () => {
+      setConsultationOpen(false);
+      setConsultationSummary("");
+    },
   });
 
   function closeBookingDialog() {
@@ -120,7 +173,7 @@ export default function BookingsPage() {
   }
 
   return (
-    <AppShell title={isStaffScoped ? "Your appointments" : "Bookings"}>
+    <AppShell title={isStaffScoped ? `Your ${terms.bookingPlural.toLowerCase()}` : terms.bookingsPageTitle}>
       <Feature flag="bookings">
         {isStaffScoped ? (
           <p className="mb-4 text-sm text-muted-foreground">Today&apos;s schedule and upcoming appointments.</p>
@@ -158,7 +211,7 @@ export default function BookingsPage() {
           </div>
           <Button data-testid="create-booking-btn" onClick={() => setDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            New booking
+            {terms.bookingVerb}
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => (open ? setDialogOpen(true) : closeBookingDialog())}>
             <DialogContent
@@ -197,7 +250,13 @@ export default function BookingsPage() {
                           data-testid={`staff-booking-customer-${id}`}
                           onClick={(e) => {
                             e.preventDefault();
-                            setSelectedCustomer({ id, name, phone });
+                            setSelectedCustomer({
+                              id,
+                              name,
+                              phone,
+                              hasAllergies: Boolean(pickRowField(row, "has_allergies")),
+                              allergyNotes: String(pickRowField(row, "allergy_notes") ?? ""),
+                            });
                           }}
                         >
                           <span className="font-medium">{name}</span>
@@ -223,7 +282,12 @@ export default function BookingsPage() {
                   <BookingWizard
                     mode="staff"
                     orgId={orgId}
-                    title="Book on behalf of customer"
+                    title={terms.bookingVerb}
+                    bookingVerb={terms.bookingVerb}
+                    staffSingular={terms.staffSingular}
+                    customerId={selectedCustomer.id}
+                    customerHasAllergies={selectedCustomer.hasAllergies}
+                    customerAllergyNotes={selectedCustomer.allergyNotes}
                     customerName={selectedCustomer.name}
                     customerPhone={selectedCustomer.phone}
                     onStaffBooked={() => {
@@ -251,9 +315,13 @@ export default function BookingsPage() {
               const status = String(pickRowField(row, "status") ?? "scheduled");
               const start = String(pickRowField(row, "start_time") ?? pickRowField(row, "startTime") ?? "");
               const end = String(pickRowField(row, "end_time") ?? pickRowField(row, "endTime") ?? "");
+              const customerId = String(pickRowField(row, "customer_id") ?? pickRowField(row, "customerId") ?? "");
+              const customer = customerById.get(customerId);
+              const hasAllergies = Boolean(customer && pickRowField(customer, "has_allergies"));
+              const allergyNotes = String(pickRowField(customer ?? {}, "allergy_notes") ?? "");
               const next = NEXT_STATUS[status];
               return (
-                <Card key={id} className="glass">
+                <Card key={id} className="glass" data-testid={hasAllergies ? "booking-allergy-card" : undefined}>
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center justify-between text-base">
                       <span>{formatTime(start)} – {formatTime(end)}</span>
@@ -264,6 +332,12 @@ export default function BookingsPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <p className="text-sm text-muted-foreground">{formatDate(selectedDate)}</p>
+                    {hasAllergies ? (
+                      <div className="flex gap-2 rounded-md border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-200" data-testid="appointment-allergy-alert">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                        <span>{allergyNotes || "Client has known allergies"}</span>
+                      </div>
+                    ) : null}
                     {next ? (
                       <Button
                         size="sm"
@@ -281,6 +355,35 @@ export default function BookingsPage() {
             })
           )}
         </div>
+
+        <Dialog open={consultationOpen} onOpenChange={setConsultationOpen}>
+          <DialogContent data-testid="booking-consultation-dialog">
+            <DialogHeader>
+              <DialogTitle>Treatment note</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <Label>Consultation summary</Label>
+              <Textarea
+                value={consultationSummary}
+                onChange={(e) => setConsultationSummary(e.target.value)}
+                data-testid="booking-consultation-summary"
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="ghost" onClick={() => setConsultationOpen(false)}>
+                  Skip
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!consultationSummary.trim() || saveConsultation.isPending}
+                  onClick={() => saveConsultation.mutate()}
+                  data-testid="booking-consultation-save"
+                >
+                  Save note
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </Feature>
     </AppShell>
   );

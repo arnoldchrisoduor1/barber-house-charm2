@@ -25,16 +25,21 @@ func (NotificationSettings) TableName() string { return "notification_settings" 
 func (NotificationSettings) IsTenantScoped()   {}
 
 type Enquiry struct {
-	ID             uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	OrganizationID uuid.UUID  `gorm:"type:uuid;not null;index"`
-	BranchID       *uuid.UUID `gorm:"type:uuid"`
-	Name           string     `gorm:"not null"`
-	Email          string
-	Phone          string
-	Subject        string
-	Message        string     `gorm:"not null"`
-	IsRead         bool       `gorm:"not null;default:false"`
-	CreatedAt      time.Time
+	ID                  uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	OrganizationID      uuid.UUID  `gorm:"type:uuid;not null;index"`
+	BranchID            *uuid.UUID `gorm:"type:uuid"`
+	Name                string     `gorm:"not null"`
+	Email               string
+	Phone               string
+	Subject             string
+	Message             string     `gorm:"not null"`
+	IsRead              bool       `gorm:"not null;default:false"`
+	Source              string     `gorm:"not null;default:web"`
+	Status              string     `gorm:"not null;default:open"`
+	CustomerID          *uuid.UUID `gorm:"type:uuid"`
+	ConvertedBookingID  *uuid.UUID `gorm:"type:uuid"`
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 func (Enquiry) TableName() string { return "enquiries" }
@@ -88,6 +93,19 @@ type SeatRental struct {
 
 func (SeatRental) TableName() string { return "seat_rentals" }
 func (SeatRental) IsTenantScoped()   {}
+
+type SeatRentCharge struct {
+	database.Base
+	OrganizationID uuid.UUID  `gorm:"type:uuid;not null;index"`
+	SeatRentalID   uuid.UUID  `gorm:"type:uuid;not null;index"`
+	StaffID        *uuid.UUID `gorm:"type:uuid"`
+	PeriodMonth    time.Time  `gorm:"type:date;not null"`
+	AmountKES      int64      `gorm:"not null"`
+	LedgerRef      string
+}
+
+func (SeatRentCharge) TableName() string { return "seat_rent_charges" }
+func (SeatRentCharge) IsTenantScoped()   {}
 
 type GalleryItem struct {
 	database.Base
@@ -157,6 +175,7 @@ var (
 	_ tenancy.OrgScoped = (*StaffChatMessage)(nil)
 	_ tenancy.OrgScoped = (*OrgBranding)(nil)
 	_ tenancy.OrgScoped = (*SeatRental)(nil)
+	_ tenancy.OrgScoped = (*SeatRentCharge)(nil)
 	_ tenancy.OrgScoped = (*GalleryItem)(nil)
 	_ tenancy.OrgScoped = (*ConsentForm)(nil)
 	_ tenancy.OrgScoped = (*InboxNotification)(nil)

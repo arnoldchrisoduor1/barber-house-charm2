@@ -23,6 +23,12 @@ func (r *Repository) List(ctx context.Context, orgID uuid.UUID) ([]Payout, error
 	return rows, err
 }
 
+func (r *Repository) Get(ctx context.Context, orgID, id uuid.UUID) (*Payout, error) {
+	var row Payout
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).First(&row, "id = ?", id).Error
+	return &row, err
+}
+
 func (r *Repository) Create(ctx context.Context, payout *Payout) error {
 	return r.db.WithContext(ctx).Create(payout).Error
 }

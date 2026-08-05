@@ -15,6 +15,7 @@ type Transaction struct {
 	BranchID       *uuid.UUID `gorm:"type:uuid"`
 	CustomerID     *uuid.UUID `gorm:"type:uuid"`
 	BookingID      *uuid.UUID `gorm:"type:uuid"`
+	StaffID        *uuid.UUID `gorm:"type:uuid;index"`
 	AmountKES      int        `gorm:"not null"`
 	PaymentMethod  string     `gorm:"type:payment_method;not null;default:cash"`
 	PaymentStatus  string     `gorm:"type:payment_status;not null;default:pending"`

@@ -252,8 +252,8 @@ export default function ReviewsPage() {
   );
 
   return (
-    <ModulePage title="Reviews" feature="marketing" description="Monitor and respond to client feedback.">
-      <Feature flag="marketing">{body}</Feature>
+    <ModulePage title="Reviews" feature="customer_reviews" description="Monitor and respond to client feedback.">
+      <Feature flag="customer_reviews">{body}</Feature>
     </ModulePage>
   );
 }

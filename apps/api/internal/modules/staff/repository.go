@@ -2,6 +2,7 @@ package staff
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -68,4 +69,24 @@ func (r *Repository) UpdateSchedule(ctx context.Context, orgID uuid.UUID, schedu
 
 func (r *Repository) DeleteSchedule(ctx context.Context, orgID, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Delete(&StaffSchedule{}, "id = ?", id).Error
+}
+
+func (r *Repository) ReassignCustomers(ctx context.Context, orgID, fromStaffID uuid.UUID, toStaffID *uuid.UUID) error {
+	return r.db.WithContext(ctx).Table("customers").
+		Where("organization_id = ? AND assigned_staff_id = ?", orgID, fromStaffID).
+		Update("assigned_staff_id", toStaffID).Error
+}
+
+func (r *Repository) ClearSeatRentals(ctx context.Context, orgID, staffID uuid.UUID) error {
+	return r.db.WithContext(ctx).Table("seat_rentals").
+		Where("organization_id = ? AND staff_id = ?", orgID, staffID).
+		Update("staff_id", nil).Error
+}
+
+func (r *Repository) CancelFutureBookings(ctx context.Context, orgID, staffID uuid.UUID) error {
+	today := time.Now().Format("2006-01-02")
+	return r.db.WithContext(ctx).Table("bookings").
+		Where("organization_id = ? AND staff_id = ? AND booking_date >= ? AND status NOT IN ?",
+			orgID, staffID, today, []string{"completed", "cancelled", "no_show"}).
+		Update("status", "cancelled").Error
 }

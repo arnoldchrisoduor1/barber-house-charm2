@@ -190,3 +190,26 @@ func (r *Repository) StaffConflicts(ctx context.Context, orgID uuid.UUID, staffI
 	err := q.Count(&count).Error
 	return count, err
 }
+
+func (r *Repository) ResourceConflicts(ctx context.Context, orgID uuid.UUID, resourceID uuid.UUID, date time.Time, start, end string, excludeID *uuid.UUID) (int64, error) {
+	q := r.db.WithContext(ctx).Model(&Booking{}).Scopes(platformtenancy.OrgScope(orgID)).
+		Where("resource_id = ? AND booking_date = ? AND status NOT IN ?", resourceID, date, []string{"cancelled", "no_show"}).
+		Where("start_time < ? AND end_time > ?", end, start)
+	if excludeID != nil {
+		q = q.Where("id <> ?", *excludeID)
+	}
+	var count int64
+	err := q.Count(&count).Error
+	return count, err
+}
+
+// TimeOffBlocks returns true when staff has approved leave on the given date.
+func (r *Repository) TimeOffBlocks(ctx context.Context, orgID, staffID uuid.UUID, date time.Time) (bool, error) {
+	d := date.Format("2006-01-02")
+	var count int64
+	err := r.db.WithContext(ctx).Table("time_off_requests").
+		Where("organization_id = ? AND staff_id = ? AND status = ? AND start_date <= ? AND end_date >= ?",
+			orgID, staffID, "approved", d, d).
+		Count(&count).Error
+	return count > 0, err
+}

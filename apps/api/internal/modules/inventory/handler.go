@@ -162,4 +162,6 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	pl.Get("/:id", h.GetPriceLock)
 	pl.Put("/:id", h.UpdatePriceLock)
 	pl.Delete("/:id", h.DeletePriceLock)
+
+	registerStockOpsRoutes(org, features, h)
 }
