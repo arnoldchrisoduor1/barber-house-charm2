@@ -1,9 +1,16 @@
-# Dependencies & build output
-**/node_modules
-**/.next
-**/dist
+# Dependencies & build output (do NOT ignore apps/web/.next/standalone/**/node_modules —
+# Next standalone needs those packages inside the web image).
+/node_modules
+apps/web/node_modules
+apps/api/node_modules
+packages/*/node_modules
 **/.turbo
 .pnpm-store
+
+# Keep apps/web/.next for prebuilt web image (host builds Next; Docker packages it).
+# Other packages' dist still excluded:
+packages/**/dist
+apps/api/bin
 
 # Git / IDE
 .git
@@ -20,7 +27,6 @@ plans
 !.env.example
 
 # Go binaries
-apps/api/bin
 **/*.exe
 **/*.test
 
@@ -33,3 +39,6 @@ apps/web/e2e
 apps/web/playwright.config.ts
 apps/web/test-results
 apps/web/e2e-run*.log
+
+# Go vendor is REQUIRED for offline API builds (container TLS broken)
+# do not ignore /vendor

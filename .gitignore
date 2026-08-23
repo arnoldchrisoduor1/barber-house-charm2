@@ -10,7 +10,7 @@ dist
 .next
 *.tsbuildinfo
 
-# Go
+# Go (vendor/ at repo root IS committed — required for offline Docker API builds)
 apps/api/bin/
 *.exe
 *.test

@@ -45,14 +45,30 @@ cd apps/api && go run ./cmd/api
 ```
 
 
-# Build API + web images
+## Production deploy
+
+1. **Prebuild web in WSL** (symlinks — do not build Next inside Docker on Windows):
+   ```bash
+   bash scripts/wsl-build-web.sh
+   ```
+2. **Push source** to GitHub (`vendor/` committed; `.next` stays gitignored).
+3. **Rsync** prebuilt web to VPS: `DEPLOY_HOST=user@server bash scripts/rsync-web-to-server.sh`
+4. **On server:** `bash scripts/deploy-server.sh`
+
+Full guide: [`infra/runbooks/deploy.md`](infra/runbooks/deploy.md)
+
+```bash
+# Production stack (after .env is configured)
+docker compose -f infra/docker/compose.yml -f infra/docker/compose.prod.yml up -d --build
+```
+
+## Local Docker (full stack)
+
+```bash
 docker compose -f infra/docker/compose.yml build api web
-
-# Apply DB migrations
 docker compose -f infra/docker/compose.yml run --rm migrate
-
-# Start the full stack
 docker compose -f infra/docker/compose.yml up -d
+```
 
 # Start Playwright E2E UI (run from apps/web)
 cd apps/web

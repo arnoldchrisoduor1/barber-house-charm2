@@ -1,4 +1,9 @@
-# Incident runbooks
+# Runbooks
+
+## Deploy
+See [deploy.md](./deploy.md) — WSL prebuild, rsync web to VPS, Docker API/worker, production compose.
+
+## Incident runbooks
 
 ## Pesapal IPN failures
 1. Check API logs for `payment_ipn_received` with `request_id`.

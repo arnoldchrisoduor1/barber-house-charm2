@@ -1,0 +1,82 @@
+# Production overrides. Usage (from repo root):
+#   docker compose -f infra/docker/compose.yml -f infra/docker/compose.prod.yml up -d --build
+#
+# Requires infra/docker/.env (copy from .env.example).
+
+name: haus-wellness
+
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-haus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-haus}
+    ports: !override
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    ports: !override
+      - "127.0.0.1:6379:6379"
+
+  minio:
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minio}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
+    ports: !override
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+
+  mailhog:
+    profiles: ["dev"]
+
+  migrate:
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-haus}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-haus}?sslmode=disable
+
+  api:
+    env_file: .env
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-haus}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-haus}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET in .env}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-24h}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://hauseoftech.com,https://www.hauseoftech.com}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-https://hauseoftech.com}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minio}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET:-haus-media}
+      S3_USE_SSL: ${S3_USE_SSL:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_USE_STARTTLS: ${SMTP_USE_STARTTLS:-true}
+      SMTP_FROM: ${SMTP_FROM:-noreply@hauseoftech.com}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-Haus of Wellness}
+      EMAIL_DRY_RUN: ${EMAIL_DRY_RUN:-false}
+    ports: !override
+      - "127.0.0.1:8080:8080"
+    depends_on: !override
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    env_file: .env
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-haus}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-haus}?sslmode=disable
+      REDIS_URL: redis://redis:6379/0
+
+  web:
+    environment:
+      NEXT_PUBLIC_API_URL: https://api.hauseoftech.com
+      API_URL: http://api:8080
+    ports: !override
+      - "127.0.0.1:3000:3000"
