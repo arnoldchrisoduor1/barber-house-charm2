@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run ON THE VPS after git pull + rsync of apps/web/.next
+# Run ON THE VPS after git pull.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -12,26 +12,14 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-if [[ ! -d "$ROOT/apps/web/.next/standalone" ]]; then
-  if [[ -f "$ROOT/apps/web/prebuilt-next.tar.gz" ]]; then
-    echo "Extracting prebuilt-next.tar.gz..."
-    mkdir -p "$ROOT/apps/web/.next"
-    tar -xzf "$ROOT/apps/web/prebuilt-next.tar.gz" -C "$ROOT/apps/web/.next"
-  else
-    echo "Missing apps/web/.next/standalone or prebuilt-next.tar.gz" >&2
-    exit 1
-  fix
+if [[ ! -f "$ROOT/apps/web/prebuilt-next.tar.gz" ]]; then
+  echo "Missing apps/web/prebuilt-next.tar.gz — pull latest main" >&2
+  exit 1
 fi
 
-if [[ ! -f "$ROOT/apps/api/prebuilt/linux-amd64/api" ]]; then
-  if [[ -f "$ROOT/apps/api/prebuilt-api.tar.gz" ]]; then
-    echo "Extracting prebuilt-api.tar.gz..."
-    mkdir -p "$ROOT/apps/api/prebuilt"
-    tar -xzf "$ROOT/apps/api/prebuilt-api.tar.gz" -C "$ROOT/apps/api/prebuilt"
-  else
-    echo "Missing apps/api/prebuilt/linux-amd64/api or prebuilt-api.tar.gz" >&2
-    exit 1
-  fi
+if [[ ! -f "$ROOT/apps/api/prebuilt-api.tar.gz" ]]; then
+  echo "Missing apps/api/prebuilt-api.tar.gz — pull latest main" >&2
+  exit 1
 fi
 
 echo "Building API + web images..."
