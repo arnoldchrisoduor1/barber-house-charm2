@@ -28,6 +28,18 @@ if find "$STAGE/standalone" -type l ! -exec test -e {} \; -print 2>/dev/null | g
   exit 1
 fi
 
+# Next require-hook resolves styled-jsx from apps/web/node_modules (not .pnpm store).
+WEB_NM="$STAGE/standalone/apps/web/node_modules"
+if [[ ! -f "$WEB_NM/styled-jsx/package.json" ]]; then
+  styled_src="$(find "$STAGE/standalone/node_modules" -path "*/node_modules/styled-jsx/package.json" 2>/dev/null | head -1)"
+  if [[ -z "$styled_src" ]]; then
+    echo "ERROR: styled-jsx missing from standalone output" >&2
+    exit 1
+  fi
+  echo "Patching styled-jsx into apps/web/node_modules ..."
+  cp -a "$(dirname "$styled_src")" "$WEB_NM/styled-jsx"
+fi
+
 echo "Creating prebuilt-next.tar.gz ..."
 tar -czf "$REPO/apps/web/prebuilt-next.tar.gz" -C "$STAGE" standalone static
 
