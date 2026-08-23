@@ -11,7 +11,8 @@ dist
 **/.next
 *.tsbuildinfo
 
-# Go (vendor/ at repo root IS committed — required for offline Docker API builds)
+# Go (prebuilt-api.tar.gz is committed; extracted linux-amd64/ stays local)
+apps/api/prebuilt/
 apps/api/bin/
 *.exe
 *.test

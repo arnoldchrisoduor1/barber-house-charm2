@@ -23,9 +23,15 @@ if [[ ! -d "$ROOT/apps/web/.next/standalone" ]]; then
   fi
 fi
 
-if [[ ! -d "$ROOT/vendor" ]]; then
-  echo "Missing vendor/ — run 'go work vendor' at repo root and commit, or pull latest main" >&2
-  exit 1
+if [[ ! -f "$ROOT/apps/api/prebuilt/linux-amd64/api" ]]; then
+  if [[ -f "$ROOT/apps/api/prebuilt-api.tar.gz" ]]; then
+    echo "Extracting prebuilt-api.tar.gz..."
+    mkdir -p "$ROOT/apps/api/prebuilt"
+    tar -xzf "$ROOT/apps/api/prebuilt-api.tar.gz" -C "$ROOT/apps/api/prebuilt"
+  else
+    echo "Missing apps/api/prebuilt/linux-amd64/api or prebuilt-api.tar.gz" >&2
+    exit 1
+  fi
 fi
 
 echo "Building API + web images..."

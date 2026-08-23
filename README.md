@@ -47,13 +47,9 @@ cd apps/api && go run ./cmd/api
 
 ## Production deploy
 
-1. **Prebuild web in WSL** (symlinks — do not build Next inside Docker on Windows):
-   ```bash
-   bash scripts/wsl-build-web.sh
-   ```
-2. **Push source** to GitHub (`vendor/` committed; `.next` stays gitignored).
-3. **Rsync** prebuilt web to VPS: `DEPLOY_HOST=user@server bash scripts/rsync-web-to-server.sh`
-4. **On server:** `bash scripts/deploy-server.sh`
+1. **Prebuild web in WSL** + **API** (`bash scripts/build-api-linux.sh`)
+2. **Commit tarballs** (`prebuilt-next.tar.gz`, `prebuilt-api.tar.gz`) and push to GitHub
+3. **On server:** `git pull && bash scripts/deploy-server.sh`
 
 Full guide: [`infra/runbooks/deploy.md`](infra/runbooks/deploy.md)
 

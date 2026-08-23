@@ -40,5 +40,5 @@ apps/web/playwright.config.ts
 apps/web/test-results
 apps/web/e2e-run*.log
 
-# Go vendor is REQUIRED for offline API builds (container TLS broken)
-# do not ignore /vendor
+# Prebuilt Go binaries (host-built; Docker only packages them)
+# do not ignore apps/api/prebuilt/

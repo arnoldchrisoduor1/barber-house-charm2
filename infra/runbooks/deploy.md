@@ -6,8 +6,8 @@ Production domains: **hauseoftech.com** (web) · **api.hauseoftech.com** (API)
 
 | Layer | Where it runs | Notes |
 |-------|---------------|-------|
-| Next.js (standalone) | Prebuilt on **WSL**, rsync'd to server | Not built inside Docker on Windows |
-| Go API / worker / migrate | Built on server via `Dockerfile.api` | Uses committed `vendor/` (offline build) |
+| Next.js (standalone) | Prebuilt on **WSL** → `prebuilt-next.tar.gz` | Not built inside Docker |
+| Go API / worker / migrate / seed | Prebuilt on dev machine → `prebuilt-api.tar.gz` | Docker only packages static linux/amd64 binaries |
 | Postgres, Redis, MinIO | Docker on server | Bound to localhost in prod override |
 | TLS | Caddy container | Auto Let's Encrypt |
 
@@ -22,7 +22,16 @@ Next.js `output: "standalone"` with **pnpm** creates **symlinks** inside `.next/
 
 **Summary:** WSL build is required on Windows. For a **Linux server**, rsync the WSL output with symlinks intact (`rsync -a`, not `-L`). Dereference only when building the web image on Windows Docker.
 
-`.next` is **gitignored** — never commit it. Transfer via rsync after each frontend release.
+`.next` and extracted binaries are **gitignored** — deploy ships `prebuilt-next.tar.gz` and `prebuilt-api.tar.gz` in git.
+
+### Prebuild API (dev machine)
+
+```bash
+# Windows (PowerShell) or WSL
+bash scripts/build-api-linux.sh
+```
+
+Produces `apps/api/prebuilt-api.tar.gz` (api, worker, migrate, seed — linux/amd64).
 
 ---
 
@@ -46,34 +55,40 @@ nano .env   # fill secrets (JWT, POSTGRES_PASSWORD, SMTP, S3)
 
 ## Release flow (every deploy)
 
-### 1. Prebuild web in WSL (dev machine)
+### 1. Prebuild web + API (dev machine)
 
 ```bash
-# In WSL
+# Web (WSL)
 bash scripts/wsl-build-web.sh
+# Pack web tarball
+wsl bash -c "cd ~/haus-web-build/apps/web/.next && tar -czf /mnt/c/Users/arnol/OneDrive/Desktop/barber-house-charm2/apps/web/prebuilt-next.tar.gz standalone static"
+
+# API (Windows or WSL)
+bash scripts/build-api-linux.sh
 ```
 
-This syncs sources to `~/haus-web-build`, runs `pnpm install`, builds contracts + web with `API_URL=http://api:8080` (Docker internal DNS for Next rewrites).
-
-Verify:
+### 2. Push to GitHub
 
 ```bash
-test -f ~/haus-web-build/apps/web/.next/standalone/apps/web/server.js \
-  || test -f ~/haus-web-build/apps/web/.next/standalone/server.js
-```
-
-### 2. Push source to GitHub (no .next)
-
-```bash
-# Windows or WSL, from repo root
-git add -A
-git commit -m "..."
+git add apps/web/prebuilt-next.tar.gz apps/api/prebuilt-api.tar.gz
+git commit -m "Deploy prebuilt web + API"
 git push origin main
 ```
 
-Ensure `vendor/` and the fixed `.dockerignore` are committed.
+### 3. Pull + run on server
 
-### 3. Rsync prebuilt web to server
+```bash
+git pull origin main
+bash scripts/deploy-server.sh
+```
+
+(Extracts both tarballs, builds Docker images, migrates, starts stack.)
+
+---
+
+## Legacy rsync flow (optional)
+
+### Rsync prebuilt web to server
 
 ```bash
 # WSL — replace USER and HOST
@@ -137,7 +152,7 @@ curl -sf -o /dev/null -w "%{http_code}\n" https://hauseoftech.com/login
 - Built on Windows without dereference → use WSL build or `scripts/wsl-deref-standalone.sh`.
 
 **API build: `vendor` missing**
-- Run `go work vendor` at repo root and commit `vendor/`.
+- Run `bash scripts/build-api-linux.sh` on dev machine and commit `prebuilt-api.tar.gz`.
 
 **Docker web build: empty `.next`**
 - Committed `.dockerignore` must **not** exclude `apps/web/.next`.
