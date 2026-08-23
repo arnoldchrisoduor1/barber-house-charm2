@@ -37,7 +37,7 @@ export default function MyEarningsPage() {
   const periodEnd = pickRowField(data ?? {}, "period_end");
 
   return (
-    <ModulePage title="My Earnings" feature="staff_commissions_payroll" description="Your commission and revenue for the current period.">
+    <ModulePage title="My Earnings" feature="my_earnings" description="Your commission and revenue for the current period.">
       {!staffId ? (
         <Card className="glass">
           <CardContent className="py-8">

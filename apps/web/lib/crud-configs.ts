@@ -357,6 +357,7 @@ export const galleryConfig: CrudModuleConfig = {
     { name: "description", label: "Description", type: "textarea" },
     { name: "staff_id", label: "Staff ID" },
     { name: "image_url", label: "Image URL (or upload after save)" },
+    { name: "after_image_url", label: "After image URL" },
     { name: "category", label: "Category" },
   ],
   columns: [
@@ -369,6 +370,7 @@ export const galleryConfig: CrudModuleConfig = {
     description: v.description,
     staff_id: v.staff_id || undefined,
     image_url: v.image_url || "https://placehold.co/600x400?text=Gallery",
+    after_image_url: v.after_image_url || undefined,
     category: v.category,
   }),
 };

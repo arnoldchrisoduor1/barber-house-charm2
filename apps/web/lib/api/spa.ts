@@ -10,21 +10,13 @@ export type SpaResource = {
   branch_id?: string;
 };
 
-export type SessionNote = {
-  id: string;
-  customer_id: string;
-  staff_id?: string;
-  booking_id?: string;
-  session_date: string;
-  title: string;
-  content: string;
-  focus_area?: string;
-  pressure_level?: string;
-  oils_used?: string;
-  contraindications?: string;
-  next_visit_notes?: string;
-  created_at: string;
-};
+export {
+  type SessionNote,
+  fetchSessionNotes,
+  createSessionNote,
+  updateSessionNote,
+  deleteSessionNote,
+} from "@/lib/api/session-notes";
 
 export async function fetchResources(orgId: string, branchId?: string) {
   const qs = branchId ? `?branch_id=${encodeURIComponent(branchId)}` : "";
@@ -52,39 +44,6 @@ export async function updateResource(orgId: string, id: string, body: Partial<Sp
 
 export async function deleteResource(orgId: string, id: string) {
   return api.delete(`/organizations/${orgId}/resources/${id}`);
-}
-
-export async function fetchSessionNotes(orgId: string, customerId?: string) {
-  const qs = customerId ? `?customer_id=${encodeURIComponent(customerId)}` : "";
-  const res = await api.get<{ data: SessionNote[] }>(`/organizations/${orgId}/session-notes${qs}`);
-  return res.data ?? [];
-}
-
-export async function createSessionNote(
-  orgId: string,
-  body: {
-    customer_id: string;
-    staff_id?: string;
-    booking_id?: string;
-    session_date: string;
-    title?: string;
-    content?: string;
-    focus_area?: string;
-    pressure_level?: string;
-    oils_used?: string;
-    contraindications?: string;
-    next_visit_notes?: string;
-  },
-) {
-  return api.post<SessionNote>(`/organizations/${orgId}/session-notes`, body);
-}
-
-export async function updateSessionNote(orgId: string, id: string, body: Partial<SessionNote>) {
-  return api.put<SessionNote>(`/organizations/${orgId}/session-notes/${id}`, body);
-}
-
-export async function deleteSessionNote(orgId: string, id: string) {
-  return api.delete(`/organizations/${orgId}/session-notes/${id}`);
 }
 
 export const SPA_AFTERCARE_TEMPLATES = [

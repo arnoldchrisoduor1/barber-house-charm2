@@ -19,7 +19,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "multi_branch"
     },
     {
       "icon": "BarChart3",
@@ -59,7 +60,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "BarChart3",
@@ -69,7 +71,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "HeadphonesIcon",
@@ -79,7 +82,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "LayoutDashboard",
@@ -115,7 +119,19 @@
       "section": "Nail Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "queue"
+    },
+    {
+      "icon": "ListOrdered",
+      "label": "Waitlist",
+      "path": "/waitlist",
+      "section": "Nail Floor",
+      "roles": [
+        "branch_manager",
+        "receptionist"
+      ],
+      "requiredFeature": "bookings"
     },
     {
       "icon": "QrCode",
@@ -124,7 +140,8 @@
       "section": "Nail Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "Calendar",
@@ -151,7 +168,8 @@
       "section": "Reception",
       "roles": [
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "queue"
     },
     {
       "icon": "ShoppingCart",
@@ -162,15 +180,6 @@
         "receptionist"
       ],
       "requiredFeature": "pos_payments"
-    },
-    {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Reception",
-      "roles": [
-        "receptionist"
-      ]
     },
     {
       "icon": "LayoutDashboard",
@@ -200,7 +209,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "DollarSign",
@@ -210,7 +220,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Sparkles",
@@ -255,13 +266,52 @@
     },
     {
       "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
+      "label": "Open Tabs",
+      "path": "/pos/tabs",
       "section": "Sales",
       "roles": [
         "ceo",
-        "director"
-      ]
+        "director",
+        "branch_manager",
+        "receptionist"
+      ],
+      "requiredFeature": "pos_payments"
+    },
+    {
+      "icon": "Wallet",
+      "label": "Booking Deposits",
+      "path": "/booking-deposits",
+      "section": "Sales",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "booking_deposits"
+    },
+    {
+      "icon": "CalendarX",
+      "label": "Tech Time Off",
+      "path": "/time-off",
+      "section": "Team",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_time_off"
+    },
+    {
+      "icon": "ArrowLeftRight",
+      "label": "Shift Swap",
+      "path": "/shift-swap",
+      "section": "Team",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "staff_shift_swap"
     },
     {
       "icon": "Crown",
@@ -272,7 +322,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "loyalty"
     },
     {
       "icon": "Repeat",
@@ -283,7 +334,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Gift",
@@ -294,7 +346,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Star",
@@ -305,7 +358,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "Camera",
@@ -317,7 +371,8 @@
         "director",
         "branch_manager",
         "senior_barber"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "FileCheck",
@@ -328,7 +383,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "clinical"
     },
     {
       "icon": "Coins",
@@ -340,7 +396,8 @@
         "director",
         "branch_manager",
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "tips_management"
     },
     {
       "icon": "ShoppingBag",
@@ -351,18 +408,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
-    },
-    {
-      "icon": "Radio",
-      "label": "Field Operations",
-      "path": "/field-operations",
-      "section": "Operations",
-      "roles": [
-        "ceo",
-        "director",
-        "branch_manager"
-      ]
+      ],
+      "requiredFeature": "inventory_tracking"
     },
     {
       "icon": "MessagesSquare",

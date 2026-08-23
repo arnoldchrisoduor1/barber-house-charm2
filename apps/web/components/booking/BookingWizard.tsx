@@ -22,10 +22,19 @@ import {
   type PortalBookingPayload,
 } from "@/lib/api/booking";
 import { useAuth } from "@/hooks/useAuth";
+import { useBusinessCategory } from "@/hooks/useBusinessCategory";
+import { fetchCoverageZones } from "@/lib/api/mobile";
 import { readPortalCustomerPhone, usePortalCustomerStore } from "@/lib/store/portal-customer-store";
 import { fetchPatchTests } from "@/lib/api/beauty-crm";
 import { fetchResources } from "@/lib/api/spa";
 import { useFeature } from "@/hooks/useFeature";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const BASE_STEPS = ["branch", "services", "datetime", "staff", "resource", "confirm"] as const;
 type Step = (typeof BASE_STEPS)[number];
@@ -38,6 +47,7 @@ interface BookingWizardProps {
   bookingVerb?: string;
   staffSingular?: string;
   customerName?: string;
+  homeVisit?: boolean;
   customerPhone?: string;
   customerId?: string;
   customerHasAllergies?: boolean;
@@ -57,9 +67,12 @@ export function BookingWizard({
   customerId,
   customerHasAllergies = false,
   customerAllergyNotes = "",
+  homeVisit = false,
   onStaffBooked,
 }: BookingWizardProps) {
   const { me } = useAuth();
+  const { mode: businessMode } = useBusinessCategory();
+  const isHomeVisit = homeVisit || businessMode === "mobile";
   const [stepIndex, setStepIndex] = useState(0);
   const [booked, setBooked] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +86,14 @@ export function BookingWizard({
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [visitAddress, setVisitAddress] = useState("");
+  const [coverageZoneId, setCoverageZoneId] = useState("");
+
+  const zonesQuery = useQuery({
+    queryKey: ["booking-zones", orgId],
+    queryFn: () => fetchCoverageZones(orgId!),
+    enabled: isHomeVisit && !!orgId && (mode === "portal" || mode === "staff"),
+  });
 
   const catalogQuery = useQuery({
     queryKey: ["booking-catalog", mode, orgSlug, orgId, branchId],
@@ -275,6 +296,8 @@ export function BookingWizard({
       fullName,
       phone,
       notes,
+      visitAddress: isHomeVisit ? visitAddress : undefined,
+      coverageZoneId: isHomeVisit && coverageZoneId ? coverageZoneId : undefined,
     };
     submitMutation.mutate(payload);
   }
@@ -581,6 +604,38 @@ export function BookingWizard({
                 <Label htmlFor="notes">Notes (optional)</Label>
                 <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} />
               </div>
+              {isHomeVisit ? (
+                <div className="space-y-3 rounded-lg border border-border/40 p-3" data-testid="home-visit-fields">
+                  <div className="space-y-2">
+                    <Label htmlFor="visit-address">Visit address</Label>
+                    <Input
+                      id="visit-address"
+                      data-testid="booking-visit-address"
+                      value={visitAddress}
+                      onChange={(e) => setVisitAddress(e.target.value)}
+                      placeholder="Street, estate, city"
+                    />
+                  </div>
+                  {(zonesQuery.data ?? []).length > 0 ? (
+                    <div className="space-y-2">
+                      <Label>Coverage zone</Label>
+                      <Select value={coverageZoneId || "__none__"} onValueChange={(v) => setCoverageZoneId(v === "__none__" ? "" : v)}>
+                        <SelectTrigger data-testid="booking-coverage-zone">
+                          <SelectValue placeholder="Select zone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">None</SelectItem>
+                          {(zonesQuery.data ?? []).map((z) => (
+                            <SelectItem key={z.id} value={z.id}>
+                              {z.name} ({z.city})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           ) : null}
 

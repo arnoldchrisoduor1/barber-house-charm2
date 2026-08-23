@@ -44,14 +44,12 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) (*AuthResponse,
 }
 
 func (s *Service) SelectOrg(ctx context.Context, userID uuid.UUID, orgID uuid.UUID) (*AuthResponse, error) {
-	org, err := s.tenancySvc.GetOrg(ctx, orgID)
+	org, roles, err := s.tenancySvc.Membership(ctx, userID, orgID)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.tenancySvc.EnsureMember(ctx, userID, org.ID, "customer"); err != nil {
-		return nil, err
-	}
-	return s.issueTokens(ctx, userID, org.ID, []string{"customer"})
+	_ = org
+	return s.issueTokens(ctx, userID, orgID, roles)
 }
 
 func (s *Service) ListPublicOrgs(ctx context.Context, category string) ([]map[string]any, error) {

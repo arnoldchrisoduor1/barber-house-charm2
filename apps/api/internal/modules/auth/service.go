@@ -152,10 +152,16 @@ func (s *Service) registerBusiness(ctx context.Context, req RegisterRequest, reg
 		if businessType == "" {
 			businessType = "barber"
 		}
+		var specialty *string
+		if req.Specialty != "" {
+			s := req.Specialty
+			specialty = &s
+		}
 		org = tenancymod.Organization{
 			Name:         req.OrgName,
 			Slug:         req.OrgSlug,
 			BusinessType: businessType,
+			Specialty:    specialty,
 		}
 		if err := tx.Create(&org).Error; err != nil {
 			return err
@@ -170,9 +176,13 @@ func (s *Service) registerBusiness(ctx context.Context, req RegisterRequest, reg
 			return err
 		}
 		trialEnds := time.Now().Add(7 * 24 * time.Hour)
+		plan := "starter"
+		if businessType == "solo_pro" {
+			plan = "solo_pro"
+		}
 		sub := tenancymod.Subscription{
 			OrganizationID: org.ID,
-			Plan:           "starter",
+			Plan:           plan,
 			Status:         "trial",
 			TrialEndsAt:    &trialEnds,
 		}
@@ -256,7 +266,7 @@ func (s *Service) Logout(_ context.Context) error {
 	return nil
 }
 
-func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error) {
+func (s *Service) Me(ctx context.Context, userID uuid.UUID, preferredOrgID uuid.UUID) (*MeResponse, error) {
 	user, err := s.repo.FindUserByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -265,21 +275,33 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 	if err != nil {
 		return nil, err
 	}
-	org, roles, err := s.tenancySvc.PrimaryMembership(ctx, userID)
-	if err != nil {
-		if errors.Is(err, httpx.ErrNotFound) {
-			return &MeResponse{
-				User: UserDTO{
-					ID:       user.ID.String(),
-					Email:    user.Email,
-					FullName: profile.FullName,
-				},
-				Roles:    []string{"customer"},
-				Features: []string{},
-			}, nil
+
+	var org *tenancymod.Organization
+	var roles []string
+	if preferredOrgID != uuid.Nil {
+		org, roles, err = s.tenancySvc.Membership(ctx, userID, preferredOrgID)
+		if err != nil && !errors.Is(err, httpx.ErrForbidden) && !errors.Is(err, httpx.ErrNotFound) {
+			return nil, err
 		}
-		return nil, err
 	}
+	if org == nil {
+		org, roles, err = s.tenancySvc.PrimaryMembership(ctx, userID)
+		if err != nil {
+			if errors.Is(err, httpx.ErrNotFound) {
+				return &MeResponse{
+					User: UserDTO{
+						ID:       user.ID.String(),
+						Email:    user.Email,
+						FullName: profile.FullName,
+					},
+					Roles:    []string{"customer"},
+					Features: []string{},
+				}, nil
+			}
+			return nil, err
+		}
+	}
+
 	sub, err := s.tenancySvc.GetSubscription(ctx, org.ID)
 	if err != nil {
 		return nil, err
@@ -296,6 +318,7 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 	}
 
 	sid, _ := s.repo.StaffIDForUser(ctx, org.ID, userID)
+	termsMode, effectiveCats := resolveOrgPresentation(org.BusinessType, org.Specialty)
 	return &MeResponse{
 		User: UserDTO{
 			ID:       user.ID.String(),
@@ -303,10 +326,13 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 			FullName: profile.FullName,
 		},
 		ActiveOrg: OrgSummaryDTO{
-			ID:           org.ID.String(),
-			Name:         org.Name,
-			Slug:         org.Slug,
-			BusinessType: org.BusinessType,
+			ID:                  org.ID.String(),
+			Name:                org.Name,
+			Slug:                org.Slug,
+			BusinessType:        org.BusinessType,
+			Specialty:           org.Specialty,
+			TermsMode:           termsMode,
+			EffectiveCategories: effectiveCats,
 		},
 		Roles: roles,
 		Subscription: SubscriptionDTO{
@@ -318,6 +344,23 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID) (*MeResponse, error)
 		Features: features,
 		StaffID:  staffIDString(sid),
 	}, nil
+}
+
+var specialtyModes = map[string]bool{
+	"barber": true, "beauty": true, "spa": true, "nail_bar": true,
+	"clinic": true, "therapy": true, "products": true,
+}
+
+// resolveOrgPresentation: mobile/solo_pro + specialty → terms from specialty, categories [base, specialty].
+func resolveOrgPresentation(businessType string, specialty *string) (termsMode string, cats []string) {
+	spec := ""
+	if specialty != nil {
+		spec = *specialty
+	}
+	if (businessType == "mobile" || businessType == "solo_pro") && specialtyModes[spec] {
+		return spec, []string{businessType, spec}
+	}
+	return businessType, []string{businessType}
 }
 
 func staffIDString(id *uuid.UUID) *string {

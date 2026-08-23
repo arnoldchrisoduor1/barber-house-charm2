@@ -31,15 +31,17 @@ type StaffAvailabilityQuery struct {
 }
 
 type PortalBookingDTO struct {
-	BranchID    *uuid.UUID  `json:"branchId"`
-	StaffID     uuid.UUID   `json:"staffId"`
-	ResourceID  *uuid.UUID  `json:"resourceId"`
-	ServiceIDs  []uuid.UUID `json:"serviceIds"`
-	BookingDate string      `json:"bookingDate"`
-	StartTime   string      `json:"startTime"`
-	FullName    string      `json:"fullName"`
-	Phone       string      `json:"phone"`
-	Notes       string      `json:"notes"`
+	BranchID       *uuid.UUID  `json:"branchId"`
+	StaffID        uuid.UUID   `json:"staffId"`
+	ResourceID     *uuid.UUID  `json:"resourceId"`
+	ServiceIDs     []uuid.UUID `json:"serviceIds"`
+	BookingDate    string      `json:"bookingDate"`
+	StartTime      string      `json:"startTime"`
+	FullName       string      `json:"fullName"`
+	Phone          string      `json:"phone"`
+	Notes          string      `json:"notes"`
+	VisitAddress   string      `json:"visitAddress"`
+	CoverageZoneID *uuid.UUID  `json:"coverageZoneId"`
 }
 
 func (s *Service) Catalog(ctx context.Context, orgID uuid.UUID, branchID *uuid.UUID) (*CatalogResponse, error) {
@@ -183,6 +185,8 @@ func (s *Service) CreatePortalBooking(ctx context.Context, orgID uuid.UUID, dto 
 		EndTime:        endTime,
 		Status:         "scheduled",
 		Notes:          dto.Notes,
+		VisitAddress:   dto.VisitAddress,
+		CoverageZoneID: dto.CoverageZoneID,
 	}
 
 	lines := make([]BookingService, 0, len(services))

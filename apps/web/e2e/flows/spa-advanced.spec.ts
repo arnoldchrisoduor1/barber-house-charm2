@@ -27,11 +27,11 @@ test.describe("Spa advanced (HS3)", () => {
     await expect(page.getByTestId("progress-tracking-page")).toBeVisible();
   });
 
-  test("aftercare templates visible", async ({ page }) => {
+  test("aftercare page loads CRUD workspace", async ({ page }) => {
     await page.goto("/aftercare");
     await waitForWorkspace(page);
     await expect(page.getByTestId("aftercare-page")).toBeVisible();
-    await expect(page.getByText(/Post-Massage Hydration/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /new template/i })).toBeVisible();
   });
 
   test("public book page spa theme", async ({ page }) => {

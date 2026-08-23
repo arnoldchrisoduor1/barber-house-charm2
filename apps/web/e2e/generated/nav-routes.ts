@@ -41,7 +41,6 @@ export const DASHBOARD_NAV_ROUTES = [
   "/onboarding-checklist",
   "/packages",
   "/patient-intake",
-  "/payments-demo",
   "/payroll",
   "/pos",
   "/pos/tabs",

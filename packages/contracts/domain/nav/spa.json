@@ -320,7 +320,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "FileCheck",
@@ -519,7 +520,7 @@
         "ceo",
         "director"
       ],
-      "requiredFeature": "payroll"
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Phone",
@@ -639,7 +640,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "FileText",
@@ -727,7 +729,7 @@
         "ceo",
         "director"
       ],
-      "requiredFeature": "inventory_tracking"
+      "requiredFeature": "pos_payments"
     },
     {
       "icon": "Megaphone",

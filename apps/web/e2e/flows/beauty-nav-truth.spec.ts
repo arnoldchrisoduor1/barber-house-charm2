@@ -30,6 +30,15 @@ test.describe("Beauty nav truth (HB0)", () => {
   test("walk-in queue nav present for entitled org", async ({ page }) => {
     await page.goto("/dashboard");
     await waitForWorkspace(page);
+    // Queue is branch_manager in beauty nav — switch to manager preview.
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "haus-portal-view",
+        JSON.stringify({ state: { activePortal: "manager" }, version: 0 }),
+      );
+    });
+    await page.reload();
+    await waitForWorkspace(page);
     const link = page.getByTestId("app-sidebar").getByRole("link", { name: /Walk-in Queue|Queue Manager/i });
     await expect(link.first()).toBeVisible();
   });

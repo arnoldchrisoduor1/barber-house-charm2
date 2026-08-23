@@ -43,6 +43,8 @@ export interface PortalBookingPayload {
   fullName: string;
   phone: string;
   notes?: string;
+  visitAddress?: string;
+  coverageZoneId?: string;
 }
 
 function mapBranch(row: Record<string, unknown>): BookingBranch {
@@ -70,6 +72,7 @@ export interface PublicOrgInfo {
   name: string;
   slug: string;
   businessType: string;
+  specialty?: string | null;
 }
 
 export async function fetchPublicOrg(orgSlug: string): Promise<PublicOrgInfo> {
@@ -78,12 +81,14 @@ export async function fetchPublicOrg(orgSlug: string): Promise<PublicOrgInfo> {
     name: string;
     slug: string;
     businessType: string;
+    specialty?: string | null;
   }>(`/organizations/public/${orgSlug}`);
   return {
     id: res.id,
     name: res.name,
     slug: res.slug,
     businessType: res.businessType ?? "barber",
+    specialty: res.specialty,
   };
 }
 

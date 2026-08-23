@@ -270,11 +270,23 @@ func (r *Repository) resolveLines(tx *gorm.DB, orgID uuid.UUID, lines []Checkout
 				return nil, 0, err
 			}
 			lineTotal := svc.PriceKES * line.Quantity
+			unitPrice := svc.PriceKES
+			var locked int
+			_ = tx.Table("price_locks").
+				Scopes(platformtenancy.OrgScope(orgID)).
+				Where("entity_type = ? AND entity_id = ? AND is_active = true AND (expires_at IS NULL OR expires_at > NOW())", "service", svc.ID).
+				Select("locked_price_kes").
+				Limit(1).
+				Scan(&locked).Error
+			if locked > 0 {
+				unitPrice = locked
+				lineTotal = unitPrice * line.Quantity
+			}
 			resolved = append(resolved, resolvedLine{
 				ItemType:     "service",
 				ItemID:       svc.ID,
 				Name:         svc.Name,
-				UnitPriceKES: svc.PriceKES,
+				UnitPriceKES: unitPrice,
 				Quantity:     line.Quantity,
 				LineTotalKES: lineTotal,
 			})
@@ -293,12 +305,23 @@ func (r *Repository) resolveLines(tx *gorm.DB, orgID uuid.UUID, lines []Checkout
 			if product.Quantity < line.Quantity {
 				return nil, 0, ErrInsufficientStock
 			}
-			lineTotal := product.PriceKES * line.Quantity
+			unitPrice := product.PriceKES
+			var locked int
+			err = tx.Table("price_locks").
+				Scopes(platformtenancy.OrgScope(orgID)).
+				Where("entity_type = ? AND entity_id = ? AND is_active = true AND (expires_at IS NULL OR expires_at > NOW())", "product", product.ID).
+				Select("locked_price_kes").
+				Limit(1).
+				Scan(&locked).Error
+			if err == nil && locked > 0 {
+				unitPrice = locked
+			}
+			lineTotal := unitPrice * line.Quantity
 			resolved = append(resolved, resolvedLine{
 				ItemType:     "product",
 				ItemID:       product.ID,
 				Name:         product.Name,
-				UnitPriceKES: product.PriceKES,
+				UnitPriceKES: unitPrice,
 				Quantity:     line.Quantity,
 				LineTotalKES: lineTotal,
 			})

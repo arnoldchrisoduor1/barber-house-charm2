@@ -44,3 +44,31 @@ func (r *Repository) Update(ctx context.Context, orgID uuid.UUID, row *SessionNo
 func (r *Repository) Delete(ctx context.Context, orgID, id uuid.UUID) error {
 	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Delete(&SessionNote{}, "id = ?", id).Error
 }
+
+func (r *Repository) ListProgress(ctx context.Context, orgID uuid.UUID, customerID *uuid.UUID) ([]ProgressMetric, error) {
+	var rows []ProgressMetric
+	q := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID))
+	if customerID != nil {
+		q = q.Where("customer_id = ?", *customerID)
+	}
+	err := q.Order("recorded_at DESC, created_at DESC").Find(&rows).Error
+	return rows, err
+}
+
+func (r *Repository) GetProgress(ctx context.Context, orgID, id uuid.UUID) (*ProgressMetric, error) {
+	var row ProgressMetric
+	err := r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).First(&row, "id = ?", id).Error
+	return &row, err
+}
+
+func (r *Repository) CreateProgress(ctx context.Context, row *ProgressMetric) error {
+	return r.db.WithContext(ctx).Create(row).Error
+}
+
+func (r *Repository) UpdateProgress(ctx context.Context, orgID uuid.UUID, row *ProgressMetric) error {
+	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Save(row).Error
+}
+
+func (r *Repository) DeleteProgress(ctx context.Context, orgID, id uuid.UUID) error {
+	return r.db.WithContext(ctx).Scopes(platformtenancy.OrgScope(orgID)).Delete(&ProgressMetric{}, "id = ?", id).Error
+}

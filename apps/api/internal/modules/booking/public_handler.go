@@ -97,6 +97,7 @@ func (h *PublicHandler) OrgInfo(c *fiber.Ctx) error {
 		"name":         org.Name,
 		"slug":         org.Slug,
 		"businessType": org.BusinessType,
+		"specialty":    org.Specialty,
 	})
 }
 

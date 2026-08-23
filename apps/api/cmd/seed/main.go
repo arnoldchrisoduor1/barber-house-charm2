@@ -81,10 +81,35 @@ func main() {
 		log.Fatalf("spa demo org: %v", err)
 	}
 
+	if err := ensureNailsDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("nails demo org: %v", err)
+	}
+	if err := ensureClinicDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("clinic demo org: %v", err)
+	}
+	if err := ensureMobileDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("mobile demo org: %v", err)
+	}
+	if err := ensureTherapyDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("therapy demo org: %v", err)
+	}
+	if err := ensureSoloDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("solo demo org: %v", err)
+	}
+	if err := ensureProductsDemoOrg(ctx, db, userID); err != nil {
+		log.Fatalf("products demo org: %v", err)
+	}
+
 	_ = userID
 	log.Printf("seed complete: %s / %s (org slug %s)", demoEmail, demoPassword, demoOrgSlug)
 	log.Printf("beauty seed: same login, org slug %s (businessType beauty)", beautyOrgSlug)
 	log.Printf("spa seed: same login, org slug %s (businessType spa)", spaOrgSlug)
+	log.Printf("nails seed: org slug %s", nailsOrgSlug)
+	log.Printf("clinic seed: org slug %s", clinicOrgSlug)
+	log.Printf("mobile seed: org slug %s", mobileOrgSlug)
+	log.Printf("therapy seed: org slug %s", therapyOrgSlug)
+	log.Printf("solo seed: org slug %s", soloOrgSlug)
+	log.Printf("products seed: org slug %s", productsOrgSlug)
 	log.Printf("seed staff login: %s / %s", staffDemoEmail, staffDemoPassword)
 }
 

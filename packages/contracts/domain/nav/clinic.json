@@ -19,7 +19,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "multi_branch"
     },
     {
       "icon": "BarChart3",
@@ -59,7 +60,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "BarChart3",
@@ -69,7 +71,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "HeadphonesIcon",
@@ -79,7 +82,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "LayoutDashboard",
@@ -115,7 +119,8 @@
       "section": "Clinic Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "Calendar",
@@ -155,15 +160,6 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Reception",
-      "roles": [
-        "receptionist"
-      ]
-    },
-    {
       "icon": "LayoutDashboard",
       "label": "My Dashboard",
       "path": "/dashboard",
@@ -201,7 +197,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "DollarSign",
@@ -211,7 +208,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Stethoscope",
@@ -252,7 +250,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "clinical"
     },
     {
       "icon": "FileCheck",
@@ -263,7 +262,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "clinical"
     },
     {
       "icon": "FileCheck",
@@ -274,7 +274,57 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "clinical"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Consultation Notes",
+      "path": "/client-consultations",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager",
+        "senior_barber"
+      ],
+      "requiredFeature": "consultation_history"
+    },
+    {
+      "icon": "FileCheck",
+      "label": "Patch Tests",
+      "path": "/client-patch-tests",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "clinical"
+    },
+    {
+      "icon": "Camera",
+      "label": "Before & After Photos",
+      "path": "/client-photos",
+      "section": "Clinical",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "crm"
+    },
+    {
+      "icon": "Armchair",
+      "label": "Treatment Rooms",
+      "path": "/resources",
+      "section": "Clinic Floor",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "resource_booking"
     },
     {
       "icon": "ShoppingCart",
@@ -286,16 +336,6 @@
         "director"
       ],
       "requiredFeature": "pos_payments"
-    },
-    {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Sales",
-      "roles": [
-        "ceo",
-        "director"
-      ]
     },
     {
       "icon": "Package",
@@ -328,7 +368,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Star",
@@ -339,7 +380,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "Camera",
@@ -350,7 +392,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "CreditCard",
@@ -372,7 +415,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "TrendingUp",
@@ -382,18 +426,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
-    },
-    {
-      "icon": "Radio",
-      "label": "Field Operations",
-      "path": "/field-operations",
-      "section": "Operations",
-      "roles": [
-        "ceo",
-        "director",
-        "branch_manager"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "MessagesSquare",

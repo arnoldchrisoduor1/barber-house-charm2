@@ -90,6 +90,78 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
+func (h *Handler) ListProgress(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	var customerID *uuid.UUID
+	if raw := c.Query("customer_id"); raw != "" {
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			return httpx.ValidationProblem(c, "invalid customer_id", nil)
+		}
+		customerID = &id
+	}
+	rows, err := h.svc.ListProgress(c.UserContext(), orgID, customerID)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(fiber.Map{"data": rows})
+}
+
+func (h *Handler) GetProgress(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.GetProgress(c.UserContext(), orgID, id)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) CreateProgress(c *fiber.Ctx) error {
+	var dto ProgressDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	row, err := h.svc.CreateProgress(c.UserContext(), orgID, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(row)
+}
+
+func (h *Handler) UpdateProgress(c *fiber.Ctx) error {
+	var dto ProgressDTO
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	row, err := h.svc.UpdateProgress(c.UserContext(), orgID, id, dto)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(row)
+}
+
+func (h *Handler) DeleteProgress(c *fiber.Ctx) error {
+	orgID := platformtenancy.OrgIDFrom(c)
+	id, err := uuid.Parse(c.Params("id"))
+	if err != nil {
+		return httpx.ValidationProblem(c, "invalid id", nil)
+	}
+	if err := h.svc.DeleteProgress(c.UserContext(), orgID, id); err != nil {
+		return httpx.From(c, err)
+	}
+	return c.SendStatus(fiber.StatusNoContent)
+}
+
 func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handler) {
 	g := org.Group("/session-notes", authz.RequireFeature(features, "therapy_notes"))
 	g.Get("/", h.List)
@@ -97,4 +169,11 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	g.Get("/:id", h.Get)
 	g.Put("/:id", h.Update)
 	g.Delete("/:id", h.Delete)
+
+	p := org.Group("/progress-tracking", authz.RequireFeature(features, "therapy_notes"))
+	p.Get("/", h.ListProgress)
+	p.Post("/", h.CreateProgress)
+	p.Get("/:id", h.GetProgress)
+	p.Put("/:id", h.UpdateProgress)
+	p.Delete("/:id", h.DeleteProgress)
 }

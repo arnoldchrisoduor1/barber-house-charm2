@@ -9,6 +9,7 @@ type RegisterRequest struct {
 	OrgName      string `json:"orgName"`
 	OrgSlug      string `json:"orgSlug"`
 	BusinessType string `json:"businessType"`
+	Specialty    string `json:"specialty"`
 	Role         string `json:"role"`
 	AccountType  string `json:"accountType"`
 }
@@ -92,10 +93,13 @@ type UserDTO struct {
 }
 
 type OrgSummaryDTO struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Slug         string `json:"slug"`
-	BusinessType string `json:"businessType"`
+	ID                  string   `json:"id"`
+	Name                string   `json:"name"`
+	Slug                string   `json:"slug"`
+	BusinessType        string   `json:"businessType"`
+	Specialty           *string  `json:"specialty,omitempty"`
+	TermsMode           string   `json:"termsMode"`
+	EffectiveCategories []string `json:"effectiveCategories"`
 }
 
 type SubscriptionDTO struct {

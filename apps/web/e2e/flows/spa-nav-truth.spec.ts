@@ -30,6 +30,15 @@ test.describe("Spa nav truth (HS0)", () => {
   test("walk-in queue nav present for entitled org", async ({ page }) => {
     await page.goto("/dashboard");
     await waitForWorkspace(page);
+    // Queue is branch_manager in spa nav — switch to manager preview.
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "haus-portal-view",
+        JSON.stringify({ state: { activePortal: "manager" }, version: 0 }),
+      );
+    });
+    await page.reload();
+    await waitForWorkspace(page);
     const link = page.getByTestId("app-sidebar").getByRole("link", { name: /Walk-in Queue/i });
     await expect(link.first()).toBeVisible();
   });
@@ -39,5 +48,22 @@ test.describe("Spa nav truth (HS0)", () => {
     await waitForWorkspace(page);
     const link = page.getByTestId("app-sidebar").getByRole("link", { name: /Treatment Rooms/i });
     await expect(link.first()).toBeVisible();
+  });
+
+  test("payroll nav present on professional spa plan", async ({ page }) => {
+    await page.goto("/dashboard");
+    await waitForWorkspace(page);
+    // Payroll is ceo/director — ensure executive portal (not manager preview).
+    await page.evaluate(() => {
+      localStorage.setItem(
+        "haus-portal-view",
+        JSON.stringify({ state: { activePortal: "executive" }, version: 0 }),
+      );
+    });
+    await page.reload();
+    await waitForWorkspace(page);
+    await expect(page.getByTestId("app-sidebar").getByRole("link", { name: /^Payroll$/i }).first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

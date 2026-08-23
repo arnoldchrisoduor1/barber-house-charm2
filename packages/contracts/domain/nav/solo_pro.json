@@ -90,7 +90,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "loyalty"
     },
     {
       "icon": "Settings",

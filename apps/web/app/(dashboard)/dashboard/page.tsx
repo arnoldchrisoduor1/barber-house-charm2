@@ -16,6 +16,10 @@ import {
 
 import { AppShell } from "@/components/AppShell";
 import { AiInsightsWidget } from "@/components/dashboard/AiInsightsWidget";
+import { MobileDispatchDashboard } from "@/components/dashboard/MobileDispatchDashboard";
+import { MobileHubDashboard } from "@/components/dashboard/MobileHubDashboard";
+import { ProductsDashboard } from "@/components/dashboard/ProductsDashboard";
+import { SoloProDashboard } from "@/components/dashboard/SoloProDashboard";
 import { PaymentMethodsChart } from "@/components/dashboard/PaymentMethodsChart";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { StaffLeaderboard } from "@/components/dashboard/StaffLeaderboard";
@@ -91,7 +95,7 @@ function StarDisplay({ rating }: { rating: number }) {
 export default function DashboardPage() {
   const { me, isLoading } = useAuth();
   const { effectiveRoles } = usePortalView();
-  const { terms, label, setFromSubscription } = useBusinessCategory();
+  const { terms, label, mode, setFromSubscription } = useBusinessCategory();
   const { activeBranch, activeBranchId, apiParams, canFilter } = useBranchFilter();
   const { staffId, isStaffScoped } = useStaffScope();
   const linkedStaffId = useCurrentStaffId();
@@ -100,10 +104,20 @@ export default function DashboardPage() {
   const scope = roleScope(effectiveRoles);
   const showMetrics = scope === "executive" || scope === "manager";
   const today = new Date().toISOString().slice(0, 10);
+  const dashboardShellTitle =
+    mode === "beauty" ? "Salon Dashboard" : mode === "spa" ? "Wellness Dashboard" : terms.servicesPageTitle;
 
   useEffect(() => {
     const businessType = me?.subscription?.businessType ?? me?.activeOrg?.businessType;
-    if (businessType) setFromSubscription(businessType);
+    const org = me?.activeOrg as
+      | (NonNullable<typeof me>["activeOrg"] & {
+          specialty?: string | null;
+          effectiveCategories?: string[];
+        })
+      | undefined;
+    if (businessType) {
+      setFromSubscription(businessType, org?.specialty, org?.effectiveCategories);
+    }
   }, [me, setFromSubscription]);
 
   const reportsQuery = useQuery({
@@ -248,7 +262,7 @@ export default function DashboardPage() {
   }, [reviewsQuery.data]);
 
   return (
-    <AppShell title={terms.servicesPageTitle}>
+    <AppShell title={dashboardShellTitle}>
       <div className="space-y-6">
         <Card className="glass">
           <CardHeader>
@@ -279,7 +293,13 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {showMetrics ? (
+        {mode === "solo_pro" ? (
+          <SoloProDashboard />
+        ) : mode === "mobile" && (scope === "executive" || scope === "manager") ? (
+          <MobileDispatchDashboard />
+        ) : mode === "products" && (scope === "executive" || scope === "manager") ? (
+          <ProductsDashboard />
+        ) : showMetrics ? (
           <>
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4" data-testid="dashboard-metrics">
               <StatTile
@@ -460,7 +480,9 @@ export default function DashboardPage() {
           </>
         ) : null}
 
-        {scope === "staff" ? (
+        {mode === "mobile" && scope === "staff" ? (
+          <MobileHubDashboard />
+        ) : scope === "staff" ? (
           <div className="space-y-4" data-testid="staff-dashboard">
             <div className="grid gap-4 sm:grid-cols-3">
               <StatTile

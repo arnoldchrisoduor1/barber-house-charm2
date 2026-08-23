@@ -13,8 +13,14 @@ if [[ ! -f .env ]]; then
 fi
 
 if [[ ! -d "$ROOT/apps/web/.next/standalone" ]]; then
-  echo "Missing apps/web/.next/standalone — rsync prebuilt web from WSL first" >&2
-  exit 1
+  if [[ -f "$ROOT/apps/web/prebuilt-next.tar.gz" ]]; then
+    echo "Extracting prebuilt-next.tar.gz..."
+    mkdir -p "$ROOT/apps/web/.next"
+    tar -xzf "$ROOT/apps/web/prebuilt-next.tar.gz" -C "$ROOT/apps/web/.next"
+  else
+    echo "Missing apps/web/.next/standalone or prebuilt-next.tar.gz" >&2
+    exit 1
+  fi
 fi
 
 if [[ ! -d "$ROOT/vendor" ]]; then

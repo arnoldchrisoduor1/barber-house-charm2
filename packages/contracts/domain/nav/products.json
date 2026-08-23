@@ -19,7 +19,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "multi_branch"
     },
     {
       "icon": "BarChart3",
@@ -81,7 +82,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "LayoutDashboard",
@@ -103,15 +105,6 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Store Floor",
-      "roles": [
-        "branch_manager"
-      ]
-    },
-    {
       "icon": "Package",
       "label": "Stock on Hand",
       "path": "/inventory",
@@ -128,7 +121,8 @@
       "section": "Store Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "shop_orders"
     },
     {
       "icon": "CheckSquare",
@@ -146,7 +140,8 @@
       "section": "Store Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "LayoutDashboard",
@@ -168,15 +163,6 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Till",
-      "roles": [
-        "receptionist"
-      ]
-    },
-    {
       "icon": "Users",
       "label": "Customer Lookup",
       "path": "/clients",
@@ -192,7 +178,8 @@
       "section": "Till",
       "roles": [
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "shop_orders"
     },
     {
       "icon": "Package",
@@ -211,7 +198,8 @@
       "section": "Till",
       "roles": [
         "receptionist"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "LayoutDashboard",
@@ -233,16 +221,6 @@
         "junior_barber"
       ],
       "requiredFeature": "pos_payments"
-    },
-    {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Sales Floor",
-      "roles": [
-        "senior_barber",
-        "junior_barber"
-      ]
     },
     {
       "icon": "Users",
@@ -273,7 +251,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "inventory_tracking"
     },
     {
       "icon": "QrCode",
@@ -283,7 +262,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "DollarSign",
@@ -293,7 +273,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "ShoppingBag",
@@ -304,7 +285,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "inventory_tracking"
     },
     {
       "icon": "Package",
@@ -314,6 +296,30 @@
       "roles": [
         "ceo",
         "director"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "ClipboardList",
+      "label": "Stock Take",
+      "path": "/inventory/stock-take",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
+      ],
+      "requiredFeature": "inventory_tracking"
+    },
+    {
+      "icon": "Truck",
+      "label": "Purchase Orders",
+      "path": "/inventory/purchase-orders",
+      "section": "Catalogue",
+      "roles": [
+        "ceo",
+        "director",
+        "branch_manager"
       ],
       "requiredFeature": "inventory_tracking"
     },
@@ -382,16 +388,6 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Sales",
-      "roles": [
-        "ceo",
-        "director"
-      ]
-    },
-    {
       "icon": "ClipboardList",
       "label": "Online Orders",
       "path": "/shop-orders",
@@ -399,7 +395,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "shop_orders"
     },
     {
       "icon": "DollarSign",
@@ -421,7 +418,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "loyalty"
     },
     {
       "icon": "Repeat",
@@ -432,7 +430,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Gift",
@@ -443,7 +442,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Tag",
@@ -455,7 +455,7 @@
         "director",
         "branch_manager"
       ],
-      "requiredFeature": "promotions_referrals"
+      "requiredFeature": "promotions"
     },
     {
       "icon": "CreditCard",
@@ -478,7 +478,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "MessageSquare",
@@ -500,7 +501,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Camera",
@@ -511,7 +513,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "MessagesSquare",
@@ -527,7 +530,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "Paintbrush",

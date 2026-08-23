@@ -201,9 +201,9 @@ export default function SeatRentalPage() {
 
   return (
     <ModulePage
-      title="Seat Rental"
+      title={seatRentalConfig.title}
       feature="staff_commissions_payroll"
-      description="Track chair assignments and monthly rent."
+      description={`Track ${terms.stationSingular.toLowerCase()} assignments and monthly rent.`}
     >
       <Feature flag="staff_commissions_payroll">{body}</Feature>
     </ModulePage>

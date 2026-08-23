@@ -21,15 +21,17 @@ func NewService(repo *Repository, publisher QueuePublisher, crm CRMRepository, a
 }
 
 type CreateBookingDTO struct {
-	CustomerID  uuid.UUID  `json:"customerId"`
-	StaffID     *uuid.UUID `json:"staffId"`
-	ResourceID  *uuid.UUID `json:"resourceId"`
-	BranchID    *uuid.UUID `json:"branchId"`
-	BookingDate string     `json:"bookingDate"`
-	StartTime   string     `json:"startTime"`
-	EndTime     string     `json:"endTime"`
-	Notes       string     `json:"notes"`
-	IsWalkin    bool       `json:"isWalkin"`
+	CustomerID     uuid.UUID  `json:"customerId"`
+	StaffID        *uuid.UUID `json:"staffId"`
+	ResourceID     *uuid.UUID `json:"resourceId"`
+	BranchID       *uuid.UUID `json:"branchId"`
+	BookingDate    string     `json:"bookingDate"`
+	StartTime      string     `json:"startTime"`
+	EndTime        string     `json:"endTime"`
+	Notes          string     `json:"notes"`
+	IsWalkin       bool       `json:"isWalkin"`
+	VisitAddress   string     `json:"visitAddress"`
+	CoverageZoneID *uuid.UUID `json:"coverageZoneId"`
 }
 
 func (s *Service) List(ctx context.Context, orgID uuid.UUID, filter ListFilter) ([]Booking, error) {
@@ -100,6 +102,8 @@ func (s *Service) Create(ctx context.Context, orgID uuid.UUID, dto CreateBooking
 		Status:         "scheduled",
 		IsWalkin:       dto.IsWalkin,
 		Notes:          dto.Notes,
+		VisitAddress:   dto.VisitAddress,
+		CoverageZoneID: dto.CoverageZoneID,
 	}
 	if err := s.repo.Create(ctx, b); err != nil {
 		return nil, err
@@ -169,6 +173,8 @@ func (s *Service) Update(ctx context.Context, orgID uuid.UUID, id uuid.UUID, dto
 	b.StartTime = dto.StartTime
 	b.EndTime = dto.EndTime
 	b.Notes = dto.Notes
+	b.VisitAddress = dto.VisitAddress
+	b.CoverageZoneID = dto.CoverageZoneID
 	if err := s.repo.Update(ctx, orgID, b); err != nil {
 		return nil, err
 	}

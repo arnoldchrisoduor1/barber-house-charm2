@@ -220,7 +220,11 @@ export default function ClientsPage() {
   );
 
   return (
-    <ModulePage title="Clients" feature="crm" description="Search and manage your client directory.">
+    <ModulePage
+      title={terms.clientPlural}
+      feature="crm"
+      description={`Search and manage your ${terms.clientSingular.toLowerCase()} directory.`}
+    >
       <Feature flag="crm">{body}</Feature>
     </ModulePage>
   );

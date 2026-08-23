@@ -158,6 +158,10 @@ func (r *Repository) FindOrgByID(ctx context.Context, orgID uuid.UUID) (*Organiz
 	return &org, err
 }
 
+func (r *Repository) UpdateSpecialty(ctx context.Context, orgID uuid.UUID, specialty *string) error {
+	return r.db.WithContext(ctx).Model(&Organization{}).Where("id = ?", orgID).Update("specialty", specialty).Error
+}
+
 func (r *Repository) ListPublicOrgs(ctx context.Context, category string) ([]map[string]any, error) {
 	q := r.db.WithContext(ctx).Table("organizations o").
 		Select(`o.id, o.name, o.slug, o.business_type::text as business_type,

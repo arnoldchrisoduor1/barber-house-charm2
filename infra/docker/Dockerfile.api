@@ -1,24 +1,24 @@
 FROM golang:1.25-alpine AS builder
 WORKDIR /src
 
-RUN apk add --no-cache git
+# Container HTTPS TLS is broken here (UNABLE_TO_VERIFY_LEAF_SIGNATURE).
+# Offline build from host `go work vendor` output at repo root.
+ENV GOFLAGS=-mod=vendor
 
 COPY go.work go.work.sum ./
-COPY apps/api/go.mod apps/api/go.sum ./apps/api/
+COPY vendor ./vendor
+COPY apps/api ./apps/api
+COPY infra/migrations ./infra/migrations
 
 WORKDIR /src/apps/api
-RUN go mod download
-
-COPY apps/api/ ./
-COPY infra/migrations /src/infra/migrations
-
 RUN CGO_ENABLED=0 go build -o /app/api ./cmd/api
 RUN CGO_ENABLED=0 go build -o /app/worker ./cmd/worker
 RUN CGO_ENABLED=0 go build -o /app/migrate ./cmd/migrate
 RUN CGO_ENABLED=0 go build -o /app/seed ./cmd/seed
 
+# Runtime: copy CA bundle from builder. Skip apk (Alpine CDN SSL also broken).
 FROM alpine:3.20
-RUN apk add --no-cache ca-certificates
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 WORKDIR /app
 
 COPY --from=builder /app/api /app/worker /app/migrate /app/seed ./

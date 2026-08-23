@@ -10,8 +10,24 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { api, apiClient } from "@/lib/api-client";
+
+const SPECIALTY_OPTIONS = [
+  { value: "barber", label: "Barber" },
+  { value: "beauty", label: "Beauty" },
+  { value: "spa", label: "Spa" },
+  { value: "nail_bar", label: "Nail bar" },
+  { value: "clinic", label: "Clinic" },
+  { value: "therapy", label: "Therapy" },
+];
 
 type Tab = "profile" | "password" | "security" | "theme" | "notifications";
 
@@ -35,9 +51,32 @@ function pickBool(data: NotificationSettings, snake: keyof NotificationSettings,
 
 export default function SettingsPage() {
   const [tab, setTab] = useState<Tab>("profile");
-  const { me, activeOrg } = useAuth();
+  const { me, activeOrg, refreshMe } = useAuth();
   const orgId = activeOrg?.id;
   const qc = useQueryClient();
+
+  const orgExtras = activeOrg as
+    | (NonNullable<typeof activeOrg> & {
+        specialty?: string | null;
+        businessType?: string;
+      })
+    | undefined;
+  const businessType = me?.subscription?.businessType ?? orgExtras?.businessType ?? "";
+  const canSetSpecialty = businessType === "mobile" || businessType === "solo_pro";
+  const [specialty, setSpecialty] = useState(orgExtras?.specialty ?? "");
+
+  useEffect(() => {
+    setSpecialty(orgExtras?.specialty ?? "");
+  }, [orgExtras?.specialty]);
+
+  const saveSpecialty = useMutation({
+    mutationFn: () => api.patch(`/organizations/${orgId}`, { specialty }),
+    onSuccess: async () => {
+      await refreshMe();
+      toast.success("Specialty updated");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Update failed"),
+  });
 
   const [otp, setOtp] = useState("");
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
@@ -209,6 +248,34 @@ export default function SettingsPage() {
               <p className="text-muted-foreground">Plan</p>
               <p className="font-medium capitalize">{me?.subscription?.plan ?? "—"}</p>
             </div>
+            {canSetSpecialty ? (
+              <div className="space-y-2 border-t border-border/40 pt-3">
+                <Label htmlFor="org-specialty">Service specialty</Label>
+                <p className="text-xs text-muted-foreground">
+                  UI terms resolve from specialty while nav stays {businessType === "mobile" ? "mobile" : "solo"}.
+                </p>
+                <Select value={specialty || undefined} onValueChange={setSpecialty}>
+                  <SelectTrigger id="org-specialty" data-testid="settings-specialty">
+                    <SelectValue placeholder="Select specialty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SPECIALTY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!specialty || saveSpecialty.isPending}
+                  onClick={() => saveSpecialty.mutate()}
+                >
+                  Save specialty
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

@@ -399,13 +399,14 @@ func (s *Service) ChargeSeatRent(ctx context.Context, orgID, seatID uuid.UUID, a
 }
 
 type GalleryItemDTO struct {
-	StaffID     *uuid.UUID `json:"staff_id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	ImageURL    string     `json:"image_url"`
-	Category    string     `json:"category"`
-	IsPublic    *bool      `json:"is_public"`
-	SortOrder   int        `json:"sort_order"`
+	StaffID       *uuid.UUID `json:"staff_id"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	ImageURL      string     `json:"image_url"`
+	AfterImageURL string     `json:"after_image_url"`
+	Category      string     `json:"category"`
+	IsPublic      *bool      `json:"is_public"`
+	SortOrder     int        `json:"sort_order"`
 }
 
 func (s *Service) ListGalleryItems(ctx context.Context, orgID uuid.UUID) ([]GalleryItem, error) {
@@ -427,6 +428,7 @@ func (s *Service) CreateGalleryItem(ctx context.Context, orgID uuid.UUID, dto Ga
 		Title:          dto.Title,
 		Description:    dto.Description,
 		ImageURL:       dto.ImageURL,
+		AfterImageURL:  dto.AfterImageURL,
 		Category:       dto.Category,
 		IsPublic:       public,
 		SortOrder:      dto.SortOrder,
@@ -446,6 +448,9 @@ func (s *Service) UpdateGalleryItem(ctx context.Context, orgID, id uuid.UUID, dt
 	row.Description = dto.Description
 	if dto.ImageURL != "" {
 		row.ImageURL = dto.ImageURL
+	}
+	if dto.AfterImageURL != "" {
+		row.AfterImageURL = dto.AfterImageURL
 	}
 	row.Category = dto.Category
 	if dto.IsPublic != nil {
@@ -470,7 +475,7 @@ func (s *Service) DeleteGalleryItem(ctx context.Context, orgID, id uuid.UUID) er
 
 const maxGalleryImageBytes = 10 << 20
 
-func (s *Service) UploadGalleryImage(ctx context.Context, orgID, id uuid.UUID, filename string, data []byte, contentType string) (*GalleryItem, error) {
+func (s *Service) UploadGalleryImage(ctx context.Context, orgID, id uuid.UUID, filename string, data []byte, contentType, slot string) (*GalleryItem, error) {
 	if s.storage == nil {
 		return nil, httpx.ErrConflict
 	}
@@ -485,7 +490,11 @@ func (s *Service) UploadGalleryImage(ctx context.Context, orgID, id uuid.UUID, f
 	if err != nil {
 		return nil, err
 	}
-	row.ImageURL = url
+	if slot == "after" {
+		row.AfterImageURL = url
+	} else {
+		row.ImageURL = url
+	}
 	if err := s.repo.UpdateGalleryItem(ctx, orgID, row); err != nil {
 		return nil, err
 	}
@@ -543,12 +552,22 @@ func (s *Service) UpdateConsentForm(ctx context.Context, orgID, id uuid.UUID, dt
 	if dto.Title != "" {
 		row.Title = dto.Title
 	}
+	if dto.FormType != "" {
+		row.FormType = dto.FormType
+	}
 	row.Content = dto.Content
 	row.SignatureURL = dto.SignatureURL
-	if dto.IsSigned != nil && *dto.IsSigned && !row.IsSigned {
-		row.IsSigned = true
-		now := time.Now()
-		row.SignedAt = &now
+	if dto.IsSigned != nil {
+		if *dto.IsSigned {
+			row.IsSigned = true
+			if row.SignedAt == nil {
+				now := time.Now()
+				row.SignedAt = &now
+			}
+		} else {
+			row.IsSigned = false
+			row.SignedAt = nil
+		}
 	}
 	row.ExpiresAt = dto.ExpiresAt
 	if err := s.repo.UpdateConsentForm(ctx, orgID, row); err != nil {

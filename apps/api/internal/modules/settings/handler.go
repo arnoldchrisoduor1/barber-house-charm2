@@ -392,7 +392,11 @@ func (h *Handler) UploadGalleryImage(c *fiber.Ctx) error {
 	if _, err := f.Read(data); err != nil {
 		return httpx.From(c, err)
 	}
-	row, err := h.svc.UploadGalleryImage(c.UserContext(), orgID, id, file.Filename, data, file.Header.Get("Content-Type"))
+	slot := c.Query("slot", "before")
+	if slot != "before" && slot != "after" {
+		return httpx.ValidationProblem(c, "slot must be before or after", nil)
+	}
+	row, err := h.svc.UploadGalleryImage(c.UserContext(), orgID, id, file.Filename, data, file.Header.Get("Content-Type"), slot)
 	if err != nil {
 		return httpx.From(c, err)
 	}

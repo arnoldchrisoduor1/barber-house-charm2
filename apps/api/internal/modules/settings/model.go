@@ -114,6 +114,7 @@ type GalleryItem struct {
 	Title          string
 	Description    string
 	ImageURL       string     `gorm:"not null"`
+	AfterImageURL  string     `json:"after_image_url" gorm:"column:after_image_url"`
 	Category       string
 	IsPublic       bool       `gorm:"not null;default:true"`
 	SortOrder      int        `gorm:"not null;default:0"`

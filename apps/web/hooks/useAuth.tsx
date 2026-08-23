@@ -38,6 +38,7 @@ interface AuthContextValue {
     fullName: string;
     organizationName?: string;
     businessType?: string;
+    specialty?: string;
     role?: string;
     accountType?: "business" | "client";
   }) => Promise<AuthLoginResponse>;
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: string;
       organizationName?: string;
       businessType?: string;
+      specialty?: string;
       role?: string;
       accountType?: "business" | "client";
     }) =>
@@ -97,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         orgName: payload.organizationName ?? "",
         orgSlug: payload.organizationName ? slugifyOrgName(payload.organizationName) : "",
         businessType: payload.businessType ?? "barber",
+        specialty: payload.specialty ?? "",
         role: payload.role ?? "ceo",
         accountType: payload.accountType ?? "business",
       }),
@@ -209,7 +212,7 @@ interface BusinessCategoryContextValue {
   label: string;
   terms: BusinessTerms;
   themeClass: string | null;
-  setFromSubscription: (type: string) => void;
+  setFromSubscription: (type: string, specialty?: string | null, effectiveCategories?: string[]) => void;
   setCategory: (cat: BusinessCategory) => void;
 }
 
@@ -232,11 +235,23 @@ function readStoredCategories(): BusinessCategory[] {
 }
 
 function resolveMode(categories: BusinessCategory[]): BusinessMode | "mixed" {
+  if (
+    categories.length === 2 &&
+    (categories[0] === "mobile" || categories[0] === "solo_pro")
+  ) {
+    return categories[0];
+  }
   if (categories.length > 1) return "mixed";
   return categories[0] ?? "barber";
 }
 
 function resolveThemeClass(categories: BusinessCategory[]): string | null {
+  if (categories.includes("mobile")) {
+    return modeTerms.themeClasses.mobile;
+  }
+  if (categories.includes("solo_pro")) {
+    return modeTerms.themeClasses.solo_pro ?? null;
+  }
   if (categories.length > 1) return modeTerms.themeClasses.mixed;
   const mode = categories[0];
   if (!mode) return null;
@@ -244,6 +259,14 @@ function resolveThemeClass(categories: BusinessCategory[]): string | null {
 }
 
 function resolveTerms(categories: BusinessCategory[]): BusinessTerms {
+  if (
+    categories.length === 2 &&
+    (categories[0] === "mobile" || categories[0] === "solo_pro")
+  ) {
+    const specialty = categories[1];
+    const fromSpecialty = modeTerms.modes[specialty as keyof typeof modeTerms.modes];
+    if (fromSpecialty) return fromSpecialty as BusinessTerms;
+  }
   const mode = resolveMode(categories);
   if (mode === "mixed") {
     return modeTerms.modes.barber as BusinessTerms;
@@ -252,12 +275,24 @@ function resolveTerms(categories: BusinessCategory[]): BusinessTerms {
 }
 
 function resolveLabel(categories: BusinessCategory[]): string {
+  // mobile/solo_pro + specialty: brand stays mode umbrella; terms come from specialty.
+  if (
+    categories.length === 2 &&
+    (categories[0] === "mobile" || categories[0] === "solo_pro")
+  ) {
+    const base = categories[0];
+    return (
+      modeTerms.brandLabels[base as keyof typeof modeTerms.brandLabels] ??
+      modeTerms.brandLabels.mixed
+    );
+  }
   if (categories.length > 1) return modeTerms.brandLabels.mixed;
   const mode = categories[0];
   return modeTerms.brandLabels[mode as keyof typeof modeTerms.brandLabels] ?? modeTerms.brandLabels.mixed;
 }
 
 export function BusinessCategoryProvider({ children }: { children: ReactNode }) {
+  const { me } = useAuth();
   const [categories, setCategories] = useState<BusinessCategory[]>(readStoredCategories);
 
   const persist = useCallback((next: BusinessCategory[]) => {
@@ -275,7 +310,15 @@ export function BusinessCategoryProvider({ children }: { children: ReactNode }) 
   );
 
   const setFromSubscription = useCallback(
-    (type: string) => {
+    (type: string, specialty?: string | null, effectiveCategories?: string[]) => {
+      if (effectiveCategories && effectiveCategories.length > 0) {
+        persist(effectiveCategories as BusinessCategory[]);
+        return;
+      }
+      if ((type === "mobile" || type === "solo_pro") && specialty) {
+        persist([type as BusinessCategory, specialty as BusinessCategory]);
+        return;
+      }
       const typeMap: Record<string, BusinessCategory[]> = {
         barber: ["barber"],
         beauty: ["beauty"],
@@ -293,6 +336,19 @@ export function BusinessCategoryProvider({ children }: { children: ReactNode }) 
     },
     [persist],
   );
+
+  useEffect(() => {
+    const businessType = me?.subscription?.businessType ?? me?.activeOrg?.businessType;
+    const org = me?.activeOrg as
+      | (NonNullable<typeof me>["activeOrg"] & {
+          specialty?: string | null;
+          effectiveCategories?: string[];
+        })
+      | undefined;
+    if (businessType) {
+      setFromSubscription(businessType, org?.specialty, org?.effectiveCategories);
+    }
+  }, [me, setFromSubscription]);
 
   const mode = resolveMode(categories);
   const themeClass = resolveThemeClass(categories);

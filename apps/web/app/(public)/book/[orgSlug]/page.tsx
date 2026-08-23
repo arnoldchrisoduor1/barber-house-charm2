@@ -18,7 +18,12 @@ export default function PublicBookPage({ params }: PublicBookPageProps) {
   });
 
   const businessType = orgQuery.data?.businessType ?? "barber";
-  const terms = modeTerms.modes[businessType as keyof typeof modeTerms.modes] ?? modeTerms.modes.barber;
+  const specialty = orgQuery.data?.specialty;
+  const termsKey =
+    businessType === "mobile" && specialty && modeTerms.modes[specialty as keyof typeof modeTerms.modes]
+      ? specialty
+      : businessType;
+  const terms = modeTerms.modes[termsKey as keyof typeof modeTerms.modes] ?? modeTerms.modes.barber;
   const brand =
     modeTerms.brandLabels[businessType as keyof typeof modeTerms.brandLabels] ?? orgQuery.data?.name ?? "Book online";
   const themeClass =
@@ -48,6 +53,7 @@ export default function PublicBookPage({ params }: PublicBookPageProps) {
           orgSlug={params.orgSlug}
           bookingVerb={terms.bookingVerb}
           staffSingular={terms.staffSingular}
+          homeVisit={businessType === "mobile"}
         />
       </div>
     </div>

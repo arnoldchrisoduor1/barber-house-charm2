@@ -18,6 +18,7 @@ func RegisterRoutes(
 ) {
 	org := router.Group("/organizations/:org", platformauth.JWT(jwt, false), platformtenancy.ResolveOrganization(checker))
 	org.Get("/", h.GetOrg)
+	org.Patch("/", h.UpdateOrg)
 	org.Get("/members", h.ListMembers)
 	org.Get("/branches", h.ListBranches)
 	org.Post("/branches", authz.RequireFeature(features, "multi_branch"), h.CreateBranch)

@@ -22,6 +22,8 @@ type Booking struct {
 	Status         string     `gorm:"type:booking_status;not null;default:scheduled"`
 	IsWalkin       bool       `gorm:"not null;default:false"`
 	Notes          string
+	VisitAddress   string     `gorm:"not null;default:''"`
+	CoverageZoneID *uuid.UUID `gorm:"type:uuid"`
 }
 
 func (Booking) TableName() string { return "bookings" }

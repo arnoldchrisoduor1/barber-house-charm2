@@ -116,7 +116,7 @@ func (h *Handler) Me(c *fiber.Ctx) error {
 	if user == nil {
 		return httpx.ProblemJSON(c, fiber.StatusUnauthorized, "Unauthorized", "authentication required")
 	}
-	resp, err := h.svc.Me(c.UserContext(), user.ID)
+	resp, err := h.svc.Me(c.UserContext(), user.ID, user.ActiveOrg)
 	if err != nil {
 		return httpx.From(c, err)
 	}

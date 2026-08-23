@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 
 import { ensureAuthenticated } from "../helpers/ensure-auth";
 import { waitForWorkspace } from "../helpers/crud";
+import { setPortal, stripMeFeatures } from "../helpers/nav-features";
 
 /** Paths removed from barber.json in Phase 0 — must not appear in barber-mode sidebar. */
 const BARBER_HIDDEN_NAV = ["Payments Demo", "Field Operations"] as const;
@@ -35,5 +36,32 @@ test.describe("Barber nav truth (Phase 0)", () => {
         await expect(link.first()).toBeVisible();
       }
     }
+  });
+
+  test("waitlist and gallery show when bookings/marketing on", async ({ page }) => {
+    await page.goto("/dashboard");
+    await waitForWorkspace(page);
+    await setPortal(page, "manager");
+    await page.reload();
+    await waitForWorkspace(page);
+    await expect(page.getByTestId("app-sidebar").getByRole("link", { name: /^Waitlist$/i }).first()).toBeVisible();
+    await setPortal(page, "executive");
+    await page.reload();
+    await waitForWorkspace(page);
+    await expect(page.getByTestId("app-sidebar").getByRole("link", { name: /Before & After Gallery/i }).first()).toBeVisible();
+  });
+
+  test("waitlist and gallery hide when bookings/marketing off", async ({ page }) => {
+    await stripMeFeatures(page, ["bookings", "marketing"]);
+    await page.goto("/dashboard");
+    await waitForWorkspace(page);
+    await setPortal(page, "manager");
+    await page.reload();
+    await waitForWorkspace(page);
+    await expect(page.getByTestId("app-sidebar").getByRole("link", { name: /^Waitlist$/i })).toHaveCount(0);
+    await setPortal(page, "executive");
+    await page.reload();
+    await waitForWorkspace(page);
+    await expect(page.getByTestId("app-sidebar").getByRole("link", { name: /Before & After Gallery/i })).toHaveCount(0);
   });
 });

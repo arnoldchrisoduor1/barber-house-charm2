@@ -198,7 +198,8 @@
       "section": "Branch",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "bookings"
     },
     {
       "icon": "Phone",
@@ -672,7 +673,8 @@
         "director",
         "branch_manager",
         "senior_barber"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Package",

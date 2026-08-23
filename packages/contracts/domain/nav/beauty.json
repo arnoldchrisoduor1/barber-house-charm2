@@ -150,7 +150,8 @@
       "section": "Salon Floor",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "bookings"
     },
     {
       "icon": "QrCode",
@@ -460,7 +461,8 @@
         "director",
         "branch_manager",
         "senior_barber"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Megaphone",
@@ -713,7 +715,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "FileCheck",

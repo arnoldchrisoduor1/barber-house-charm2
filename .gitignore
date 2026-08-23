@@ -7,7 +7,8 @@ node_modules
 .pnpm-store
 .turbo
 dist
-.next
+# Next build output (deploy ships apps/web/prebuilt-next.tar.gz instead)
+**/.next
 *.tsbuildinfo
 
 # Go (vendor/ at repo root IS committed — required for offline Docker API builds)

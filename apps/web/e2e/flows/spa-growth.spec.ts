@@ -24,11 +24,17 @@ test.describe("Spa growth (HS2)", () => {
     await page.goto("/consent-forms");
     await waitForWorkspace(page);
     await expect(page.getByTestId("consent-forms-page")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Consent & Allergies/i }).first()).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("gallery page loads", async ({ page }) => {
     await page.goto("/gallery");
     await waitForWorkspace(page);
-    await expect(page.getByText(/gallery/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Ambience Gallery/i }).first()).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("gallery-upload-slot")).toHaveCount(0);
   });
 });

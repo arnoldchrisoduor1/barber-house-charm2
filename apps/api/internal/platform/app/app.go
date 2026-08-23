@@ -46,6 +46,9 @@ import (
 	suppliersmod "github.com/haus-of-wellness/api/internal/modules/suppliers"
 	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
 	therapymod "github.com/haus-of-wellness/api/internal/modules/therapy"
+	clinicalmod "github.com/haus-of-wellness/api/internal/modules/clinical"
+	mobilemod "github.com/haus-of-wellness/api/internal/modules/mobile"
+	shopmod "github.com/haus-of-wellness/api/internal/modules/shop"
 )
 
 type Dependencies struct {
@@ -190,6 +193,18 @@ func New(deps Dependencies) (*fiber.App, error) {
 	therapySvc := therapymod.NewService(therapyRepo)
 	therapyHandler := therapymod.NewHandler(therapySvc)
 
+	clinicalRepo := clinicalmod.NewRepository(deps.DB)
+	clinicalSvc := clinicalmod.NewService(clinicalRepo)
+	clinicalHandler := clinicalmod.NewHandler(clinicalSvc)
+
+	mobileRepo := mobilemod.NewRepository(deps.DB)
+	mobileSvc := mobilemod.NewService(mobileRepo)
+	mobileHandler := mobilemod.NewHandler(mobileSvc)
+
+	shopRepo := shopmod.NewRepository(deps.DB)
+	shopSvc := shopmod.NewService(shopRepo)
+	shopHandler := shopmod.NewHandler(shopSvc, tenancySvc)
+
 	settingsRepo := settingsmod.NewRepository(deps.DB)
 	settingsSvc := settingsmod.NewService(settingsRepo, realtimeHub, ledgerSvc, platformSvc, storageClient)
 	settingsSvc.SetEnquiryIntegrations(enquiryCRMBridge{repo: crmRepo}, enquiryBookingBridge{svc: bookingSvc})
@@ -248,6 +263,7 @@ func New(deps Dependencies) (*fiber.App, error) {
 	platformmod.RegisterRoutes(v1, jwtSvc, platformSvc, platformHandler, platformFeaturesHandler)
 	pesapalmod.RegisterPublicRoutes(v1, pesapalHandler)
 	bookingmod.RegisterPublicRoutes(v1, publicBookingHandler)
+	shopmod.RegisterPublicRoutes(v1, shopHandler)
 
 	org := v1.Group("/organizations/:org",
 		platformauth.JWT(jwtSvc, false),
@@ -271,6 +287,9 @@ func New(deps Dependencies) (*fiber.App, error) {
 	analyticsmod.RegisterOrgRoutes(org, featureSvc, analyticsHandler)
 	resourcesmod.RegisterOrgRoutes(org, featureSvc, resourcesHandler)
 	therapymod.RegisterOrgRoutes(org, featureSvc, therapyHandler)
+	clinicalmod.RegisterOrgRoutes(org, featureSvc, clinicalHandler)
+	mobilemod.RegisterOrgRoutes(org, featureSvc, mobileHandler)
+	shopmod.RegisterOrgRoutes(org, featureSvc, shopHandler)
 	settingsmod.RegisterOrgRoutes(org, featureSvc, settingsHandler)
 	staffmod.RegisterOrgRoutes(org, staffHandler)
 	staffmod.RegisterTimeOffRoutes(org, featureSvc, staffHandler)

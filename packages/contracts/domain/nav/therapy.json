@@ -19,7 +19,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "multi_branch"
     },
     {
       "icon": "BarChart3",
@@ -59,7 +60,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "HeadphonesIcon",
@@ -69,7 +71,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "LayoutDashboard",
@@ -105,7 +108,8 @@
       "section": "Practice",
       "roles": [
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "qr_clock"
     },
     {
       "icon": "LayoutDashboard",
@@ -145,7 +149,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "DollarSign",
@@ -155,7 +160,8 @@
       "roles": [
         "senior_barber",
         "junior_barber"
-      ]
+      ],
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Brain",
@@ -197,7 +203,8 @@
         "director",
         "branch_manager",
         "senior_barber"
-      ]
+      ],
+      "requiredFeature": "therapy_notes"
     },
     {
       "icon": "TrendingUp",
@@ -208,7 +215,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "therapy_notes"
     },
     {
       "icon": "FileCheck",
@@ -219,7 +227,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "clinical"
     },
     {
       "icon": "Crown",
@@ -230,7 +239,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "loyalty"
     },
     {
       "icon": "Repeat",
@@ -241,7 +251,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "marketing"
     },
     {
       "icon": "Star",
@@ -252,7 +263,8 @@
         "ceo",
         "director",
         "branch_manager"
-      ]
+      ],
+      "requiredFeature": "customer_reviews"
     },
     {
       "icon": "CreditCard",
@@ -278,16 +290,6 @@
       "requiredFeature": "pos_payments"
     },
     {
-      "icon": "Receipt",
-      "label": "Payments Demo",
-      "path": "/payments-demo",
-      "section": "Operations",
-      "roles": [
-        "ceo",
-        "director"
-      ]
-    },
-    {
       "icon": "TrendingUp",
       "label": "Revenue Forecast",
       "path": "/revenue-forecast",
@@ -295,18 +297,8 @@
       "roles": [
         "ceo",
         "director"
-      ]
-    },
-    {
-      "icon": "Radio",
-      "label": "Field Operations",
-      "path": "/field-operations",
-      "section": "Operations",
-      "roles": [
-        "ceo",
-        "director",
-        "branch_manager"
-      ]
+      ],
+      "requiredFeature": "advanced_analytics"
     },
     {
       "icon": "MessagesSquare",
@@ -323,7 +315,7 @@
         "ceo",
         "director"
       ],
-      "requiredFeature": "multi_branch"
+      "requiredFeature": "staff_commissions_payroll"
     },
     {
       "icon": "Bell",

@@ -25,6 +25,26 @@ func (h *Handler) GetOrg(c *fiber.Ctx) error {
 	return c.JSON(org)
 }
 
+type updateOrgRequest struct {
+	Specialty *string `json:"specialty"`
+}
+
+func (h *Handler) UpdateOrg(c *fiber.Ctx) error {
+	var req updateOrgRequest
+	if err := c.BodyParser(&req); err != nil {
+		return httpx.ValidationProblem(c, "invalid request body", nil)
+	}
+	if req.Specialty == nil {
+		return httpx.ValidationProblem(c, "specialty required", nil)
+	}
+	orgID := platformtenancy.OrgIDFrom(c)
+	org, err := h.svc.UpdateSpecialty(c.UserContext(), orgID, *req.Specialty)
+	if err != nil {
+		return httpx.From(c, err)
+	}
+	return c.JSON(org)
+}
+
 func (h *Handler) ListMembers(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
 	members, err := h.svc.ListMembers(c.UserContext(), orgID)

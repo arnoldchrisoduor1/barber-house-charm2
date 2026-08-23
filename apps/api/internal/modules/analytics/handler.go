@@ -144,42 +144,6 @@ func (h *Handler) DashboardExtras(c *fiber.Ctx) error {
 	return c.JSON(data)
 }
 
-func (h *Handler) PatientIntake(c *fiber.Ctx) error {
-	orgID := platformtenancy.OrgIDFrom(c)
-	data, err := h.svc.PatientIntake(c.UserContext(), orgID)
-	if err != nil {
-		return httpx.From(c, err)
-	}
-	return c.JSON(fiber.Map{"data": data})
-}
-
-func (h *Handler) Aftercare(c *fiber.Ctx) error {
-	orgID := platformtenancy.OrgIDFrom(c)
-	data, err := h.svc.Aftercare(c.UserContext(), orgID)
-	if err != nil {
-		return httpx.From(c, err)
-	}
-	return c.JSON(fiber.Map{"data": data})
-}
-
-func (h *Handler) SessionNotes(c *fiber.Ctx) error {
-	orgID := platformtenancy.OrgIDFrom(c)
-	data, err := h.svc.SessionNotes(c.UserContext(), orgID)
-	if err != nil {
-		return httpx.From(c, err)
-	}
-	return c.JSON(fiber.Map{"data": data})
-}
-
-func (h *Handler) ProgressTracking(c *fiber.Ctx) error {
-	orgID := platformtenancy.OrgIDFrom(c)
-	data, err := h.svc.ProgressTracking(c.UserContext(), orgID)
-	if err != nil {
-		return httpx.From(c, err)
-	}
-	return c.JSON(fiber.Map{"data": data})
-}
-
 func (h *Handler) CoverageZones(c *fiber.Ctx) error {
 	orgID := platformtenancy.OrgIDFrom(c)
 	data, err := h.svc.CoverageZones(c.UserContext(), orgID)
@@ -213,16 +177,8 @@ func RegisterOrgRoutes(org fiber.Router, features *featuremod.Service, h *Handle
 	adv.Get("/revenue-forecast", h.RevenueForecast)
 	adv.Get("/call-centre", h.CallCentre)
 
-	earnings := org.Group("/analytics", authz.RequireFeature(features, "staff_commissions_payroll"))
+	earnings := org.Group("/analytics", authz.RequireFeature(features, "my_earnings"))
 	earnings.Get("/my-earnings", h.MyEarnings)
-
-	clinical := org.Group("/analytics", authz.RequireFeature(features, "clinical"))
-	clinical.Get("/patient-intake", h.PatientIntake)
-	clinical.Get("/aftercare", h.Aftercare)
-
-	therapy := org.Group("/analytics", authz.RequireFeature(features, "therapy_notes"))
-	therapy.Get("/session-notes", h.SessionNotes)
-	therapy.Get("/progress-tracking", h.ProgressTracking)
 
 	mobile := org.Group("/analytics", authz.RequireFeature(features, "coverage_zones"))
 	mobile.Get("/coverage-zones", h.CoverageZones)

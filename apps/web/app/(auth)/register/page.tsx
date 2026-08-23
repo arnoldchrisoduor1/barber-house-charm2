@@ -3,7 +3,7 @@
 import { modeTerms } from "@haus/contracts";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import {
   Brain,
   Car,
@@ -77,15 +77,15 @@ function RegisterForm() {
   const isClientPortal = portalParam === "client";
   const isStaffPortal = portalParam === "staff";
 
-  const businessType = useMemo(() => {
-    if (categoryParam === "solo_pro" && specialtyParam) return specialtyParam;
-    return categoryParam;
-  }, [categoryParam, specialtyParam]);
-
+  const businessType = categoryParam;
   const registerRole = resolveRegisterRole(portalParam, roleParam);
+
   const houseLabel =
-    modeTerms.brandLabels[businessType as keyof typeof modeTerms.brandLabels] ??
-    modeTerms.brandLabels.barber;
+    categoryParam === "solo_pro" && specialtyParam
+      ? (modeTerms.brandLabels[specialtyParam as keyof typeof modeTerms.brandLabels] ??
+          modeTerms.brandLabels.solo_pro)
+      : (modeTerms.brandLabels[businessType as keyof typeof modeTerms.brandLabels] ??
+          modeTerms.brandLabels.barber);
 
   useEffect(() => {
     if (!isClientPortal) setCategory(categoryParam);
@@ -103,6 +103,12 @@ function RegisterForm() {
         fullName: String(form.get("fullName")),
         organizationName: isClientPortal ? undefined : String(form.get("organizationName")),
         businessType: isClientPortal ? undefined : businessType,
+        specialty:
+          !isClientPortal &&
+          (categoryParam === "solo_pro" || categoryParam === "mobile") &&
+          specialtyParam
+            ? specialtyParam
+            : undefined,
         role: registerRole,
         accountType: isClientPortal ? "client" : "business",
       });
