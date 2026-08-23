@@ -3,9 +3,9 @@
 }
 
 hauseoftech.com, www.hauseoftech.com {
-  reverse_proxy web:3000
+  reverse_proxy http://web:3000
 }
 
 api.hauseoftech.com {
-  reverse_proxy api:8080
+  reverse_proxy http://api:8080
 }

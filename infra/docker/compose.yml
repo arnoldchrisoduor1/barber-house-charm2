@@ -152,12 +152,17 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    # Ubuntu systemd-resolved (127.0.0.53) breaks Docker service name lookup.
+    dns:
+      - 127.0.0.11
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddydata:/data
     depends_on:
-      - web
-      - api
+      web:
+        condition: service_healthy
+      api:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
