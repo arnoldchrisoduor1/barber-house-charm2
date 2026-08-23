@@ -7,13 +7,15 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 COPY apps/web/prebuilt-next.tar.gz /tmp/prebuilt-next.tar.gz
+
+RUN mkdir -p /tmp/next && \
+    tar -xzf /tmp/prebuilt-next.tar.gz -C /tmp/next && \
+    cp -a /tmp/next/standalone/. . && \
+    mkdir -p apps/web/.next/static && \
+    cp -a /tmp/next/static/. apps/web/.next/static/ && \
+    rm -rf /tmp/next /tmp/prebuilt-next.tar.gz
+
 COPY apps/web/public ./apps/web/public
-
-RUN mkdir -p apps/web/.next && \
-    tar -xzf /tmp/prebuilt-next.tar.gz -C apps/web/.next && \
-    cp -a apps/web/.next/standalone/. . && \
-    rm -rf apps/web/.next /tmp/prebuilt-next.tar.gz
-
 COPY infra/docker/docker-entrypoint-web.sh /docker-entrypoint.sh
 RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 
