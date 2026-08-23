@@ -20,7 +20,7 @@ if [[ ! -d "$ROOT/apps/web/.next/standalone" ]]; then
   else
     echo "Missing apps/web/.next/standalone or prebuilt-next.tar.gz" >&2
     exit 1
-  fi
+  fix
 fi
 
 if [[ ! -f "$ROOT/apps/api/prebuilt/linux-amd64/api" ]]; then

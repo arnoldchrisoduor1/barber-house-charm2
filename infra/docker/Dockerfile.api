@@ -1,16 +1,15 @@
-# Prebuilt API image — run scripts/build-api-linux.sh on the host first.
-# Packages api, worker, migrate, seed (linux/amd64 static binaries).
+# Prebuilt API image — requires apps/api/prebuilt-api.tar.gz in repo.
 FROM alpine:3.20
 
 RUN apk add --no-cache ca-certificates
 
 WORKDIR /app
 
-COPY apps/api/prebuilt/linux-amd64/api \
-     apps/api/prebuilt/linux-amd64/worker \
-     apps/api/prebuilt/linux-amd64/migrate \
-     apps/api/prebuilt/linux-amd64/seed \
-     ./
+COPY apps/api/prebuilt-api.tar.gz /tmp/prebuilt-api.tar.gz
+
+RUN tar -xzf /tmp/prebuilt-api.tar.gz -C /tmp && \
+    mv /tmp/linux-amd64/* /app/ && \
+    rm -rf /tmp/prebuilt-api.tar.gz /tmp/linux-amd64
 
 COPY infra/migrations /app/migrations
 
