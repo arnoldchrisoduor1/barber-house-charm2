@@ -11,8 +11,8 @@ COPY apps/web/public ./apps/web/public
 
 RUN mkdir -p apps/web/.next && \
     tar -xzf /tmp/prebuilt-next.tar.gz -C apps/web/.next && \
-    cp -a apps/web/.next/standalone/. . && \
-    rm /tmp/prebuilt-next.tar.gz
+    cp -aL apps/web/.next/standalone/. . && \
+    rm -rf apps/web/.next /tmp/prebuilt-next.tar.gz
 
 COPY infra/docker/docker-entrypoint-web.sh /docker-entrypoint.sh
 RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh

@@ -49,3 +49,6 @@ test -f "$REPO/apps/web/.next/standalone/apps/web/server.js" \
 
 echo "STANDALONE OK"
 find "$REPO/apps/web/.next/standalone" -name 'server.js' | head -5
+
+echo "Packaging dereferenced tarball for deploy..."
+bash "$REPO/scripts/package-web-tarball.sh"
