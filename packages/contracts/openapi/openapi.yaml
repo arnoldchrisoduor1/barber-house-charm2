@@ -315,6 +315,10 @@ components:
             type: string
         activeOrg:
           $ref: "#/components/schemas/Organization"
+        organizations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Organization"
         subscription:
           $ref: "#/components/schemas/Subscription"
         features:

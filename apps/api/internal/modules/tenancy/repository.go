@@ -78,6 +78,17 @@ func (r *Repository) PrimaryOrg(ctx context.Context, userID uuid.UUID) (*Organiz
 	return &org, err
 }
 
+func (r *Repository) ListOrgsForUser(ctx context.Context, userID uuid.UUID) ([]Organization, error) {
+	var orgs []Organization
+	err := r.db.WithContext(ctx).
+		Table("organizations").
+		Joins("JOIN organization_members om ON om.organization_id = organizations.id").
+		Where("om.user_id = ? AND om.is_active = true", userID).
+		Order("om.joined_at ASC").
+		Find(&orgs).Error
+	return orgs, err
+}
+
 func (r *Repository) GetSubscription(ctx context.Context, orgID uuid.UUID) (*Subscription, error) {
 	var sub Subscription
 	err := r.db.WithContext(ctx).Where("organization_id = ?", orgID).First(&sub).Error

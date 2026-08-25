@@ -13,14 +13,14 @@ export async function login(page: Page, email = DEMO_EMAIL, password = DEMO_PASS
 
 export async function loginAndWait(page: Page, email = DEMO_EMAIL, password = DEMO_PASSWORD) {
   await login(page, email, password);
-  await expect(page).toHaveURL(/\/(admin|dashboard|portal)/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/(admin|dashboard|portal|select-haus)/, { timeout: 30_000 });
   await expect(page.locator("body")).not.toContainText("Login failed");
 }
 
 export async function submitOtpStep(page: Page, otp: string) {
   await page.getByLabel(/verification code/i).fill(otp);
   await page.getByRole("button", { name: /verify/i }).click();
-  await expect(page).toHaveURL(/\/(admin|dashboard|portal)/, { timeout: 30_000 });
+  await expect(page).toHaveURL(/\/(admin|dashboard|portal|select-haus)/, { timeout: 30_000 });
 }
 
 export async function logout(page: Page) {

@@ -18,3 +18,11 @@ export function getDefaultRoute(roles: string[]): string {
   if (roles.some((role) => STAFF_ROLES.has(role))) return "/dashboard";
   return "/dashboard";
 }
+
+/** After login: multi-org staff land on the Haus picker instead of a single workspace. */
+export function getPostLoginRoute(roles: string[], orgCount: number): string {
+  if (roles.some((role) => PLATFORM_ROLES.has(role))) return "/admin";
+  if (roles.some((role) => PORTAL_ROLES.has(role))) return "/home";
+  if (orgCount > 1 && roles.some((role) => STAFF_ROLES.has(role))) return "/select-haus";
+  return getDefaultRoute(roles);
+}

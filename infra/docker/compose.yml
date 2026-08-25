@@ -152,9 +152,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    # Ubuntu systemd-resolved (127.0.0.53) breaks Docker service name lookup.
-    dns:
-      - 127.0.0.11
+    # Do NOT set dns: 127.0.0.11 — that makes ExtServers loop and ACME
+    # (Let's Encrypt) fails with "server misbehaving". Host daemon.json
+    # already sets 8.8.8.8/1.1.1.1; Docker embedded DNS then resolves both
+    # service names (web/api) and external ACME hosts.
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddydata:/data

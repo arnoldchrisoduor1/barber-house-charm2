@@ -280,6 +280,7 @@ export interface components {
             user?: components["schemas"]["User"];
             roles?: string[];
             activeOrg?: components["schemas"]["Organization"];
+            organizations?: components["schemas"]["Organization"][];
             subscription?: components["schemas"]["Subscription"];
             features?: string[];
         };

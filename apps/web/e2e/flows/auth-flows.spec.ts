@@ -28,6 +28,6 @@ test("fresh login via helper", async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
   await loginAndWait(page);
-  await expect(page).toHaveURL(/\/(admin|dashboard|portal)/);
+  await expect(page).toHaveURL(/\/(admin|dashboard|portal|select-haus)/);
   await context.close();
 });

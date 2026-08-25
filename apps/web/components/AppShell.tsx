@@ -26,6 +26,7 @@ import {
 import type { ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { HausSwitcher } from "@/components/HausSwitcher";
 import { PortalSwitcher } from "@/components/PortalSwitcher";
 import { BranchSwitcher } from "@/components/BranchSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -134,6 +135,7 @@ export function AppShell({ children, title }: AppShellProps) {
               {title ? <h2 className="font-heading text-lg font-semibold truncate">{title}</h2> : null}
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:ml-auto">
+              <HausSwitcher />
               <BranchSwitcher />
               <PortalSwitcher />
               <ThemeToggle />

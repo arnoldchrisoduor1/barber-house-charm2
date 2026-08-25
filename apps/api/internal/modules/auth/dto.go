@@ -35,12 +35,12 @@ type CreateStaffInviteRequest struct {
 }
 
 type StaffMembershipLookupResponse struct {
-	Email        string `json:"email"`
-	Organization string `json:"organization"`
-	OrgSlug      string `json:"orgSlug"`
-	Role         string `json:"role"`
-	HasAccount   bool   `json:"hasAccount"`
-	InvitePending bool  `json:"invitePending"`
+	Email         string `json:"email"`
+	Organization  string `json:"organization"`
+	OrgSlug       string `json:"orgSlug"`
+	Role          string `json:"role"`
+	HasAccount    bool   `json:"hasAccount"`
+	InvitePending bool   `json:"invitePending"`
 }
 
 type LoginRequest struct {
@@ -66,24 +66,24 @@ type ChangePasswordRequest struct {
 	NewPassword     string `json:"newPassword"`
 }
 
-
 type AuthResponse struct {
-	AccessToken           string `json:"accessToken,omitempty"`
-	RefreshToken          string `json:"refreshToken,omitempty"`
-	ExpiresIn             int64  `json:"expiresIn,omitempty"`
-	Requires2FA           bool   `json:"requires2FA,omitempty"`
-	ChallengeToken        string `json:"challengeToken,omitempty"`
-	RequiresVerification  bool   `json:"requiresVerification,omitempty"`
-	Email                 string `json:"email,omitempty"`
+	AccessToken          string `json:"accessToken,omitempty"`
+	RefreshToken         string `json:"refreshToken,omitempty"`
+	ExpiresIn            int64  `json:"expiresIn,omitempty"`
+	Requires2FA          bool   `json:"requires2FA,omitempty"`
+	ChallengeToken       string `json:"challengeToken,omitempty"`
+	RequiresVerification bool   `json:"requiresVerification,omitempty"`
+	Email                string `json:"email,omitempty"`
 }
 
 type MeResponse struct {
-	User         UserDTO         `json:"user"`
-	ActiveOrg    OrgSummaryDTO   `json:"activeOrg"`
-	Roles        []string        `json:"roles"`
-	Subscription SubscriptionDTO `json:"subscription"`
-	Features     []string        `json:"features"`
-	StaffID      *string         `json:"staffId,omitempty"`
+	User          UserDTO         `json:"user"`
+	ActiveOrg     OrgSummaryDTO   `json:"activeOrg"`
+	Organizations []OrgSummaryDTO `json:"organizations"`
+	Roles         []string        `json:"roles"`
+	Subscription  SubscriptionDTO `json:"subscription"`
+	Features      []string        `json:"features"`
+	StaffID       *string         `json:"staffId,omitempty"`
 }
 
 type UserDTO struct {

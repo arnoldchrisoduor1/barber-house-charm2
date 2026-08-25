@@ -31,6 +31,10 @@ func (s *Service) UserBelongsToOrg(ctx context.Context, userID uuid.UUID, orgRef
 	return org.ID, nil
 }
 
+func (s *Service) ListOrgsForUser(ctx context.Context, userID uuid.UUID) ([]Organization, error) {
+	return s.repo.ListOrgsForUser(ctx, userID)
+}
+
 func (s *Service) PrimaryMembership(ctx context.Context, userID uuid.UUID) (*Organization, []string, error) {
 	org, err := s.repo.PrimaryOrg(ctx, userID)
 	if err != nil {

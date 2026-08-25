@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { ApiError, api, type MeResponse } from "@/lib/api-client";
-import { getDefaultRoute } from "@/lib/role-redirect";
+import { getPostLoginRoute } from "@/lib/role-redirect";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function LoginPage() {
   async function finishLogin() {
     await refreshMe();
     const me = await api.get<MeResponse>("/me");
-    router.push(getDefaultRoute(me.roles ?? []));
+    router.push(getPostLoginRoute(me.roles ?? [], me.organizations?.length ?? 0));
   }
 
   async function onCredentialsSubmit(event: FormEvent<HTMLFormElement>) {

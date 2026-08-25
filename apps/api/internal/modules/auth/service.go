@@ -11,23 +11,23 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
-	"github.com/haus-of-wellness/api/internal/platform/httpx"
-	platformemail "github.com/haus-of-wellness/api/internal/platform/email"
-	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
 	featuremod "github.com/haus-of-wellness/api/internal/modules/features"
 	platformmod "github.com/haus-of-wellness/api/internal/modules/platform"
+	tenancymod "github.com/haus-of-wellness/api/internal/modules/tenancy"
+	platformauth "github.com/haus-of-wellness/api/internal/platform/auth"
+	platformemail "github.com/haus-of-wellness/api/internal/platform/email"
+	"github.com/haus-of-wellness/api/internal/platform/httpx"
 )
 
 type Service struct {
-	repo          *Repository
-	jwt           *platformauth.JWTService
-	tenancySvc    *tenancymod.Service
-	features      *featuremod.Service
-	platform      *platformmod.Service
-	twoFactor     *TwoFactorService
-	email         platformemail.Sender
-	publicWebURL  string
+	repo         *Repository
+	jwt          *platformauth.JWTService
+	tenancySvc   *tenancymod.Service
+	features     *featuremod.Service
+	platform     *platformmod.Service
+	twoFactor    *TwoFactorService
+	email        platformemail.Sender
+	publicWebURL string
 }
 
 func NewService(
@@ -294,8 +294,9 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID, preferredOrgID uuid.
 						Email:    user.Email,
 						FullName: profile.FullName,
 					},
-					Roles:    []string{"customer"},
-					Features: []string{},
+					Roles:         []string{"customer"},
+					Organizations: []OrgSummaryDTO{},
+					Features:      []string{},
 				}, nil
 			}
 			return nil, err
@@ -317,24 +318,25 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID, preferredOrgID uuid.
 		}
 	}
 
+	memberships, err := s.tenancySvc.ListOrgsForUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	orgSummaries := make([]OrgSummaryDTO, 0, len(memberships))
+	for i := range memberships {
+		orgSummaries = append(orgSummaries, orgToSummary(&memberships[i]))
+	}
+
 	sid, _ := s.repo.StaffIDForUser(ctx, org.ID, userID)
-	termsMode, effectiveCats := resolveOrgPresentation(org.BusinessType, org.Specialty)
 	return &MeResponse{
 		User: UserDTO{
 			ID:       user.ID.String(),
 			Email:    user.Email,
 			FullName: profile.FullName,
 		},
-		ActiveOrg: OrgSummaryDTO{
-			ID:                  org.ID.String(),
-			Name:                org.Name,
-			Slug:                org.Slug,
-			BusinessType:        org.BusinessType,
-			Specialty:           org.Specialty,
-			TermsMode:           termsMode,
-			EffectiveCategories: effectiveCats,
-		},
-		Roles: roles,
+		ActiveOrg:     orgToSummary(org),
+		Organizations: orgSummaries,
+		Roles:         roles,
 		Subscription: SubscriptionDTO{
 			Plan:         sub.Plan,
 			Status:       sub.Status,
@@ -344,6 +346,19 @@ func (s *Service) Me(ctx context.Context, userID uuid.UUID, preferredOrgID uuid.
 		Features: features,
 		StaffID:  staffIDString(sid),
 	}, nil
+}
+
+func orgToSummary(org *tenancymod.Organization) OrgSummaryDTO {
+	termsMode, effectiveCats := resolveOrgPresentation(org.BusinessType, org.Specialty)
+	return OrgSummaryDTO{
+		ID:                  org.ID.String(),
+		Name:                org.Name,
+		Slug:                org.Slug,
+		BusinessType:        org.BusinessType,
+		Specialty:           org.Specialty,
+		TermsMode:           termsMode,
+		EffectiveCategories: effectiveCats,
+	}
 }
 
 var specialtyModes = map[string]bool{

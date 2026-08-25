@@ -32,6 +32,15 @@ test.describe("backend API (via web proxy + session)", () => {
     expect(body.activeOrg.slug).toBe("demo-salon");
     expect(body.roles).toContain("ceo");
     expect(body.features).toBeInstanceOf(Array);
+    expect(body.organizations).toBeInstanceOf(Array);
+    expect(body.organizations.length).toBeGreaterThanOrEqual(9);
+    expect(body.organizations.map((org: { slug?: string }) => org.slug)).toEqual(
+      expect.arrayContaining([
+        "demo-salon",
+        "beauty-demo-salon",
+        "spa-demo-wellness",
+      ]),
+    );
   });
 
   test("list bookings for demo org", async ({ request }) => {
