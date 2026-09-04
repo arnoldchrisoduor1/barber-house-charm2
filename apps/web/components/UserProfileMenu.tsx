@@ -45,7 +45,7 @@ export function UserProfileMenu() {
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "flex items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-2 transition-colors hover:bg-muted/60 sm:pr-3",
+          "flex min-h-11 items-center gap-2 rounded-full border border-border bg-card py-1 pl-1 pr-2 transition-colors hover:bg-muted/60 sm:pr-3",
           open && "ring-2 ring-primary/30",
         )}
         aria-expanded={open}
@@ -56,7 +56,7 @@ export function UserProfileMenu() {
         </span>
         <span className="hidden min-w-0 text-left sm:block">
           <span className="block max-w-[140px] truncate text-sm font-medium leading-tight">{name}</span>
-          <span className="block max-w-[140px] truncate text-[10px] capitalize text-muted-foreground">
+          <span className="block max-w-[140px] truncate text-xs capitalize text-muted-foreground">
             {portalLabel} portal
           </span>
         </span>
@@ -66,7 +66,7 @@ export function UserProfileMenu() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-50 mt-2 w-72 rounded-xl border border-border bg-popover p-3 shadow-lg"
+          className="absolute right-0 z-50 mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-xl border border-border bg-popover p-3 shadow-lg"
         >
           <div className="border-b border-border pb-3">
             <p className="font-medium text-foreground">{name}</p>

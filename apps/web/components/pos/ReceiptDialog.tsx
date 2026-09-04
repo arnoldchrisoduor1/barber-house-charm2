@@ -135,7 +135,7 @@ export function ReceiptDialog({
           <p className="mt-4 text-center text-[10px] text-muted-foreground">Thank you!</p>
         </div>
 
-        <div className="flex gap-2 border-t border-border p-3 print:hidden">
+        <div className="grid grid-cols-2 gap-2 border-t border-border p-3 print:hidden sm:flex">
           <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={handlePrint}>
             <Printer className="h-3 w-3" /> Print
           </Button>

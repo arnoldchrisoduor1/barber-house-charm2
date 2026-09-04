@@ -127,10 +127,10 @@ export default function ClientOwnershipPage() {
             value={search}
             onChange={setSearch}
             placeholder="Search clients or staff…"
-            className="w-full max-w-xs"
+            className="w-full sm:max-w-xs"
           />
           <Select value={tierFilter} onValueChange={setTierFilter}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-full min-w-0 sm:w-[140px]">
               <SelectValue placeholder="Tier" />
             </SelectTrigger>
             <SelectContent>

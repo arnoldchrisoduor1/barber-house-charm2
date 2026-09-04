@@ -644,14 +644,14 @@ export function BookingWizard({
             <p className="text-sm text-destructive">Could not load booking catalog.</p>
           ) : null}
 
-          <div className="flex justify-between pt-2">
-            <Button type="button" variant="outline" onClick={back} disabled={stepIndex === 0}>
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
+            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={back} disabled={stepIndex === 0}>
               Back
             </Button>
             {currentStep === "confirm" ? (
               <Button
                 type="button"
-                className="bg-gradient-gold text-primary-foreground"
+                className="w-full bg-gradient-gold text-primary-foreground sm:w-auto"
                 disabled={!canProceed() || submitMutation.isPending}
                 onClick={handleSubmit}
               >
@@ -660,7 +660,7 @@ export function BookingWizard({
             ) : (
               <Button
                 type="button"
-                className="bg-gradient-gold text-primary-foreground"
+                className="w-full bg-gradient-gold text-primary-foreground sm:w-auto"
                 disabled={!canProceed() || catalogQuery.isLoading}
                 onClick={next}
               >

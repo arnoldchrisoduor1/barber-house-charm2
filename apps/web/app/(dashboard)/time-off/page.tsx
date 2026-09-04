@@ -87,7 +87,7 @@ export default function TimeOffPage() {
   return (
     <ModulePage title="Time Off" feature="staff_time_off" description="Request leave and approve team time off.">
       <Card className="glass">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Requests</CardTitle>
           <Button size="sm" className="gap-2" onClick={() => setOpen(true)} data-testid="time-off-request-btn">
             <Plus className="h-4 w-4" /> Request time off

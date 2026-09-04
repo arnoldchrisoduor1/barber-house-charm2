@@ -24,7 +24,12 @@ export function StarRating({ value, max = 5, size = "md", onChange, className }:
             type="button"
             disabled={!onChange}
             onClick={() => onChange?.(i + 1)}
-            className={cn(onChange && "cursor-pointer hover:scale-110 transition")}
+            className={cn(
+              onChange
+                ? "inline-flex h-11 w-11 items-center justify-center cursor-pointer hover:scale-110 transition"
+                : "inline-flex items-center justify-center",
+            )}
+            aria-label={onChange ? `${i + 1} star${i === 0 ? "" : "s"}` : undefined}
           >
             <Star
               className={cn(iconClass, filled ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40")}

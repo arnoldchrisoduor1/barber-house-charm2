@@ -38,14 +38,20 @@ export function MarketingNavbar() {
             <Link href="/get-started">Get started</Link>
           </Button>
         </div>
-        <button type="button" className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center md:hidden"
+          onClick={() => setOpen(!open)}
+          aria-label="Menu"
+          aria-expanded={open}
+        >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
       {open ? (
         <div className="border-t border-border px-4 py-4 md:hidden">
           {NAV.map((item) => (
-            <a key={item.href} href={item.href} className="block py-2 text-sm" onClick={() => setOpen(false)}>
+            <a key={item.href} href={item.href} className="block min-h-11 py-3 text-sm" onClick={() => setOpen(false)}>
               {item.label}
             </a>
           ))}

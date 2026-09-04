@@ -70,11 +70,11 @@ export default function SelectHausPage() {
   }
 
   return (
-    <div className="relative min-h-screen p-6">
+    <div className="relative min-h-dvh p-4 md:p-6">
       <div className="mesh-ambient" aria-hidden />
       <div className="relative z-10 mx-auto max-w-5xl py-10">
         <p className="label-eyebrow">Haus of Wellness</p>
-        <h1 className="mt-2 font-display text-4xl text-gradient-gold">Choose a Haus</h1>
+        <h1 className="mt-2 font-display text-3xl text-gradient-gold md:text-4xl">Choose a Haus</h1>
         <p className="mt-2 max-w-xl text-sm text-muted-foreground">
           You belong to more than one workspace. Pick which Haus to open — you can switch anytime from the header.
         </p>

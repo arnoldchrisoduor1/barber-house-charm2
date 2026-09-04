@@ -58,11 +58,11 @@ export function HausSwitcher() {
   }
 
   return (
-    <div className="flex items-center gap-2" data-testid="haus-switcher">
-      <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden />
+    <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-initial" data-testid="haus-switcher">
+      <Building2 className="hidden h-4 w-4 shrink-0 text-muted-foreground sm:block" aria-hidden />
       <Select value={activeId} onValueChange={(value) => void onSelect(value)} disabled={switching}>
         <SelectTrigger
-          className="h-9 w-[180px] text-xs sm:w-[220px] sm:text-sm"
+          className="h-11 w-full min-w-0 text-sm md:h-9 md:w-[180px] lg:w-[220px]"
           aria-label="Switch Haus"
         >
           <SelectValue placeholder={switching ? "Switching…" : "Choose Haus"} />

@@ -187,12 +187,12 @@ function RegisterForm() {
         </CardHeader>
         <CardContent>
           {!isClientPortal ? (
-            <div className="mb-6 grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
               {HOUSES.map(({ key, Icon }) => (
                 <Link
                   key={key}
                   href={`/register?category=${key}${portalParam ? `&portal=${portalParam}` : ""}${roleParam ? `&role=${roleParam}` : ""}`}
-                  className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-center text-[10px] transition-colors ${
+                  className={`flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-center text-xs transition-colors ${
                     businessType === key || categoryParam === key
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border hover:border-primary/40"
@@ -211,7 +211,7 @@ function RegisterForm() {
                 <input
                   name="fullName"
                   required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:min-h-10 md:text-sm"
                 />
               </label>
               {!isClientPortal ? (
@@ -220,7 +220,7 @@ function RegisterForm() {
                   <input
                     name="organizationName"
                     required
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:min-h-10 md:text-sm"
                   />
                 </label>
               ) : null}
@@ -230,7 +230,7 @@ function RegisterForm() {
                   name="email"
                   type="email"
                   required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:min-h-10 md:text-sm"
                 />
               </label>
               <label className="block space-y-1">
@@ -240,7 +240,7 @@ function RegisterForm() {
                   type="password"
                   required
                   minLength={8}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:min-h-10 md:text-sm"
                 />
               </label>
               {error ? <p className="text-sm text-destructive">{error}</p> : null}

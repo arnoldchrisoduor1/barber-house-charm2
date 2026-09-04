@@ -106,7 +106,7 @@ export default function PublicShopPage() {
 
   if (placed) {
     return (
-      <div className="mx-auto max-w-lg p-8 text-center" data-testid="shop-order-success">
+      <div className="mx-auto max-w-lg p-4 text-center md:p-8" data-testid="shop-order-success">
         <h1 className="font-heading text-2xl font-semibold">Order confirmed</h1>
         <p className="mt-2 text-muted-foreground">
           {placed} · pay on pickup. We&apos;ll have it ready shortly.
@@ -119,7 +119,7 @@ export default function PublicShopPage() {
   }
 
   return (
-    <div className="relative min-h-screen p-6 theme-products" data-testid="public-shop-page">
+    <div className="relative min-h-dvh p-4 theme-products md:p-6" data-testid="public-shop-page">
       <div className="mesh-aurora" aria-hidden />
       <div className="relative z-10 mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1fr_320px]">
         <div>

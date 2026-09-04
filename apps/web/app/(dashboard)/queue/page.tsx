@@ -241,7 +241,7 @@ export default function QueuePage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            className="mt-2 h-7 px-2 text-xs"
+                            className="mt-2 w-full"
                             onClick={() => advance.mutate({ id, status: next })}
                             disabled={advance.isPending}
                           >

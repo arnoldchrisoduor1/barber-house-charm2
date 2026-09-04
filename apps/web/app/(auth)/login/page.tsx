@@ -71,7 +71,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-6">
+    <div className="relative flex min-h-dvh items-center justify-center p-4 md:p-6">
       <div className="mesh-ambient" aria-hidden />
       <Card className="relative z-10 w-full max-w-md glass">
         <CardHeader>
@@ -96,7 +96,7 @@ export default function LoginPage() {
                     name="email"
                     type="email"
                     required
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:min-h-10 md:text-sm"
                   />
                 </label>
                 <label className="block space-y-1">
@@ -105,7 +105,7 @@ export default function LoginPage() {
                     name="password"
                     type="password"
                     required
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-base md:min-h-10 md:text-sm"
                   />
                 </label>
                 {error ? <p className="text-sm text-destructive">{error}</p> : null}

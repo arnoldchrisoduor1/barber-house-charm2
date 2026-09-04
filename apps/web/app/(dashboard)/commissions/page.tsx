@@ -124,7 +124,7 @@ export default function CommissionsPage() {
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Period summary</CardTitle>
             <Select value={period} onValueChange={(v) => setPeriod(v as "month" | "quarter")}>
-              <SelectTrigger className="w-[180px]" aria-label="Commission period">
+              <SelectTrigger className="w-full min-w-0 sm:w-[180px]" aria-label="Commission period">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

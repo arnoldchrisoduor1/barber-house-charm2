@@ -47,11 +47,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-6 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-6">
+      <header className="sticky top-0 z-10 border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:px-6 md:py-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-3 md:gap-6">
             <p className="font-display text-lg text-gradient-gold">Platform Admin</p>
-            <nav className="flex flex-wrap gap-1">
+            <nav className="flex w-full flex-wrap gap-1 sm:w-auto">
               {NAV.map((item) => {
                 const active =
                   pathname === item.href ||
@@ -61,7 +61,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "rounded-md px-3 py-1.5 text-sm transition-colors",
+                      "inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm transition-colors md:min-h-0 md:py-1.5",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -73,12 +73,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               })}
             </nav>
           </div>
-          <Button variant="outline" size="sm" onClick={() => logout()}>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => logout()}>
             Sign out
           </Button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl p-6">{children}</main>
+      <main className="mx-auto max-w-6xl p-4 md:p-6">{children}</main>
     </div>
   );
 }

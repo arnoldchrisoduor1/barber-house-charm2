@@ -163,7 +163,7 @@ export default function TipsPage() {
       description="Track and distribute staff tips."
     >
       <Card className="glass">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Tips ledger</CardTitle>
           <Button size="sm" className="gap-2" onClick={openCreate}>
             <Plus className="h-4 w-4" /> Record tip

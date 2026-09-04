@@ -33,7 +33,7 @@ function VerifyEmailInner() {
   }, [token, verifyEmail, refreshMe, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
+    <div className="flex min-h-dvh items-center justify-center p-4 md:p-6">
       <p className="text-sm text-muted-foreground">
         {error ?? "Verifying your email…"}
       </p>

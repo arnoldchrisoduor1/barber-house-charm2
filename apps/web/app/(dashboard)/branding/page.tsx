@@ -122,7 +122,7 @@ export default function BrandingPage() {
                     type="color"
                     value={field.value}
                     onChange={(e) => field.set(e.target.value)}
-                    className="h-10 w-14 cursor-pointer p-1"
+                    className="h-11 w-14 cursor-pointer p-1 md:h-10"
                   />
                   <Input value={field.value} onChange={(e) => field.set(e.target.value)} />
                 </div>

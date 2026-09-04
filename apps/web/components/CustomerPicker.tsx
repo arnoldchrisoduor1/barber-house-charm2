@@ -60,14 +60,14 @@ export function CustomerPicker({
     <div className="space-y-2" data-testid={testId}>
       <Label>{label}</Label>
       {value ? (
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm">
-          <div>
+        <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+          <div className="min-w-0">
             <p className="font-medium">{value.name}</p>
             {value.phone ? <p className="text-xs text-muted-foreground">{value.phone}</p> : null}
           </div>
           <button
             type="button"
-            className="text-xs text-primary hover:underline"
+            className="inline-flex min-h-11 shrink-0 items-center px-2 text-sm text-primary hover:underline"
             onClick={() => {
               onChange(null);
               setSearch("");
@@ -102,7 +102,7 @@ export function CustomerPicker({
                     <button
                       type="button"
                       className={cn(
-                        "w-full rounded-md px-2 py-1.5 text-left text-sm hover:bg-muted/60",
+                        "w-full rounded-md px-3 py-2 text-left text-sm hover:bg-muted/60 min-h-11",
                       )}
                       onClick={() => {
                         onChange({ id, name, phone });

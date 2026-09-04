@@ -102,7 +102,7 @@ function FinanceTabs({
           aria-selected={active === tab.id}
           onClick={() => onChange(tab.id)}
           className={cn(
-            "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+            "min-h-11 rounded-md px-3 py-2 text-sm font-medium transition-colors md:min-h-0 md:py-1.5",
             active === tab.id
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground",
@@ -385,9 +385,9 @@ export default function FinancePage() {
 
         {tab === "expenses" ? (
           <Card className="glass">
-            <CardHeader className="flex flex-row items-center justify-between gap-4">
+            <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle>Expenses</CardTitle>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" asChild>
                   <a href={expensesExportCsvUrl(orgId ?? "", apiParams)} download>
                     Export CSV

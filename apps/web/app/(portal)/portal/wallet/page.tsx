@@ -197,7 +197,7 @@ export default function PortalWalletPage() {
             <Button type="submit" disabled={topUpMut.isPending} className="bg-gradient-gold text-primary-foreground">
               {topUpMut.isPending ? "Processing…" : "Top up via M-PESA"}
             </Button>
-            <p className="text-[10px] text-muted-foreground">Demo only — no real payment is processed.</p>
+            <p className="text-xs text-muted-foreground">Demo only — no real payment is processed.</p>
           </form>
         </CardContent>
       </Card>

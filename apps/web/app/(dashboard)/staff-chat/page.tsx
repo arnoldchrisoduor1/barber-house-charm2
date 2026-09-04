@@ -94,7 +94,7 @@ export default function StaffChatPage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="capitalize">{channel} channel</CardTitle>
               <select
-                className="rounded-md border border-border bg-background px-2 py-1 text-sm sm:hidden"
+                className="min-h-11 rounded-md border border-border bg-background px-3 py-2 text-base sm:hidden md:text-sm"
                 value={channel}
                 onChange={(e) => setChannel(e.target.value)}
               >
@@ -128,7 +128,7 @@ export default function StaffChatPage() {
                       isMine ? "ml-auto bg-primary/15" : "bg-background/80",
                     )}
                   >
-                    <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    <p className="mb-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {isMine ? "You" : senderId.slice(0, 8) + "…"}
                     </p>
                     <p>{String(pick(row, "message") ?? "")}</p>
@@ -139,15 +139,15 @@ export default function StaffChatPage() {
                 );
               })}
             </div>
-            <form className="flex gap-2" onSubmit={onSubmit}>
+            <form className="flex flex-col gap-2 sm:flex-row" onSubmit={onSubmit}>
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder={`Message #${channel}…`}
                 rows={2}
-                className="min-h-0 flex-1 resize-none"
+                className="min-h-11 flex-1 resize-none"
               />
-              <Button type="submit" disabled={!orgId || sendMut.isPending || !message.trim()}>
+              <Button type="submit" className="w-full sm:w-auto" disabled={!orgId || sendMut.isPending || !message.trim()}>
                 Send
               </Button>
             </form>

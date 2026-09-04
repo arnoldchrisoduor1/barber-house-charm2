@@ -112,7 +112,7 @@ export default function PortalHomePage() {
 
         <Feature flag="loyalty" fallback={null}>
           <Card className="glass">
-            <CardContent className="flex items-center justify-between py-5">
+            <CardContent className="flex flex-wrap items-center justify-between gap-4 py-5">
               <div className="flex items-center gap-3">
                 <Crown className="h-8 w-8 text-primary" />
                 <div>

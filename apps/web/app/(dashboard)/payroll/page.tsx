@@ -111,7 +111,7 @@ export default function PayrollPage() {
       description="Generate and review staff payslips."
     >
       <Card className="glass">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Payslips</CardTitle>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" asChild>

@@ -111,7 +111,7 @@ export default function PortalLoyaltyPage() {
         <div className="grid gap-4 sm:grid-cols-2">
           {(rewardsQuery.data ?? []).map((reward) => (
             <Card key={reward.id} className="glass">
-              <CardContent className="flex items-center justify-between gap-4 py-4">
+              <CardContent className="flex flex-wrap items-center justify-between gap-4 py-4">
                 <div>
                   <p className="font-medium">{reward.name}</p>
                   <p className="text-xs text-muted-foreground">

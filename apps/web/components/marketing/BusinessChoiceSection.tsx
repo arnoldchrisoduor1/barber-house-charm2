@@ -49,17 +49,17 @@ export function BusinessChoiceSection() {
             >
               <Link
                 href={`/get-started?category=${row.key}`}
-                className={`group grid grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-5 transition-colors hover:bg-foreground/[0.025] sm:px-8 sm:py-7 ${
+                className={`group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-5 transition-colors hover:bg-foreground/[0.025] sm:gap-4 sm:px-8 sm:py-7 ${
                   i !== ROWS.length - 1 ? "border-b border-foreground/[0.06]" : ""
                 }`}
               >
                 <span className="font-mono text-xs text-muted-foreground">{row.index}</span>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl glass-strong text-primary group-hover:bg-gradient-gold group-hover:text-primary-foreground">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl glass-strong text-primary group-hover:bg-gradient-gold group-hover:text-primary-foreground sm:h-10 sm:w-10">
                     <row.Icon className="h-4 w-4" />
                   </div>
-                  <div>
-                    <div className="font-display text-lg">{row.brand}</div>
+                  <div className="min-w-0">
+                    <div className="font-display text-lg leading-tight">{row.brand}</div>
                     <div className="text-xs text-muted-foreground sm:text-sm">{row.industry}</div>
                   </div>
                 </div>

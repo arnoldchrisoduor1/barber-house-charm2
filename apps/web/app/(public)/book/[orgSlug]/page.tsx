@@ -38,12 +38,12 @@ export default function PublicBookPage({ params }: PublicBookPageProps) {
   }, [themeClass]);
 
   return (
-    <div className="relative min-h-screen p-6" data-testid="public-book-page">
+    <div className="relative min-h-dvh p-4 md:p-6" data-testid="public-book-page">
       <div className="mesh-aurora" aria-hidden />
       <div className="relative z-10 mx-auto max-w-3xl pt-10">
         <header className="mb-8 text-center">
           <p className="label-eyebrow mb-2">{brand}</p>
-          <h1 className="font-display text-3xl font-semibold">{terms.bookingVerb}</h1>
+          <h1 className="font-display text-2xl font-semibold sm:text-3xl">{terms.bookingVerb}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Select services, pick a time, and choose your {terms.staffSingular.toLowerCase()}.
           </p>

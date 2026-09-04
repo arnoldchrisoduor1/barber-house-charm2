@@ -20,7 +20,7 @@ export function PortalSwitcher() {
 
   return (
     <div
-      className="inline-flex items-center rounded-full border border-border bg-card p-1 gap-0.5"
+      className="inline-flex max-w-full items-center overflow-x-auto rounded-full border border-border bg-card p-1 gap-0.5"
       role="tablist"
       aria-label="Switch portal"
     >
@@ -35,7 +35,7 @@ export function PortalSwitcher() {
             aria-selected={selected}
             onClick={() => switchPortal(portal)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors sm:px-4 sm:text-sm",
+              "inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-colors sm:min-h-0 sm:px-4 sm:py-1.5 sm:text-sm",
               selected
                 ? "bg-primary text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",

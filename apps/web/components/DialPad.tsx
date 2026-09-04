@@ -145,17 +145,17 @@ export function DialPad({ onCallInitiated, onClose, initialNumber = "", compact 
   return (
     <Card className={`relative mx-auto overflow-hidden border-border/50 ${compact ? "max-w-xs" : "max-w-sm"}`} data-testid="dial-pad">
       <CardContent className="p-0">
-        <div className="flex items-center justify-between border-b border-border/50 bg-muted/30 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 bg-muted/30 px-4 py-3">
           <div className="flex items-center gap-2">
             <Phone className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">Dial Pad</span>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowSpeedDial(!showSpeedDial)}>
+            <Button variant="ghost" size="sm" className="h-11 px-3 text-xs md:h-9 md:px-2" onClick={() => setShowSpeedDial(!showSpeedDial)}>
               <Star className="mr-1 h-3.5 w-3.5" /> Speed Dial
             </Button>
             {onClose ? (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close dial pad">
                 <X className="h-4 w-4" />
               </Button>
             ) : null}

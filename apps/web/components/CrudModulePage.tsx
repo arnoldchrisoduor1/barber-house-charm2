@@ -108,9 +108,9 @@ export function CrudModulePage({ config }: { config: CrudModuleConfig }) {
 
   const body = (
     <Card className="glass">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>{config.title}</CardTitle>
-        <Button onClick={openCreate} disabled={!orgId}>
+      <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+        <CardTitle className="min-w-0">{config.title}</CardTitle>
+        <Button onClick={openCreate} disabled={!orgId} className="w-full shrink-0 sm:w-auto">
           Add new
         </Button>
       </CardHeader>

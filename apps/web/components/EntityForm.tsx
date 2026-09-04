@@ -39,7 +39,7 @@ export function EntityForm({ fields, values, onChange, children }: EntityFormPro
         <div key={field.name} className="space-y-1.5">
           <Label htmlFor={field.name}>{field.label}</Label>
           {field.type === "checkbox" ? (
-            <div className="flex items-center gap-2">
+            <div className="flex min-h-11 items-center gap-2">
               <Checkbox
                 id={field.name}
                 checked={values[field.name] === "true"}

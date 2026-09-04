@@ -238,9 +238,14 @@
     @apply border-border;
   }
 
+  html {
+    overflow-x: clip;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    min-width: 0;
   }
 
   h1,

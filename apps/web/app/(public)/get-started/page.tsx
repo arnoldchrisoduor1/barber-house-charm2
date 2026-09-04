@@ -345,7 +345,7 @@ function GetStartedContent() {
                   <mode.icon className="h-5 w-5 text-primary sm:h-7 sm:w-7" />
                 </div>
                 <h2 className="font-heading text-sm font-bold text-foreground sm:text-lg">{mode.title}</h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm">
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm">
                   {mode.description}
                 </p>
                 <span className="mt-2 text-xs font-semibold text-primary sm:mt-4">Continue →</span>
@@ -470,7 +470,7 @@ function GetStartedContent() {
                     <cat.icon className="h-5 w-5 text-primary sm:h-7 sm:w-7" />
                   </div>
                   <h2 className="font-heading text-sm font-bold text-foreground sm:text-lg">{cat.title}</h2>
-                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm">
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm">
                     {cat.description}
                   </p>
                   <span className="mt-2 text-xs font-semibold text-primary sm:mt-4">Sign up →</span>
@@ -577,7 +577,7 @@ function GetStartedContent() {
                   <portal.icon className="h-5 w-5 text-primary sm:h-7 sm:w-7" />
                 </div>
                 <h2 className="font-heading text-sm font-bold text-foreground sm:text-lg">{portal.title}</h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm">
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:mt-2 sm:text-sm">
                   {portal.description}
                 </p>
                 <span className="mt-2 text-xs font-semibold text-primary sm:mt-4">Sign up →</span>

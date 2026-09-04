@@ -113,10 +113,10 @@ export default function PosTabsPage() {
           ) : (
             openTabs.map((tab) => (
               <Card key={tab.id} className="glass p-4" data-testid="pos-tab-card">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="font-semibold">{tab.label}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       <Receipt className="mr-1 inline h-3 w-3" />
                       {tab.items.length} items
                     </p>
@@ -134,12 +134,12 @@ export default function PosTabsPage() {
                   ))}
                 </div>
                 {activeTab === tab.id ? (
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
                     <Input placeholder="Item" value={itemName} onChange={(e) => setItemName(e.target.value)} />
                     <Input
                       type="number"
                       placeholder="Price"
-                      className="w-24"
+                      className="w-full sm:w-24"
                       value={itemPrice}
                       onChange={(e) => setItemPrice(e.target.value)}
                     />

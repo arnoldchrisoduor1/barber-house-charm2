@@ -158,7 +158,7 @@ export default function ReviewsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Select value={effectiveStaffFilter} onValueChange={setStaffFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full min-w-0 sm:w-[180px]">
                 <SelectValue placeholder="Filter by staff" />
               </SelectTrigger>
               <SelectContent>

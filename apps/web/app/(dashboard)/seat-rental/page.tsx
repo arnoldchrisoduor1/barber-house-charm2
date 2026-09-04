@@ -129,7 +129,7 @@ export default function SeatRentalPage() {
       </div>
 
       <Card className="glass">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Seat rentals</CardTitle>
           <Button onClick={openCreate} disabled={!orgId}>
             Add seat

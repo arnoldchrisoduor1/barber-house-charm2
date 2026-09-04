@@ -126,7 +126,7 @@ export default function FieldOperationsPage() {
           Coverage zones
         </Button>
         {tab === "jobs" ? (
-          <Button type="button" className="ml-auto" onClick={() => setOpen(true)} data-testid="field-job-add">
+          <Button type="button" className="w-full sm:ml-auto sm:w-auto" onClick={() => setOpen(true)} data-testid="field-job-add">
             <Plus className="mr-2 h-4 w-4" />
             New job
           </Button>

@@ -85,13 +85,13 @@ export default function SelectPlanPage() {
           <p className="text-sm text-muted-foreground">
             All plans include a 7-day free trial. No payment required to switch.
           </p>
-          <div className="mt-4 inline-flex items-center rounded-full border border-border bg-card p-1 gap-1">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-1 rounded-full border border-border bg-card p-1">
             {BILLING_CYCLES.map((cycle) => (
               <button
                 key={cycle}
                 type="button"
                 onClick={() => setBillingCycle(cycle)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                className={`min-h-11 rounded-full px-3 py-2 text-sm font-medium transition-all sm:px-4 ${
                   billingCycle === cycle
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"

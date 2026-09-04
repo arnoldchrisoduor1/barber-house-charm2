@@ -20,7 +20,7 @@ export default function PublicShopPDPPage() {
   const p = query.data;
 
   return (
-    <div className="mx-auto max-w-2xl p-6" data-testid="shop-pdp-page">
+    <div className="mx-auto max-w-2xl p-4 md:p-6" data-testid="shop-pdp-page">
       <Button type="button" variant="outline" size="sm" asChild className="mb-4">
         <Link href={`/shop/${params.orgSlug}`}>← Back to shop</Link>
       </Button>

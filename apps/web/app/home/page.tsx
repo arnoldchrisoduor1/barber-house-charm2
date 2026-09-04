@@ -52,8 +52,8 @@ export default function ClientHomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/40 px-6 py-6">
+    <div className="min-h-dvh bg-background">
+      <header className="border-b border-border bg-card/40 px-4 py-6 md:px-6">
         <div className="mx-auto max-w-6xl">
           <h1 className="text-2xl font-semibold">Find your Haus</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -62,7 +62,7 @@ export default function ClientHomePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8 md:px-6">
         <div className="mb-8 flex flex-wrap gap-2" data-testid="haus-filter">
           {HAUS_MODES.map((mode) => (
             <Button

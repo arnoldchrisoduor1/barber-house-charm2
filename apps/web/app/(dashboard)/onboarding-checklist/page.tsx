@@ -104,7 +104,7 @@ export default function OnboardingChecklistPage() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Select value={enrollStaffId} onValueChange={setEnrollStaffId}>
-              <SelectTrigger className="w-[220px]">
+              <SelectTrigger className="w-full min-w-0 sm:w-[220px]">
                 <SelectValue placeholder="Select staff" />
               </SelectTrigger>
               <SelectContent>

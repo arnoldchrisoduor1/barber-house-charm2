@@ -146,7 +146,7 @@ export default function SessionNotesPage() {
       >
         <div data-testid="session-notes-page" className="space-y-4">
           <div className="flex flex-wrap items-end justify-between gap-3">
-            <div className="space-y-2 min-w-[220px]">
+            <div className="w-full min-w-0 space-y-2 sm:w-auto sm:min-w-[220px]">
               <Label>Filter {clientLabel.toLowerCase()}</Label>
               <Select value={filterCustomer || "__all"} onValueChange={(v) => setFilterCustomer(v === "__all" ? "" : v)}>
                 <SelectTrigger>

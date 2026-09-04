@@ -85,7 +85,7 @@ export default function WaitlistPage() {
                       {phone ? <p className="text-xs text-muted-foreground">{phone}</p> : null}
                       {note ? <p className="mt-1 text-xs text-muted-foreground">{note}</p> : null}
                       {created ? (
-                        <p className="mt-1 text-[10px] text-muted-foreground">Added {formatDate(String(created))}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Added {formatDate(String(created))}</p>
                       ) : null}
                     </div>
                   );

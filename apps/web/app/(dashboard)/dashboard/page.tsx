@@ -366,7 +366,7 @@ export default function DashboardPage() {
             {extras ? (
               <Card className="glass" data-testid="monthly-target">
                 <CardContent className="py-5">
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <p className="text-sm font-medium text-foreground">Monthly Revenue Target</p>
                       <p className="text-xs text-muted-foreground">

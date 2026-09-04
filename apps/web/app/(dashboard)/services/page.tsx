@@ -117,7 +117,7 @@ export default function ServicesPage() {
             type="button"
             onClick={() => setCategoryFilter("all")}
             className={cn(
-              "rounded-full border px-3 py-1 text-xs font-medium transition",
+              "min-h-11 rounded-full border px-3 py-2 text-xs font-medium transition",
               categoryFilter === "all"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border text-muted-foreground hover:border-primary/50",
@@ -131,7 +131,7 @@ export default function ServicesPage() {
               type="button"
               onClick={() => setCategoryFilter(cat)}
               className={cn(
-                "rounded-full border px-3 py-1 text-xs font-medium transition",
+                "min-h-11 rounded-full border px-3 py-2 text-xs font-medium transition",
                 categoryFilter === cat
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/50",

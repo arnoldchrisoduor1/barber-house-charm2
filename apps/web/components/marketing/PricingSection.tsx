@@ -88,7 +88,7 @@ export function PricingSection() {
                   key={platform.id}
                   type="button"
                   onClick={() => togglePlatform(platform.id)}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+                  className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
                     selected
                       ? "border-primary bg-primary/10 text-foreground"
                       : "border-border bg-card text-muted-foreground hover:border-primary/40"
@@ -115,7 +115,7 @@ export function PricingSection() {
                   key={cycle}
                   type="button"
                   onClick={() => setBillingCycle(cycle)}
-                  className={`relative rounded-full px-3 py-1.5 text-xs font-medium transition-all sm:px-4 sm:py-2 sm:text-sm ${
+                  className={`relative min-h-11 rounded-full px-3 py-2 text-xs font-medium transition-all sm:min-h-0 sm:px-4 sm:py-2 sm:text-sm ${
                     billingCycle === cycle
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"

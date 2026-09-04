@@ -44,7 +44,7 @@ export function HeldSalesDialog({ open, onClose, sales, onResume, onRemove }: He
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{sale.label}</p>
-                      <p className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                         <Clock className="h-2.5 w-2.5" />
                         {new Date(sale.heldAt).toLocaleString(undefined, {
                           dateStyle: "short",
@@ -58,7 +58,7 @@ export function HeldSalesDialog({ open, onClose, sales, onResume, onRemove }: He
                     <div className="flex flex-col gap-1">
                       <Button
                         size="sm"
-                        className="h-7 gap-1"
+                        className="gap-1"
                         onClick={() => {
                           onResume(sale.id);
                           onClose();
@@ -69,7 +69,7 @@ export function HeldSalesDialog({ open, onClose, sales, onResume, onRemove }: He
                       <Button
                         size="sm"
                         variant="ghost"
-                        className="h-7 text-destructive"
+                        className="text-destructive"
                         onClick={() => onRemove(sale.id)}
                       >
                         <Trash2 className="h-3 w-3" />

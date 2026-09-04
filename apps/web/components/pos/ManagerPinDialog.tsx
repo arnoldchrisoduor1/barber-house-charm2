@@ -69,7 +69,7 @@ export function ManagerPinDialog({ open, onClose, onApprove, reason }: ManagerPi
               className="text-center text-lg tracking-widest"
               autoFocus
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">Default demo PIN: 1234</p>
+            <p className="mt-1 text-xs text-muted-foreground">Default demo PIN: 1234</p>
           </div>
           <Button className="w-full" disabled={pin.length < 4} onClick={submit}>
             Approve

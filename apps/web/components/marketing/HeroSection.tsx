@@ -14,7 +14,7 @@ export function HeroSection() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto flex w-fit items-center gap-2 rounded-full glass px-3 py-1.5 text-xs font-medium"
+          className="mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-2 rounded-full glass px-3 py-1.5 text-center text-xs font-medium"
         >
           One operating system for every wellness business
         </motion.div>

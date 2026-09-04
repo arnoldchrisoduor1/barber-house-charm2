@@ -65,7 +65,7 @@ export function MobileDispatchDashboard() {
                   const start = String(pickRowField(row, "start_time") ?? pickRowField(row, "startTime") ?? "");
                   const address = String(pickRowField(row, "visit_address") ?? pickRowField(row, "visitAddress") ?? "");
                   return (
-                    <div key={id} className="flex items-center justify-between py-2.5" data-testid={`dispatch-booking-${id}`}>
+                    <div key={id} className="flex min-w-0 flex-wrap items-start justify-between gap-2 py-2.5" data-testid={`dispatch-booking-${id}`}>
                       <div>
                         <p className="text-sm font-medium capitalize">{status.replace(/_/g, " ")}</p>
                         <p className="text-xs text-muted-foreground">
@@ -99,7 +99,7 @@ export function MobileDispatchDashboard() {
                 {jobs.slice(0, 12).map((job) => (
                   <div
                     key={job.id}
-                    className="flex items-center justify-between rounded-lg border border-border/40 px-3 py-2"
+                    className="flex min-w-0 flex-wrap items-start justify-between gap-2 rounded-lg border border-border/40 px-3 py-2"
                     data-testid={`dispatch-job-${job.id}`}
                   >
                     <div>

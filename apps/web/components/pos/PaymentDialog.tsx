@@ -101,7 +101,7 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between gap-4">
+          <DialogTitle className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <span>Take payment</span>
             <span className="font-heading text-2xl text-primary">{formatKes(total)}</span>
           </DialogTitle>
@@ -113,7 +113,7 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
               key={id}
               type="button"
               onClick={() => setMethod(id)}
-              className={`flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-colors ${
+                className={`flex min-h-11 flex-col items-center justify-center gap-1 rounded-lg border p-3 text-xs transition-colors ${
                 method === id
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-border text-muted-foreground hover:border-primary/30"
@@ -178,7 +178,7 @@ export function PaymentDialog({ open, total, defaultPhone, onClose, onConfirm }:
                 type="button"
                 data-testid={`tip-preset-${pct}`}
                 onClick={() => applyTipPct(pct)}
-                className={`rounded-lg border p-2 text-xs transition-colors ${
+                className={`min-h-11 rounded-lg border p-2 text-xs transition-colors ${
                   tipPct === pct
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-border text-muted-foreground hover:border-primary/30"

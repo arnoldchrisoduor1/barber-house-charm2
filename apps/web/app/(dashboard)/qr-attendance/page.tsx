@@ -125,13 +125,13 @@ export default function QrAttendancePage() {
       <div className="flex flex-wrap items-end gap-4">
         <div className="space-y-1.5">
           <label className="text-sm text-muted-foreground">Date</label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-44" />
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full min-w-0 sm:w-44" />
         </div>
         {branches.length > 0 ? (
           <div className="space-y-1.5">
             <label className="text-sm text-muted-foreground">Branch</label>
             <Select value={effectiveBranchId} onValueChange={setActiveBranchId}>
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full min-w-0 sm:w-48">
                 <SelectValue placeholder="Branch" />
               </SelectTrigger>
               <SelectContent>

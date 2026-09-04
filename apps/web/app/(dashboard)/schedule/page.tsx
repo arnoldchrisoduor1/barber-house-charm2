@@ -124,12 +124,12 @@ export default function SchedulePage() {
 
   return (
     <ModulePage title={terms.schedulePageTitle} description="Weekly staff schedule grid.">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
           <Button type="button" variant="outline" size="icon" onClick={() => setWeekStart((w) => addDays(w, -7))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <p className="text-sm font-medium">
+          <p className="min-w-0 text-sm font-medium">
             {weekDays[0].toLocaleDateString("en-KE", { month: "short", day: "numeric" })} –{" "}
             {weekDays[6].toLocaleDateString("en-KE", { month: "short", day: "numeric", year: "numeric" })}
           </p>
@@ -137,7 +137,7 @@ export default function SchedulePage() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        <Button type="button" size="sm" className="gap-2" onClick={() => setEditorOpen(true)} data-testid="schedule-add-shift">
+        <Button type="button" size="sm" className="w-full gap-2 sm:w-auto" onClick={() => setEditorOpen(true)} data-testid="schedule-add-shift">
           <Plus className="h-4 w-4" />
           Add shift
         </Button>

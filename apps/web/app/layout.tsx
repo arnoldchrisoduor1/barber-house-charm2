@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 
 import { Providers } from "@/app/providers";
@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "Haus of Wellness",
   description: "Multi-tenant SaaS for grooming, beauty, wellness, and retail",
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -141,7 +141,7 @@ export default function ClientsPage() {
           value={search}
           onChange={setSearch}
           placeholder="Search clients by name or phone…"
-          className="w-full max-w-sm"
+          className="w-full sm:max-w-sm"
         />
         <Button onClick={openCreate} disabled={!orgId} className="gap-2">
           <Plus className="h-4 w-4" />

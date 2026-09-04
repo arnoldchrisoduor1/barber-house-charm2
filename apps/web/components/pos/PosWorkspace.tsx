@@ -625,8 +625,9 @@ export function PosWorkspace() {
                           </div>
                           <button
                             type="button"
-                            className="text-muted-foreground hover:text-destructive"
+                            className="inline-flex h-11 w-11 shrink-0 items-center justify-center text-muted-foreground hover:text-destructive md:h-8 md:w-8"
                             onClick={() => removeLine(line)}
+                            aria-label="Remove line"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -637,7 +638,7 @@ export function PosWorkspace() {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-11 w-11 md:h-7 md:w-7"
                               onClick={() => updateQty(line, -1)}
                             >
                               <Minus className="h-3 w-3" />
@@ -647,7 +648,7 @@ export function PosWorkspace() {
                               type="button"
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-11 w-11 md:h-7 md:w-7"
                               onClick={() => updateQty(line, 1)}
                             >
                               <Plus className="h-3 w-3" />
@@ -727,7 +728,7 @@ export function PosWorkspace() {
                 <p className="text-sm text-muted-foreground">No sales yet.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[32rem] text-sm">
                     <thead>
                       <tr className="border-b border-border/60 text-left text-muted-foreground">
                         <th className="py-2 pr-4">When</th>

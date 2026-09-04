@@ -57,16 +57,16 @@ export function DataTable<T extends Record<string, unknown>>({
       className="overflow-x-auto rounded-lg border border-border"
       data-testid={tableTestId}
     >
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[36rem] text-sm">
         <thead className="bg-muted/50">
           <tr>
             {columns.map((c) => (
-              <th key={String(c.key)} className="px-4 py-2 text-left font-medium">
+              <th key={String(c.key)} className="whitespace-nowrap px-3 py-3 text-left font-medium md:px-4 md:py-2">
                 {c.header}
               </th>
             ))}
             {hasActions ? (
-              <th className="px-4 py-2 text-right font-medium">Actions</th>
+              <th className="whitespace-nowrap px-3 py-3 text-right font-medium md:px-4 md:py-2">Actions</th>
             ) : null}
           </tr>
         </thead>
@@ -78,14 +78,14 @@ export function DataTable<T extends Record<string, unknown>>({
               data-testid={rowDataTestId?.(row)}
             >
               {columns.map((c) => (
-                <td key={String(c.key)} className="px-4 py-2">
+                <td key={String(c.key)} className="max-w-[16rem] px-3 py-3 md:px-4 md:py-2">
                   {c.render
                     ? c.render(row)
                     : String(pickRowField(row, String(c.key)) ?? "—")}
                 </td>
               ))}
               {hasActions ? (
-                <td className="px-4 py-2 text-right">
+                <td className="px-3 py-3 text-right md:px-4 md:py-2">
                   <div className="flex justify-end gap-1">
                     {onEdit ? (
                       <Button type="button" variant="ghost" size="icon" onClick={() => onEdit(row)} title="Edit">

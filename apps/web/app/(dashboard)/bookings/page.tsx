@@ -188,7 +188,7 @@ export default function BookingsPage() {
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
+                className="w-full min-w-0 sm:w-auto"
                 data-testid="booking-date-picker"
               />
             </div>
@@ -196,7 +196,7 @@ export default function BookingsPage() {
           <div className="space-y-1">
             <Label>Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]" data-testid="booking-status-filter">
+              <SelectTrigger className="w-full min-w-0 sm:w-[160px]" data-testid="booking-status-filter">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -215,7 +215,7 @@ export default function BookingsPage() {
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(open) => (open ? setDialogOpen(true) : closeBookingDialog())}>
             <DialogContent
-              className="max-h-[90vh] max-w-3xl overflow-y-auto"
+            className="max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto"
               onPointerDownOutside={(e) => e.preventDefault()}
             >
               <DialogHeader>
